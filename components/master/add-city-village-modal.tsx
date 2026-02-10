@@ -80,21 +80,7 @@ export default function AddCityVillageModal({
 
         <div className="space-y-6 py-4">
           <div className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold block mb-2 text-gray-700">
-                Select State
-              </label>
-              <Select value={selectedState} onValueChange={setSelectedState}>
-                <SelectTrigger className="w-full border-2 !border-gray-300">
-                  <SelectValue placeholder="Select state" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="chhattisgarh">Chhattisgarh</SelectItem>
-                  <SelectItem value="madhya-pradesh">Madhya Pradesh</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+            
             <div>
               <label className="text-xs font-semibold block mb-2 text-gray-700">
                 Select District
@@ -134,7 +120,7 @@ export default function AddCityVillageModal({
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="text-xs font-semibold block mb-2 text-gray-700">
                 Status
               </label>
@@ -147,7 +133,7 @@ export default function AddCityVillageModal({
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
