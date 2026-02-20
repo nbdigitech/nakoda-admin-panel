@@ -29,10 +29,10 @@ export default function InfluencerCategoryCard() {
     loading,
   } = useMasterData();
 
-  const handleDeleteCategory = async (id: string) => {
+  const handleDeleteCategory = async (docId: string) => {
     if (confirm("Are you sure you want to delete this category?")) {
       try {
-        await deleteInfluencerCategory({ id });
+        await deleteInfluencerCategory({ docId });
         fetchCategories();
       } catch (error) {
         console.error("Failed to delete category:", error);

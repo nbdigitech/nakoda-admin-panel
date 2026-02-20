@@ -27,10 +27,10 @@ interface CityVillageData {
 export default function CityVillageCard() {
   const { cities, districts, refreshCities, loading } = useMasterData();
 
-  const handleDeleteCity = async (id: string) => {
+  const handleDeleteCity = async (docId: string) => {
     if (confirm("Are you sure you want to delete this city?")) {
       try {
-        await deleteCity({ id });
+        await deleteCity({ docId });
         refreshCities();
       } catch (error) {
         console.error("Failed to delete city:", error);

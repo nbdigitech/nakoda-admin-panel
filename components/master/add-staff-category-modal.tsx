@@ -22,7 +22,7 @@ import { addDesignation } from "@/services/masterData";
 
 interface StaffCategoryData {
   id: string;
-  designationName: string;
+  staffCategoryName: string;
   status?: string;
 }
 
@@ -37,8 +37,8 @@ export default function AddStaffCategoryModal({
 }) {
   const [open, setOpen] = React.useState(false);
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
-  const [designationName, setDesignationName] = React.useState(
-    initialData?.designationName || "",
+  const [staffCategoryName, setStaffCategoryName] = React.useState(
+    initialData?.staffCategoryName || "",
   );
   const [selectedStatus, setSelectedStatus] = React.useState(
     initialData?.status || "active",
@@ -49,10 +49,10 @@ export default function AddStaffCategoryModal({
 
   React.useEffect(() => {
     if (initialData) {
-      setDesignationName(initialData.designationName);
+      setStaffCategoryName(initialData.staffCategoryName);
       setSelectedStatus(initialData.status || "active");
     } else {
-      setDesignationName("");
+      setStaffCategoryName("");
       setSelectedStatus("active");
     }
   }, [initialData, open]);
@@ -62,7 +62,7 @@ export default function AddStaffCategoryModal({
       setLoading(true);
       const payload = {
         id: initialData?.id || "",
-        designationName,
+        staffCategoryName,
         status: selectedStatus,
       };
 
@@ -106,10 +106,10 @@ export default function AddStaffCategoryModal({
               </label>
               <Input
                 placeholder="Enter designation name"
-                value={designationName}
-                onChange={(e) => setDesignationName(e.target.value)}
+                value={staffCategoryName}
+                onChange={(e) => setStaffCategoryName(e.target.value)}
                 className={`w-full border-2 transition ${
-                  focusedField === "designationName"
+                  focusedField === "staffCategoryName"
                     ? "!border-[#F87B1B]"
                     : "!border-gray-300"
                 }`}

@@ -8,3 +8,8 @@ export const checkUserBeforeLogin = (payload) =>
 
 export const activateUserAfterOtp = (payload) =>
   callFunction("activateUserAfterOtp", payload);
+
+export const getUsers = (payload) => callFunction("getUsers", payload);
+
+export const changeUserStatus = (payload) =>
+  callFunction("changeUserStatus", payload);

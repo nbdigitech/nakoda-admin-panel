@@ -26,10 +26,10 @@ interface StateData {
 export default function StateCard() {
   const { states, refreshStates, loading } = useMasterData();
 
-  const handleDeleteState = async (id: string) => {
+  const handleDeleteState = async (docId: string) => {
     if (confirm("Are you sure you want to delete this state?")) {
       try {
-        await deleteState({ id });
+        await deleteState({ docId });
         refreshStates();
       } catch (error) {
         console.error("Failed to delete state:", error);

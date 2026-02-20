@@ -26,10 +26,10 @@ interface UnitData {
 export default function UnitCard() {
   const { units, refreshUnits, loading } = useMasterData();
 
-  const handleDeleteUnit = async (id: string) => {
+  const handleDeleteUnit = async (docId: string) => {
     if (confirm("Are you sure you want to delete this unit?")) {
       try {
-        await deleteUnit({ id });
+        await deleteUnit({ docId });
         refreshUnits();
       } catch (error) {
         console.error("Failed to delete unit:", error);

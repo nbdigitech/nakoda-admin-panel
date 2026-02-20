@@ -30,10 +30,10 @@ export default function StaffCard() {
     loading,
   } = useMasterData();
 
-  const handleDeleteStaff = async (id: string) => {
+  const handleDeleteStaff = async (docId: string) => {
     if (confirm("Are you sure you want to delete this designation?")) {
       try {
-        await deleteDesignation({ id });
+        await deleteDesignation({ docId });
         fetchStaff();
       } catch (error) {
         console.error("Failed to delete designation:", error);

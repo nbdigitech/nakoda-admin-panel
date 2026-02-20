@@ -25,7 +25,7 @@ interface CityVillageData {
   id: string;
   cityName: string;
   districtId: string;
-  stateName: string;
+  // stateName: string; // Removed as part of request
   status?: string;
 }
 
@@ -40,9 +40,9 @@ export default function AddCityVillageModal({
 }) {
   const [open, setOpen] = React.useState(false);
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
-  const [selectedState, setSelectedState] = React.useState(
-    initialData?.stateName || "",
-  );
+  // const [selectedState, setSelectedState] = React.useState(
+  //   initialData?.stateName || "",
+  // ); // Removed
   const [selectedDistrict, setSelectedDistrict] = React.useState(
     initialData?.districtId || "",
   );
@@ -50,19 +50,19 @@ export default function AddCityVillageModal({
   const [selectedStatus, setSelectedStatus] = React.useState(
     initialData?.status || "active",
   );
-  const { states, districts } = useMasterData();
+  const { districts } = useMasterData(); // Removed states
   const [loading, setLoading] = React.useState(false);
 
   const isEditMode = !!initialData;
 
   React.useEffect(() => {
     if (initialData) {
-      setSelectedState(initialData.stateName);
+      // setSelectedState(initialData.stateName); // Removed
       setSelectedDistrict(initialData.districtId);
       setCityName(initialData.cityName);
       setSelectedStatus(initialData.status || "active");
     } else {
-      setSelectedState("");
+      // setSelectedState(""); // Removed
       setSelectedDistrict("");
       setCityName("");
       setSelectedStatus("active");
@@ -72,9 +72,8 @@ export default function AddCityVillageModal({
   const handleSave = async () => {
     try {
       setLoading(true);
-      const payload = {
+      const payload: any = {
         id: initialData?.id || "",
-        stateName: selectedState,
         districtId: selectedDistrict,
         cityName,
         status: selectedStatus,
@@ -108,23 +107,7 @@ export default function AddCityVillageModal({
 
         <div className="space-y-6 py-4">
           <div className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold block mb-2 text-gray-700">
-                Select State
-              </label>
-              <Select value={selectedState} onValueChange={setSelectedState}>
-                <SelectTrigger className="w-full border-2 !border-gray-300">
-                  <SelectValue placeholder="Select state" />
-                </SelectTrigger>
-                <SelectContent>
-                  {states.map((state) => (
-                    <SelectItem key={state.id} value={state.stateName}>
-                      {state.stateName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* State selection removed */}
 
             <div>
               <label className="text-xs font-semibold block mb-2 text-gray-700">
@@ -139,9 +122,7 @@ export default function AddCityVillageModal({
                 </SelectTrigger>
                 <SelectContent>
                   {districts
-                    .filter(
-                      (d) => !selectedState || d.stateName === selectedState,
-                    )
+                    // .filter((d) => !selectedState || d.stateName === selectedState) // Removed filter
                     .map((district) => (
                       <SelectItem key={district.id} value={district.id}>
                         {district.districtName}
@@ -174,21 +155,6 @@ export default function AddCityVillageModal({
                 onBlur={() => setFocusedField(null)}
               />
             </div>
-
-            {/* <div>
-              <label className="text-xs font-semibold block mb-2 text-gray-700">
-                Status
-              </label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-full border-2 !border-gray-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div> */}
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

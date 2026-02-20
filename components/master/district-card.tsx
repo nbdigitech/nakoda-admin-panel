@@ -26,10 +26,10 @@ interface DistrictData {
 export default function DistrictCard() {
   const { districts, states, refreshDistricts, loading } = useMasterData();
 
-  const handleDeleteDistrict = async (id: string) => {
+  const handleDeleteDistrict = async (docId: string) => {
     if (confirm("Are you sure you want to delete this district?")) {
       try {
-        await deleteDistrict({ id });
+        await deleteDistrict({ docId });
         refreshDistricts();
       } catch (error) {
         console.error("Failed to delete district:", error);
