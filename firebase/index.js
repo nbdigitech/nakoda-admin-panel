@@ -2,12 +2,15 @@ import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFunctions } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import { getFirestore } from "firebase/firestore";
 
 let app;
 let auth;
 let functions;
+let db;
 
 const initializeFirebase = () => {
+
   if (typeof window === "undefined") return;
 
   if (!app) {
@@ -28,6 +31,9 @@ const initializeFirebase = () => {
 
     // ☁️ Cloud Functions
     functions = getFunctions(app);
+
+    // 🔥 Firestore
+    db = getFirestore(app);
 
     // 🛡️ App Check (NO debug token in production)
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
@@ -50,9 +56,14 @@ export const getFirebaseFunctions = () => {
   return functions;
 };
 
+export const getFirestoreDB = () => {
+  initializeFirebase();
+  return db;
+};
 
 // Lazy getters
 export const getFirebaseApp = () => {
   initializeFirebase();
   return app;
 };
+

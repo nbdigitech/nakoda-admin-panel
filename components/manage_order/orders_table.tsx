@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Table,
@@ -7,92 +7,140 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Edit, MessageSquare } from "lucide-react"
-import EditOrders from "./edit-order"
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Edit, MessageSquare } from "lucide-react";
+import EditOrders from "./edit-order";
 
 export interface Order {
-  id: number
-  orderId: string
-  orderDate: string
-  dealerName: string
-  qty: string
-  shipTo: string
-  status: "Pending" | "In Progress" | "Completed"
+  id: string;
+  orderId: string;
+  createdAt: any;
+  distributorName: string;
+  totalQtyTons: number;
+  fulfilledQtyTons: number;
+  pendingQtyTons: number;
+  location: string;
+  mobileNumber: string;
+  rate: string;
+  status: string;
 }
 
 interface OrdersTableProps {
-  orders: Order[]
+  orders: Order[];
 }
 
-const statusStyles: Record<Order["status"], string> = {
-  Pending: "bg-orange-100 text-orange-700",
-  "In Progress": "bg-yellow-100 text-yellow-700",
-  Completed: "bg-green-100 text-green-700",
-}
+const statusStyles: Record<string, string> = {
+  pending: "bg-orange-100 text-orange-700",
+  accepted: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-700",
+};
 
 export default function OrdersTable({ orders }: OrdersTableProps) {
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "-";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   return (
     <div className="w-full overflow-x-auto">
       <Table>
         {/* Header */}
         <TableHeader>
           <TableRow>
-            <TableHead className="px-4 py-4 font-bold">S No.</TableHead>
-            <TableHead className="px-4 py-4 font-bold">Order ID</TableHead>
-            <TableHead className="px-4 py-4 font-bold">Order Date</TableHead>
-            <TableHead className="px-4 py-4 font-bold">Dealer Name</TableHead>
-            <TableHead className="px-4 py-4 font-bold">Qty</TableHead>
-            <TableHead className="px-4 py-4 font-bold">Ship To</TableHead>
-            <TableHead className="px-4 py-4 font-bold">Status</TableHead>
-            <TableHead className="px-4 py-4 font-bold">Message</TableHead>
-            <TableHead className="px-4 py-4 font-bold">Action</TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">S No.</TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">
+              Order ID
+            </TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">
+              Order Date
+            </TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">
+              Distributor
+            </TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">
+              Mobile
+            </TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">
+              Location
+            </TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">
+              Qty (Tons)
+            </TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">
+              Fulfilled
+            </TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">
+              Pending
+            </TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">Rate</TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">
+              Status
+            </TableHead>
+            <TableHead className="px-4 py-4 font-bold text-xs">
+              Action
+            </TableHead>
           </TableRow>
         </TableHeader>
 
         {/* Body */}
         <TableBody>
-          {orders.map((order) => (
-            <TableRow
-              key={order.id}
-              className="hover:bg-gray-50"
-            >
-              <TableCell className="px-4 py-4">{order.id}</TableCell>
-              <TableCell className="px-4 py-4">{order.orderId}</TableCell>
-              <TableCell className="px-4 py-4">{order.orderDate}</TableCell>
-              <TableCell className="px-4 py-4">{order.dealerName}</TableCell>
-              <TableCell className="px-4 py-4">{order.qty}</TableCell>
-              <TableCell className="px-4 py-4">{order.shipTo}</TableCell>
+          {orders.map((order, index) => (
+            <TableRow key={order.id} className="hover:bg-gray-50">
+              <TableCell className="px-4 py-4 text-sm">{index + 1}</TableCell>
+              <TableCell className="px-4 py-4 text-sm font-medium">
+                {order.orderId || "N/A"}
+              </TableCell>
+
+              <TableCell className="px-4 py-4 text-sm">
+                {formatDate(order.createdAt)}
+              </TableCell>
+              <TableCell className="px-4 py-4 text-sm">
+                {order.distributorName || "Unknown"}
+              </TableCell>
+              <TableCell className="px-4 py-4 text-sm">
+                {order.mobileNumber || "-"}
+              </TableCell>
+              <TableCell className="px-4 py-4 text-sm">
+                {order.location || "-"}
+              </TableCell>
+              <TableCell className="px-4 py-4 text-sm">
+                {order.totalQtyTons || 0}t
+              </TableCell>
+              <TableCell className="px-4 py-4 text-sm">
+                {order.fulfilledQtyTons || 0}t
+              </TableCell>
+              <TableCell className="px-4 py-4 text-sm">
+                {order.pendingQtyTons || 0}t
+              </TableCell>
+              <TableCell className="px-4 py-4 text-sm font-semibold text-green-600">
+                ₹ {order.rate || "0"}
+              </TableCell>
 
               {/* Status */}
               <TableCell className="px-4 py-4">
                 <Badge
-                  className={`text-xs font-semibold ${statusStyles[order.status]}`}
+                  className={`text-[10px] font-bold uppercase ${statusStyles[(order.status || "").toLowerCase()] || "bg-gray-100 text-gray-700"}`}
                 >
-                  {order.status}
+                  {order.status || "Pending"}
                 </Badge>
-              </TableCell>
-
-              {/* Message */}
-              <TableCell className="px-4 py-4">
-                <div className="flex items-center gap-2 text-[#F87B1B] cursor-pointer hover:opacity-80">
-                  <MessageSquare size={18} />
-                  <span className="text-sm font-semibold">1</span>
-                </div>
               </TableCell>
 
               {/* Action */}
               <TableCell className="px-4 py-4">
                 <EditOrders
-                  orderId={order.orderId}
-                  dealerName={order.dealerName}
+                  order={order}
                   trigger={
                     <Button
                       variant="ghost"
                       className="flex items-center gap-2 text-[#F87B1B] px-3 py-2 rounded-lg font-semibold hover:bg-[#F87B1B1A]"
-                      style={{ backgroundColor: '#F87B1B1A' }}
+                      style={{ backgroundColor: "#F87B1B1A" }}
                     >
                       <Edit className="w-4 h-4" />
                       Edit Order
@@ -105,5 +153,5 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
