@@ -9,6 +9,7 @@ import { useState } from "react";
 export default function DealerPage() {
   const [activeTab, setActiveTab] = useState("Dealer");
   const [statusFilter, setStatusFilter] = useState("active");
+  const [searchTerm, setSearchTerm] = useState("");
 
   return (
     <DashboardLayout>
@@ -44,7 +45,14 @@ export default function DealerPage() {
             </button>
           </div>
 
-          <div className="flex items-center ">
+          <div className="flex items-center flex-1 justify-end w-full lg:w-auto">
+            <input
+              type="text"
+              placeholder="Search dealer by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full lg:w-[300px] py-3 px-4 mr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F87B1B]"
+            />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -68,7 +76,7 @@ export default function DealerPage() {
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <DealerTable statusFilter={statusFilter} />
+          <DealerTable statusFilter={statusFilter} searchTerm={searchTerm} />
         </div>
       </div>
     </DashboardLayout>

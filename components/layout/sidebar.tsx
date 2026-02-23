@@ -38,11 +38,11 @@ interface SidebarItem {
 }
 
 const dashboardDropdownItems: SidebarItem[] = [
-  { label: "Analytics", href: "/analytics", icon: <BarChart3 size={16} /> },
+  // { label: "Analytics", href: "/analytics", icon: <BarChart3 size={16} /> },
   { label: "Dealer", href: "/dealer", icon: <Users size={16} /> },
   { label: "Sub Dealer", href: "/sub-dealer", icon: <UserPlus size={16} /> },
   { label: "Staff", href: "/staff", icon: <Users size={16} /> },
-  { label: "Permission", href: "/permission", icon: <ShieldCheck size={16} /> },
+  // { label: "Permission", href: "/permission", icon: <ShieldCheck size={16} /> },
 ];
 
 const managementItems: SidebarItem[] = [
@@ -52,6 +52,7 @@ const managementItems: SidebarItem[] = [
     href: "/order-history",
     icon: <History size={16} />,
   },
+  { label: "ASM Survey", href: "/asm-survey", icon: <Users size={16} /> },
   { label: "AI Chat Bot", href: "/chatbot", icon: <Bot size={16} /> },
   { label: "Master", href: "/master", icon: <Database size={16} /> },
   { label: "Rewards", href: "/rewards", icon: <Trophy size={16} /> },
@@ -142,20 +143,65 @@ export default function Sidebar() {
 
         {/* Management */}
         <div className="mt-4 space-y-2">
-          {managementItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm ${
-                pathname.startsWith(item.href)
-                  ? "bg-orange-50 text-[#F87B1B]"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          ))}
+          {/* Manage Order Dropdown */}
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <div
+                className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer ${
+                  pathname.startsWith("/manage-order")
+                    ? "bg-orange-50 text-[#F87B1B]"
+                    : "text-gray-500 hover:bg-gray-100"
+                }`}
+              >
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Package size={18} />
+                  Manage Order
+                </div>
+                <ChevronDown size={16} />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="ml-4 mt-2 space-y-1 border-l pl-3">
+              <Link
+                href="/manage-order/dealer"
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg ${
+                  pathname === "/manage-order/dealer"
+                    ? "text-[#F87B1B]"
+                    : "text-gray-400 hover:text-[#F87B1B]"
+                }`}
+              >
+                <Users size={16} />
+                Dealer
+              </Link>
+              <Link
+                href="/manage-order/sub-dealer"
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg ${
+                  pathname === "/manage-order/sub-dealer"
+                    ? "text-[#F87B1B]"
+                    : "text-gray-400 hover:text-[#F87B1B]"
+                }`}
+              >
+                <UserPlus size={16} />
+                Sub Dealer
+              </Link>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {managementItems
+            .filter((item) => item.label !== "Manage Order")
+            .map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm ${
+                  pathname.startsWith(item.href)
+                    ? "bg-orange-50 text-[#F87B1B]"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            ))}
 
           <Button
             variant="ghost"

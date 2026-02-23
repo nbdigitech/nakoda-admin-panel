@@ -8,6 +8,7 @@ import { Plus } from "lucide-react";
 export default function StaffPage() {
   const [activeTab, setActiveTab] = useState("Staff");
   const [statusFilter, setStatusFilter] = useState("active");
+  const [searchTerm, setSearchTerm] = useState("");
 
   return (
     <DashboardLayout>
@@ -43,7 +44,14 @@ export default function StaffPage() {
             </button>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center flex-1 justify-end w-full lg:w-auto">
+            <input
+              type="text"
+              placeholder="Search staff by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full lg:w-[300px] py-3 px-4 mr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F87B1B]"
+            />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -67,7 +75,7 @@ export default function StaffPage() {
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow ">
-          <StaffTable statusFilter={statusFilter} />
+          <StaffTable statusFilter={statusFilter} searchTerm={searchTerm} />
         </div>
       </div>
     </DashboardLayout>

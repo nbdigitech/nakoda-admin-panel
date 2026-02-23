@@ -39,3 +39,18 @@ export const getInfluencerOrderFulfillments = async (influencerOrderId) => {
         throw error;
     }
 };
+export const getDistributorOrders = async () => {
+    try {
+        const db = getFirestoreDB();
+        const ordersRef = collection(db, "distributor_orders");
+        const querySnapshot = await getDocs(ordersRef);
+        
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        console.error("Error fetching distributor orders:", error);
+        throw error;
+    }
+};

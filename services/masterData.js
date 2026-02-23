@@ -28,4 +28,8 @@ export const deleteDesignation = (payload) => callFunction("deleteDesignation", 
 export const createDealerByPhone = (payload) => callFunction("createDealerByPhone", payload);
 export const checkUserBeforeLogin = (payload) => callFunction("checkUserBeforeLogin", payload);
 
-
+// ASM Related Functions
+export const getTour = () => callFunction("getTour");
+export const getSurvey = (payload) => callFunction("getSurvey", payload);
+export const getExpenses = (payload) => callFunction("getExpenses", payload);
+export const changeExpenseStatus = (payload) => callFunction("changeExpenseStatus", payload);

@@ -4,20 +4,15 @@ import { useState } from "react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { Plus } from "lucide-react";
 import SubDealerTable from "@/components/sub-dealer/sub-dealer-table";
-import AddSubDealerModal from "@/components/sub-dealer/add-sub-dealer-modal";
 
 export default function DealerPage() {
   const [activeTab, setActiveTab] = useState("Sub Dealer");
   const [openModal, setOpenModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState("active");
+  const [searchTerm, setSearchTerm] = useState("");
 
   return (
     <DashboardLayout>
-      <AddSubDealerModal
-        trigger={null}
-        open={openModal}
-        onOpenChange={setOpenModal}
-      />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-center gap-6 -mt-2 mb-6">
@@ -50,7 +45,14 @@ export default function DealerPage() {
             </button>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center flex-1 justify-end w-full lg:w-auto">
+            <input
+              type="text"
+              placeholder="Search sub dealer by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full lg:w-[300px] py-3 px-4 mr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F87B1B]"
+            />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -61,20 +63,12 @@ export default function DealerPage() {
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
-            <AddSubDealerModal
-              trigger={
-                <button className="bg-[#7FFF7C5C] text-sm text-[#009846] font-bold py-3 px-12 rounded-lg flex items-center  transition-colors ">
-                  <Plus className="w-5 h-5 mr-1" />
-                  Add Sub Dealer
-                </button>
-              }
-            />
           </div>
         </div>
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <SubDealerTable statusFilter={statusFilter} />
+          <SubDealerTable statusFilter={statusFilter} searchTerm={searchTerm} />
         </div>
       </div>
     </DashboardLayout>
