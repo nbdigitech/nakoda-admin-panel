@@ -219,19 +219,37 @@ export default function DealerTable({
                       <div
                         className="relative cursor-pointer"
                         onClick={() => {
+                          const isPdf = (url: string) =>
+                            url?.toLowerCase().includes(".pdf");
                           const sliderDocs: { url: string; label: string }[] =
                             [];
+
+                          // If main image is PDF, open in browser
+                          if (dealer.imagePath && isPdf(dealer.imagePath)) {
+                            window.open(dealer.imagePath, "_blank");
+                            return;
+                          }
+
                           if (dealer.imagePath)
                             sliderDocs.push({
                               url: dealer.imagePath,
                               label: "Profile Image",
                             });
-                          if (dealer.aadhaarPath)
+
+                          // Only add non-PDF Aadhaar to slider
+                          if (
+                            dealer.aadhaarPath &&
+                            !isPdf(dealer.aadhaarPath)
+                          ) {
                             sliderDocs.push({
                               url: dealer.aadhaarPath,
                               label: "Aadhaar",
                             });
-                          if (sliderDocs.length > 0) openViewer(sliderDocs, 0);
+                          }
+
+                          if (sliderDocs.length > 0) {
+                            openViewer(sliderDocs, 0);
+                          }
                         }}
                       >
                         {dealer.imagePath ? (
@@ -268,11 +286,20 @@ export default function DealerTable({
                             </Link>
                           )}
                         </div>
-                        {dealer.aadhaarPath && (
-                          <span className="text-[10px] text-gray-500 font-medium">
-                            + Aadhaar
-                          </span>
-                        )}
+                        {dealer.aadhaarPath &&
+                          (dealer.aadhaarPath.toLowerCase().includes(".pdf") ? (
+                            <Link
+                              href={dealer.aadhaarPath}
+                              target="_blank"
+                              className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-bold hover:bg-orange-100 border border-orange-100 w-fit"
+                            >
+                              Aadhaar (PDF)
+                            </Link>
+                          ) : (
+                            <span className="text-[10px] text-gray-500 font-medium">
+                              + Aadhaar
+                            </span>
+                          ))}
                       </div>
                     </div>
                   </TableCell>

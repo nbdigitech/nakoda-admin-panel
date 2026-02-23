@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Eye, ChevronLeft, ChevronRight, X, FileText } from "lucide-react";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -232,27 +232,38 @@ export default function StaffTable({
                       <div
                         className="relative cursor-pointer"
                         onClick={() => {
-                          const sliderDocs: { url: string; label: string }[] =
-                            [];
-                          if (member.imagePath)
-                            sliderDocs.push({
-                              url: member.imagePath,
-                              label: "Profile Image",
-                            });
-                          if (member.aadhaarPath)
-                            sliderDocs.push({
-                              url: member.aadhaarPath,
-                              label: "Aadhaar",
-                            });
-                          if (sliderDocs.length > 0) openViewer(sliderDocs, 0);
+                          const isPdf = (url: string) =>
+                            url?.toLowerCase().includes(".pdf");
+                          if (member.imagePath && isPdf(member.imagePath)) {
+                            window.open(member.imagePath, "_blank");
+                            return;
+                          }
+                          if (member.imagePath) {
+                            openViewer(
+                              [
+                                {
+                                  url: member.imagePath,
+                                  label: "Profile Image",
+                                },
+                              ],
+                              0,
+                            );
+                          }
                         }}
                       >
                         {member.imagePath ? (
-                          <img
-                            src={member.imagePath}
-                            alt="avatar"
-                            className="w-10 h-10 rounded-lg object-cover border border-gray-200 hover:border-orange-400 transition-colors shadow-sm"
-                          />
+                          member.imagePath.toLowerCase().includes(".pdf") ? (
+                            <div className="w-10 h-10 rounded-lg bg-orange-50 border border-orange-200 flex flex-col items-center justify-center text-orange-600 hover:bg-orange-100 transition-colors">
+                              <FileText className="w-5 h-5" />
+                              <span className="text-[8px] font-bold">PDF</span>
+                            </div>
+                          ) : (
+                            <img
+                              src={member.imagePath}
+                              alt="avatar"
+                              className="w-10 h-10 rounded-lg object-cover border border-gray-200 hover:border-orange-400 transition-colors shadow-sm"
+                            />
+                          )
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
                             <Eye className="w-4 h-4" />
@@ -260,14 +271,14 @@ export default function StaffTable({
                         )}
                       </div>
 
-                      {/* Other Links */}
+                      {/* Other Documents */}
                       <div className="flex flex-col gap-1">
                         <div className="flex gap-1">
                           {member.gstUrl && (
                             <Link
                               href={member.gstUrl}
                               target="_blank"
-                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200"
+                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200 border border-gray-200"
                             >
                               GST
                             </Link>
@@ -276,16 +287,48 @@ export default function StaffTable({
                             <Link
                               href={member.pancardUrl}
                               target="_blank"
-                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200"
+                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200 border border-gray-200"
                             >
                               PAN
                             </Link>
                           )}
                         </div>
                         {member.aadhaarPath && (
-                          <span className="text-[10px] text-gray-500 font-medium">
-                            + Aadhaar
-                          </span>
+                          <div
+                            className="w-fit"
+                            onClick={() => {
+                              if (
+                                member.aadhaarPath
+                                  .toLowerCase()
+                                  .includes(".pdf")
+                              ) {
+                                window.open(member.aadhaarPath, "_blank");
+                              } else {
+                                openViewer(
+                                  [
+                                    {
+                                      url: member.aadhaarPath,
+                                      label: "Aadhaar",
+                                    },
+                                  ],
+                                  0,
+                                );
+                              }
+                            }}
+                          >
+                            {member.aadhaarPath
+                              .toLowerCase()
+                              .includes(".pdf") ? (
+                              <div className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-bold hover:bg-orange-100 border border-orange-100 flex items-center gap-1 cursor-pointer">
+                                <FileText className="w-3 h-3" />
+                                Aadhaar
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-gray-500 font-medium cursor-pointer hover:text-orange-500 transition-colors">
+                                + Aadhaar Card
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

@@ -17,16 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createUserByPhone } from "@/services/user";
-import {
-  getCity,
-  getDesignation,
-  getDistrict,
-  getState,
-} from "@/services/masterData";
+import { createUserByPhone, checkUserBeforeLogin } from "@/services/user";
+import { getDesignation, getDistrict, getState } from "@/services/masterData";
 import { Timestamp } from "firebase/firestore";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useToast } from "@/hooks/use-toast";
+import { Combobox } from "@/components/ui/combobox";
 
 export default function AddStaffModal({
   trigger,
@@ -43,13 +39,12 @@ export default function AddStaffModal({
   // dropdown data
   const [states, setStates] = React.useState<any[]>([]);
   const [districts, setDistricts] = React.useState<any[]>([]);
-  const [cities, setCities] = React.useState<any[]>([]);
   const [designations, setDesignations] = React.useState<any[]>([]);
 
   // selected values (ID stored)
   const [stateId, setStateId] = React.useState<string | null>(null);
   const [districtId, setDistrictId] = React.useState<string | null>(null);
-  const [cityId, setCityId] = React.useState<string | null>(null);
+  const [city, setCity] = React.useState<string>("");
   const [designationId, setDesignationId] = React.useState<string | null>(null);
 
   // No UID states needed
@@ -62,13 +57,34 @@ export default function AddStaffModal({
   const [dob, setDob] = React.useState<string>("");
   const [aadhaarBase64, setAadhaarBase64] = React.useState<string>("");
   const [imageBase64, setImageBase64] = React.useState<string>("");
-  const [locationValue, setLocationValue] = React.useState<string>("");
 
   // permissions
   const [orderManagement, setOrderManagement] = React.useState<boolean>(false);
   const [staffManagement, setStaffManagement] = React.useState<boolean>(false);
   const [masterDataManagement, setMasterDataManagement] =
     React.useState<boolean>(false);
+  const [isPhoneRegistered, setIsPhoneRegistered] =
+    React.useState<boolean>(false);
+  const [checkingPhone, setCheckingPhone] = React.useState<boolean>(false);
+
+  const resetForm = () => {
+    setStep(1);
+    setStaffName("");
+    setPhone("");
+    setEmail("");
+    setPassword("");
+    setDob("");
+    setAadhaarBase64("");
+    setImageBase64("");
+    setStateId(null);
+    setDistrictId(null);
+    setCity("");
+    setDesignationId(null);
+    setOrderManagement(false);
+    setStaffManagement(false);
+    setMasterDataManagement(false);
+    setIsPhoneRegistered(false);
+  };
 
   const fileToBase64 = (file: File) =>
     new Promise<string>((resolve, reject) => {
@@ -102,7 +118,45 @@ export default function AddStaffModal({
     }
   };
 
+  const handlePhoneChange = async (val: string) => {
+    setPhone(val);
+    const cleanPhone = val.replace(/^\+91/, "").replace(/\D/g, "");
+    if (cleanPhone.length === 10) {
+      try {
+        setCheckingPhone(true);
+        const payload = { phoneNumber: cleanPhone };
+        const res: any = await checkUserBeforeLogin(payload);
+
+        // Adjust structural check based on common patterns or what was likely intended
+        if (
+          res?.data?.data?.length > 0 ||
+          res?.data?.length > 0 ||
+          res?.length > 0
+        ) {
+          setIsPhoneRegistered(true);
+        } else {
+          setIsPhoneRegistered(false);
+        }
+      } catch (err) {
+        console.error("Phone check error:", err);
+        setIsPhoneRegistered(false);
+      } finally {
+        setCheckingPhone(false);
+      }
+    } else {
+      setIsPhoneRegistered(false);
+    }
+  };
+
   const handleSubmit = async () => {
+    if (isPhoneRegistered) {
+      toast({
+        title: "Error",
+        description: "Cannot create user: phone number already registered.",
+        variant: "destructive",
+      });
+      return;
+    }
     const permissions: string[] = [];
     if (orderManagement) permissions.push("order_management");
     if (staffManagement) permissions.push("staff_management");
@@ -126,10 +180,9 @@ export default function AddStaffModal({
       imageBase64: imageBase64 || "",
       stateId: stateId,
       districtId: districtId ? String(districtId) : null,
-      cityId: cityId ? String(cityId) : null,
+      city: city,
       staffCategoryId: designationId,
       role: roleValue,
-      address: locationValue,
     };
 
     console.log("CREATE USER PAYLOAD", payload);
@@ -137,6 +190,7 @@ export default function AddStaffModal({
     try {
       const res = await createUserByPhone(payload);
       console.log("User created:", res);
+      resetForm();
       setOpen(false);
       toast({
         title: "Success",
@@ -158,19 +212,16 @@ export default function AddStaffModal({
     let mounted = true;
     const loadData = async () => {
       try {
-        const [stateRes, districtRes, cityRes, designationRes] =
-          await Promise.all([
-            getState(),
-            getDistrict(),
-            getCity(),
-            getDesignation(),
-          ]);
+        const [stateRes, districtRes, designationRes] = await Promise.all([
+          getState(),
+          getDistrict(),
+          getDesignation(),
+        ]);
 
         if (!mounted) return;
 
         setStates(stateRes?.data ?? stateRes ?? []);
         setDistricts(districtRes?.data ?? districtRes ?? []);
-        setCities(cityRes?.data ?? cityRes ?? []);
         setDesignations(designationRes?.data ?? designationRes ?? []);
         console.log(designationRes);
       } catch (err) {
@@ -183,10 +234,6 @@ export default function AddStaffModal({
       mounted = false;
     };
   }, [authReady, user]);
-
-  const filteredCities = cities.filter(
-    (c) => String(c.districtId) === String(districtId),
-  );
 
   const filteredDistricts = districts.filter(
     (d) => String(d.stateId) === String(stateId),
@@ -271,13 +318,27 @@ export default function AddStaffModal({
                     <Input
                       placeholder="9405005285"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
                       className={`w-full border-2 transition ${
-                        focusedField === "phone" ? "!border-[#F87B1B]" : null
+                        isPhoneRegistered
+                          ? "!border-red-500"
+                          : focusedField === "phone"
+                            ? "!border-[#F87B1B]"
+                            : null
                       }`}
                       onFocus={() => setFocusedField("phone")}
                       onBlur={() => setFocusedField(null)}
                     />
+                    {isPhoneRegistered && (
+                      <p className="text-[10px] text-red-500 mt-1">
+                        phone number already register use differ
+                      </p>
+                    )}
+                    {checkingPhone && (
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        Checking phone number...
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -290,7 +351,7 @@ export default function AddStaffModal({
                           : "text-gray-700"
                       }`}
                     >
-                      E-Mail
+                      E-Mail (Optional)
                     </label>
                     <Input
                       placeholder="Kunal@gmail.com"
@@ -366,26 +427,16 @@ export default function AddStaffModal({
                     >
                       Allotment Area
                     </label>
-                    <Select
+                    <Combobox
+                      options={districts.map((d) => ({
+                        label: d.districtName,
+                        value: String(d.id),
+                      }))}
                       value={districtId ?? ""}
-                      onValueChange={(value) => {
-                        setDistrictId(value);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select District" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {districts.map((d) => (
-                          <SelectItem
-                            key={d.id} // ✅ UNIQUE
-                            value={String(d.id)}
-                          >
-                            {d.districtName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onValueChange={(value) => setDistrictId(value)}
+                      placeholder="Select District"
+                      searchPlaceholder="Search district..."
+                    />
                   </div>
                 </div>
               </div>
@@ -393,6 +444,7 @@ export default function AddStaffModal({
               <div className="flex justify-center pt-6">
                 <Button
                   className="bg-[#F87B1B] hover:bg-[#e86f12] text-white px-12"
+                  disabled={isPhoneRegistered || checkingPhone}
                   onClick={() => setStep(2)}
                 >
                   Next
@@ -420,23 +472,16 @@ export default function AddStaffModal({
                     >
                       Designation
                     </label>
-                    <Select
+                    <Combobox
+                      options={designations.map((d) => ({
+                        label: d.staffCategoryName,
+                        value: String(d.id),
+                      }))}
                       value={designationId ?? ""}
-                      onValueChange={(value) => {
-                        setDesignationId(value);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Designation" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {designations.map((d) => (
-                          <SelectItem key={d.id} value={String(d.id)}>
-                            {d.staffCategoryName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onValueChange={(value) => setDesignationId(value)}
+                      placeholder="Select Designation"
+                      searchPlaceholder="Search designation..."
+                    />
                   </div>
                   <div>
                     <label
@@ -459,6 +504,11 @@ export default function AddStaffModal({
                       onFocus={() => setFocusedField("aadhar")}
                       onBlur={() => setFocusedField(null)}
                     />
+                    {aadhaarBase64 && (
+                      <p className="text-[10px] text-green-600 mt-1 font-semibold">
+                        ✓ Aadhaar Card Uploaded
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label
@@ -482,6 +532,11 @@ export default function AddStaffModal({
                       onFocus={() => setFocusedField("selfie")}
                       onBlur={() => setFocusedField(null)}
                     />
+                    {imageBase64 && (
+                      <p className="text-[10px] text-green-600 mt-1 font-semibold">
+                        ✓ Selfie Uploaded
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -576,26 +631,20 @@ export default function AddStaffModal({
                     >
                       State
                     </label>
-                    <Select
+                    <Combobox
+                      options={states.map((s) => ({
+                        label: s.stateName,
+                        value: String(s.id),
+                      }))}
                       value={stateId ?? ""}
                       onValueChange={(value) => {
                         setStateId(value);
-                        // reset children
                         setDistrictId(null);
-                        setCityId(null);
+                        setCity("");
                       }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select State" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {states.map((s) => (
-                          <SelectItem key={s.id} value={String(s.id)}>
-                            {s.stateName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select State"
+                      searchPlaceholder="Search state..."
+                    />
                   </div>
                   <div>
                     <label
@@ -607,25 +656,20 @@ export default function AddStaffModal({
                     >
                       District
                     </label>
-                    <Select
+                    <Combobox
+                      options={filteredDistricts.map((d) => ({
+                        label: d.districtName,
+                        value: String(d.id),
+                      }))}
                       value={districtId ?? ""}
-                      disabled={!stateId}
                       onValueChange={(value) => {
                         setDistrictId(value);
-                        setCityId(null);
+                        setCity("");
                       }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select District" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filteredDistricts.map((d) => (
-                          <SelectItem key={d.id} value={String(d.id)}>
-                            {d.districtName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      disabled={!stateId}
+                      placeholder="Select District"
+                      searchPlaceholder="Search district..."
+                    />
                   </div>
                   <div>
                     <label
@@ -635,44 +679,22 @@ export default function AddStaffModal({
                           : "text-gray-700"
                       }`}
                     >
-                      City / Village
+                      City
                     </label>
                     <Input
-                      placeholder="Enter City or Village"
-                      value={cityId ?? ""}
-                      onChange={(e) => setCityId(e.target.value)}
+                      placeholder="Enter city name"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
                       className={`w-full border-2 transition ${
                         focusedField === "city"
-                          ? "border-[#F87B1B]"
-                          : "border-gray-300"
+                          ? "!border-[#F87B1B]"
+                          : "!border-gray-300"
                       }`}
                       onFocus={() => setFocusedField("city")}
                       onBlur={() => setFocusedField(null)}
+                      disabled={!districtId}
                     />
                   </div>
-                  {/* <div>
-                    <label
-                      className={`text-xs font-semibold block mb-2 transition ${
-                        focusedField === "location"
-                          ? "text-[#F87B1B]"
-                          : "text-gray-700"
-                      }`}
-                    >
-                      Location
-                    </label>
-                    <Input
-                      placeholder="Pandit Roosal"
-                      value={locationValue}
-                      onChange={(e) => setLocationValue(e.target.value)}
-                      className={`w-full border-2 transition ${
-                        focusedField === "location"
-                          ? "border-[#F87B1B]"
-                          : "border-gray-300"
-                      }`}
-                      onFocus={() => setFocusedField("location")}
-                      onBlur={() => setFocusedField(null)}
-                    />
-                  </div> */}
                 </div>
               </div>
 

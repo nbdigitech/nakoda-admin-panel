@@ -90,13 +90,6 @@ export default function Sidebar() {
       </div>
 
       {/* New Dealer */}
-      <div className="px-4 py-3.5">
-        <Link href="/add-dealer">
-          <Button className="w-full h-10 bg-[#F87B1B] hover:bg-[#e86f12] text-white rounded-xl">
-            + New Dealer
-          </Button>
-        </Link>
-      </div>
 
       <ScrollArea className=" mt-4 h-[calc(100vh-160px)] px-3">
         {/* Dashboard */}
