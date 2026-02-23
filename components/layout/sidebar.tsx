@@ -55,7 +55,7 @@ const managementItems: SidebarItem[] = [
   { label: "ASM Survey", href: "/asm-survey", icon: <Users size={16} /> },
   { label: "AI Chat Bot", href: "/chatbot", icon: <Bot size={16} /> },
   { label: "Master", href: "/master", icon: <Database size={16} /> },
-  { label: "Rewards", href: "/rewards", icon: <Trophy size={16} /> },
+  // { label: "Rewards", href: "/rewards", icon: <Trophy size={16} /> },
 ];
 
 export default function Sidebar() {
