@@ -635,28 +635,22 @@ export default function AddStaffModal({
                           : "text-gray-700"
                       }`}
                     >
-                      City
+                      City / Village
                     </label>
-                    <Select
+                    <Input
+                      placeholder="Enter City or Village"
                       value={cityId ?? ""}
-                      disabled={!districtId}
-                      onValueChange={(value) => {
-                        setCityId(value);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select City" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filteredCities.map((d) => (
-                          <SelectItem key={d.id} value={String(d.id)}>
-                            {d.cityName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(e) => setCityId(e.target.value)}
+                      className={`w-full border-2 transition ${
+                        focusedField === "city"
+                          ? "border-[#F87B1B]"
+                          : "border-gray-300"
+                      }`}
+                      onFocus={() => setFocusedField("city")}
+                      onBlur={() => setFocusedField(null)}
+                    />
                   </div>
-                  <div>
+                  {/* <div>
                     <label
                       className={`text-xs font-semibold block mb-2 transition ${
                         focusedField === "location"
@@ -678,7 +672,7 @@ export default function AddStaffModal({
                       onFocus={() => setFocusedField("location")}
                       onBlur={() => setFocusedField(null)}
                     />
-                  </div>
+                  </div> */}
                 </div>
               </div>
 

@@ -10,11 +10,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Eye, Power } from "lucide-react";
+import { Edit, Eye, Power, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { getUsers, changeUserStatus } from "@/services/user";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Dealer {
   id: string;
@@ -29,6 +36,8 @@ interface Dealer {
   aadhaarPath: string;
   status: string;
   role: string;
+  imagePath?: string;
+  permissions?: string[];
 }
 
 export default function DealerTable({
@@ -42,6 +51,32 @@ export default function DealerTable({
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // Image Slider State
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedDocs, setSelectedDocs] = useState<
+    { url: string; label: string }[]
+  >([]);
+  const [currentDocIndex, setCurrentDocIndex] = useState(0);
+
+  const openViewer = (
+    docs: { url: string; label: string }[],
+    index: number,
+  ) => {
+    setSelectedDocs(docs);
+    setCurrentDocIndex(index);
+    setViewerOpen(true);
+  };
+
+  const nextDoc = () => {
+    setCurrentDocIndex((prev) => (prev + 1) % selectedDocs.length);
+  };
+
+  const prevDoc = () => {
+    setCurrentDocIndex(
+      (prev) => (prev - 1 + selectedDocs.length) % selectedDocs.length,
+    );
+  };
 
   const fetchDealers = async () => {
     setLoading(true);
@@ -129,6 +164,9 @@ export default function DealerTable({
                 ASM ID
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
+                Permissions
+              </TableHead>
+              <TableHead className="px-3 py-2 font-bold text-xs">
                 Documents
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
@@ -167,51 +205,94 @@ export default function DealerTable({
                     {dealer.organizationName}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
-                    {dealer.districtId}
+                    {dealer.districtId?.substring(0, 8) || "-"}
                   </TableCell>
-                  <TableCell className="px-3 py-4 text-md">
+                  <TableCell className="px-3 py-4 text-md text-gray-500">
                     {dealer.email}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
-                    {dealer.asmId || "-"}
+                    {dealer.asmId?.substring(0, 8) || "-"}
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
+                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      {dealer.permissions && dealer.permissions.length > 0 ? (
+                        dealer.permissions.map((p, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="text-[10px] bg-blue-50 text-blue-600 border-blue-100 whitespace-nowrap"
+                          >
+                            {p}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-gray-400 text-xs">-</span>
+                      )}
+                    </div>
                   </TableCell>
 
                   {/* Documents Column */}
                   <TableCell className="px-3 py-2">
-                    <div className="flex gap-2 flex-wrap max-w-[150px]">
-                      {dealer.gstUrl && (
-                        <Link
-                          href={dealer.gstUrl}
-                          target="_blank"
-                          className="flex items-center gap-1 cursor-pointer hover:opacity-80 bg-gray-100 p-1 rounded"
-                        >
-                          <span className="text-xs text-blue-600 font-medium">
-                            GST
+                    <div className="flex items-center gap-3">
+                      {/* Thumbnail trigger */}
+                      <div
+                        className="relative cursor-pointer"
+                        onClick={() => {
+                          const sliderDocs: { url: string; label: string }[] =
+                            [];
+                          if (dealer.imagePath)
+                            sliderDocs.push({
+                              url: dealer.imagePath,
+                              label: "Profile Image",
+                            });
+                          if (dealer.aadhaarPath)
+                            sliderDocs.push({
+                              url: dealer.aadhaarPath,
+                              label: "Aadhaar",
+                            });
+                          if (sliderDocs.length > 0) openViewer(sliderDocs, 0);
+                        }}
+                      >
+                        {dealer.imagePath ? (
+                          <img
+                            src={dealer.imagePath}
+                            alt="avatar"
+                            className="w-10 h-10 rounded-lg object-cover border border-gray-200 hover:border-orange-400 transition-colors shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
+                            <Eye className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <div className="flex gap-1">
+                          {dealer.gstUrl && (
+                            <Link
+                              href={dealer.gstUrl}
+                              target="_blank"
+                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200"
+                            >
+                              GST
+                            </Link>
+                          )}
+                          {dealer.pancardUrl && (
+                            <Link
+                              href={dealer.pancardUrl}
+                              target="_blank"
+                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200"
+                            >
+                              PAN
+                            </Link>
+                          )}
+                        </div>
+                        {dealer.aadhaarPath && (
+                          <span className="text-[10px] text-gray-500 font-medium">
+                            + Aadhaar
                           </span>
-                        </Link>
-                      )}
-                      {dealer.pancardUrl && (
-                        <Link
-                          href={dealer.pancardUrl}
-                          target="_blank"
-                          className="flex items-center gap-1 cursor-pointer hover:opacity-80 bg-gray-100 p-1 rounded"
-                        >
-                          <span className="text-xs text-blue-600 font-medium">
-                            PAN
-                          </span>
-                        </Link>
-                      )}
-                      {dealer.aadhaarPath && (
-                        <Link
-                          href={dealer.aadhaarPath}
-                          target="_blank"
-                          className="flex items-center gap-1 cursor-pointer hover:opacity-80 bg-gray-100 p-1 rounded"
-                        >
-                          <span className="text-xs text-blue-600 font-medium">
-                            Aadhaar
-                          </span>
-                        </Link>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </TableCell>
 
@@ -276,6 +357,49 @@ export default function DealerTable({
           Next
         </Button>
       </div>
+      {/* Document Viewer Modal */}
+      <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-black/95 border-none">
+          <DialogTitle className="sr-only">Document View</DialogTitle>
+          <div className="relative w-full h-[80vh] flex items-center justify-center">
+            {selectedDocs[currentDocIndex] && (
+              <>
+                <img
+                  src={selectedDocs[currentDocIndex].url}
+                  alt={selectedDocs[currentDocIndex].label}
+                  className="max-w-full max-h-full object-contain"
+                />
+
+                <div className="absolute top-4 left-4 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
+                  {selectedDocs[currentDocIndex].label}
+                </div>
+              </>
+            )}
+
+            {selectedDocs.length > 1 && (
+              <>
+                <button
+                  onClick={prevDoc}
+                  className="absolute left-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-sm"
+                >
+                  <ChevronLeft size={32} />
+                </button>
+
+                <button
+                  onClick={nextDoc}
+                  className="absolute right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-sm"
+                >
+                  <ChevronRight size={32} />
+                </button>
+
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1 rounded-full text-sm text-white">
+                  {currentDocIndex + 1} / {selectedDocs.length}
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

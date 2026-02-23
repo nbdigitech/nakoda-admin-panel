@@ -1,48 +1,48 @@
-"use client"
+"use client";
 
-import { Card, CardContent } from "@/components/ui/card"
-import Image from "next/image"
+import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 
-const stats = [
-  {
-    title: "Total Dealer",
-    value: "502",
-    image: "/total dealer.png",
-    bg: "bg-orange-100",
-  },
-  {
-    title: "Total Sub Dealer",
-    value: "2,502",
-    image: "/total sub dealer.png",
-    bg: "bg-orange-100",
-  },
-  {
-    title: "Total Staff",
-    value: "265",
-    image: "/total staff.png",
-    bg: "bg-orange-100",
-  },
-  {
-    title: "Total Order",
-    value: "502",
-    image: "/total order.png",
-    bg: "bg-green-100",
-  },
-  {
-    title: "Today Order",
-    value: "150",
-    image: "/total order.png",
-    bg: "bg-green-100",
-  },
-  {
-    title: "Order Pending",
-    value: "265",
-    image: "/total order.png",
-    bg: "bg-green-100",
-  },
-]
+export default function DashboardCards({ data }: { data?: any }) {
+  const stats = [
+    {
+      title: "Total Dealer",
+      value: data?.totalDealer?.toLocaleString() || "0",
+      image: "/total dealer.png",
+      bg: "bg-orange-100",
+    },
+    {
+      title: "Total Sub Dealer",
+      value: data?.totalInfluencer?.toLocaleString() || "0",
+      image: "/total sub dealer.png",
+      bg: "bg-orange-100",
+    },
+    {
+      title: "Total Staff",
+      value: data?.totalStaff?.toLocaleString() || "0",
+      image: "/total staff.png",
+      bg: "bg-orange-100",
+    },
+    {
+      title: "Total Order",
+      value: data?.totalDealerOrder?.toLocaleString() || "0",
+      image: "/total order.png",
+      bg: "bg-green-100",
+    },
+    {
+      title: "Today Order",
+      value: data?.todayOrders?.toLocaleString() || "0",
+      image: "/total order.png",
+      bg: "bg-green-100",
+    },
+    {
+      title: "Order Pending",
+      value: data?.pendingOrders?.toLocaleString() || "0",
+      image: "/total order.png",
+      bg: "bg-green-100",
+    },
+  ];
 
-export default function DashboardCards() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {stats.map((item) => (
@@ -83,5 +83,5 @@ export default function DashboardCards() {
         </Card>
       ))}
     </div>
-  )
+  );
 }
