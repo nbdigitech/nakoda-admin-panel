@@ -26,6 +26,7 @@ import {
 } from "@/services/masterData";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { Combobox } from "@/components/ui/combobox";
+import { useToast } from "@/hooks/use-toast";
 
 interface FormState {
   // Step 1 - Personal Info
@@ -45,22 +46,28 @@ interface FormState {
   // Step 3 - Address
   stateId: string;
   districtId: string;
-  cityId: string;
-  address: string;
+  city: string;
   asmId: string;
   asmName: string;
 }
 
 export default function AddDealerModal({
   trigger,
+  onSuccess,
 }: {
   trigger: React.ReactNode;
+  onSuccess?: () => void;
 }) {
+  const [open, setOpen] = React.useState(false);
   const [step, setStep] = React.useState(1);
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [isPhoneRegistered, setIsPhoneRegistered] = React.useState(false);
   const [checkingPhone, setCheckingPhone] = React.useState(false);
+  const [aadhaarFileType, setAadhaarFileType] = React.useState<
+    "image" | "pdf" | null
+  >(null);
+  const { toast } = useToast();
 
   const [formData, setFormData] = React.useState<FormState>({
     name: "",
@@ -75,8 +82,7 @@ export default function AddDealerModal({
     aadhaarBase64: "",
     stateId: "",
     districtId: "",
-    cityId: "",
-    address: "",
+    city: "",
     asmId: "",
     asmName: "",
   });
@@ -109,10 +115,13 @@ export default function AddDealerModal({
     if (authReady && user && typeof user === "object") {
       const asmName =
         (user as any).displayName ||
+        (user as any).name ||
         (user as any).email ||
         (user as any).phoneNumber ||
         "";
-      setFormData((prev) => ({ ...prev, asmId: (user as any).uid, asmName }));
+      const asmId =
+        (user as any).uid || (user as any).id || (user as any)._id || "";
+      setFormData((prev) => ({ ...prev, asmId, asmName }));
     }
   }, [authReady, user]);
 
@@ -173,6 +182,42 @@ export default function AddDealerModal({
     reader.readAsDataURL(file);
   };
 
+  const handleAadhaarChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const f = e.target.files?.[0];
+    if (!f) {
+      handleInputChange("aadhaarBase64", "");
+      setAadhaarFileType(null);
+      return;
+    }
+
+    if (f.type === "application/pdf") {
+      if (f.size > 200 * 1024) {
+        toast({
+          title: "File too large",
+          description: "max size 200kb only for pdf",
+          variant: "destructive",
+        });
+        e.target.value = ""; // Clear the input
+        handleInputChange("aadhaarBase64", "");
+        setAadhaarFileType(null);
+        return;
+      }
+      setAadhaarFileType("pdf");
+    } else {
+      setAadhaarFileType("image");
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      const base64Only = base64String.split(",")[1] || base64String;
+      handleInputChange("aadhaarBase64", base64Only);
+    };
+    reader.readAsDataURL(f);
+  };
+
   // Validate form data
   const validateStep = (stepNum: number): boolean => {
     if (stepNum === 1) {
@@ -198,8 +243,7 @@ export default function AddDealerModal({
       return !!(
         formData.stateId &&
         formData.districtId &&
-        formData.cityId &&
-        formData.address &&
+        formData.city &&
         formData.asmId
       );
     }
@@ -229,10 +273,9 @@ export default function AddDealerModal({
         pancardBase64: formData.pancardBase64,
         stateId: formData.stateId,
         districtId: formData.districtId,
-        cityId: formData.cityId,
-        address: formData.address,
+        city: formData.city,
         asmId: formData.asmId,
-        asmName: formData.asmName,
+        asmName: formData.name,
       };
 
       const response = await createDealerByPhone(payload);
@@ -253,12 +296,13 @@ export default function AddDealerModal({
         aadhaarBase64: "",
         stateId: "",
         districtId: "",
-        cityId: "",
-        address: "",
-        asmId: "",
-        asmName: "",
+        city: "",
+        asmId: formData.asmId,
+        asmName: formData.name,
       });
       setStep(1);
+      setOpen(false);
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error creating dealer:", error);
       alert("Failed to create dealer. Please try again.");
@@ -268,7 +312,7 @@ export default function AddDealerModal({
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
       <DialogContent className="max-w-3xl rounded-xl">
@@ -607,10 +651,8 @@ export default function AddDealerModal({
                   </label>
                   <Input
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                      handleFileChange("aadhaarBase64", e.target.files?.[0])
-                    }
+                    accept=".pdf,image/png,image/jpeg,image/jpg"
+                    onChange={handleAadhaarChange}
                     placeholder="Choose file"
                     className={`w-full border-2 transition ${
                       focusedField === "aadhaarBase64"
@@ -620,9 +662,12 @@ export default function AddDealerModal({
                     onFocus={() => setFocusedField("aadhaarBase64")}
                     onBlur={() => setFocusedField(null)}
                   />
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Supported: PNG, JPG, PDF (Max 200KB for PDF)
+                  </p>
                   {formData.aadhaarBase64 && (
-                    <p className="text-xs text-green-600 mt-1">
-                      ✓ Aadhar uploaded
+                    <p className="text-[10px] text-green-600 mt-1 font-semibold">
+                      ✓ {aadhaarFileType?.toUpperCase() || "AADHAAR"} Uploaded
                     </p>
                   )}
                 </div>
@@ -671,7 +716,7 @@ export default function AddDealerModal({
                       handleInputChange("stateId", val);
                       // reset downstream
                       handleInputChange("districtId", "");
-                      handleInputChange("cityId", "");
+                      handleInputChange("city", "");
                       setDistricts([]);
                       setCities([]);
                       if (val) {
@@ -702,7 +747,7 @@ export default function AddDealerModal({
                     value={formData.districtId}
                     onValueChange={async (val) => {
                       handleInputChange("districtId", val);
-                      handleInputChange("cityId", "");
+                      handleInputChange("city", "");
                       setCities([]);
                       if (val) {
                         try {
@@ -726,21 +771,26 @@ export default function AddDealerModal({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold block mb-2 text-gray-700">
+                  <label
+                    className={`text-xs font-semibold block mb-2 transition ${
+                      focusedField === "city"
+                        ? "text-[#F87B1B]"
+                        : "text-gray-700"
+                    }`}
+                  >
                     City *
                   </label>
-                  <Combobox
-                    options={cities.map((c) => ({
-                      label: c.cityName || c.name,
-                      value: c.id || c._id,
-                    }))}
-                    value={formData.cityId}
-                    onValueChange={(val) => handleInputChange("cityId", val)}
-                    disabled={!formData.districtId}
-                    placeholder={
-                      cities.length ? "Select city" : "Select district first"
-                    }
-                    searchPlaceholder="Search city..."
+                  <Input
+                    value={formData.city}
+                    onChange={(e) => handleInputChange("city", e.target.value)}
+                    placeholder="Enter city"
+                    className={`w-full border-2 transition ${
+                      focusedField === "city"
+                        ? "border-[#F87B1B]"
+                        : "border-gray-300"
+                    }`}
+                    onFocus={() => setFocusedField("city")}
+                    onBlur={() => setFocusedField(null)}
                   />
                 </div>
               </div>
@@ -749,43 +799,17 @@ export default function AddDealerModal({
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "address"
-                        ? "text-[#F87B1B]"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    Address *
-                  </label>
-                  <Input
-                    value={formData.address}
-                    onChange={(e) =>
-                      handleInputChange("address", e.target.value)
-                    }
-                    placeholder="Enter full address"
-                    className={`w-full border-2 transition ${
-                      focusedField === "address"
-                        ? "border-[#F87B1B]"
-                        : "border-gray-300"
-                    }`}
-                    onFocus={() => setFocusedField("address")}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className={`text-xs font-semibold block mb-2 transition ${
                       focusedField === "asmId"
                         ? "text-[#F87B1B]"
                         : "text-gray-700"
                     }`}
                   >
-                    ASM ID *
+                    ASM ID (Current User) *
                   </label>
                   <Input
-                    value={formData.asmName || formData.asmId}
+                    value={formData.asmName}
                     disabled
-                    placeholder="ASM (auto-assigned)"
+                    placeholder="ASM Name"
                     className="w-full border-2 bg-gray-50 text-gray-700"
                   />
                 </div>

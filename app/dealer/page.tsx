@@ -10,6 +10,7 @@ export default function DealerPage() {
   const [activeTab, setActiveTab] = useState("Dealer");
   const [statusFilter, setStatusFilter] = useState("active");
   const [searchTerm, setSearchTerm] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   return (
     <DashboardLayout>
@@ -64,6 +65,7 @@ export default function DealerPage() {
               <option value="inactive">Inactive</option>
             </select>
             <AddDealerModal
+              onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
               trigger={
                 <button className="bg-[#7FFF7C5C] text-sm text-[#009846] font-bold py-3 px-12 rounded-lg flex items-center  transition-colors ">
                   <Plus className="w-5 h-5 mr-1" />
@@ -76,7 +78,11 @@ export default function DealerPage() {
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <DealerTable statusFilter={statusFilter} searchTerm={searchTerm} />
+          <DealerTable
+            statusFilter={statusFilter}
+            searchTerm={searchTerm}
+            refreshTrigger={refreshTrigger}
+          />
         </div>
       </div>
     </DashboardLayout>

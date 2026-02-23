@@ -12,8 +12,18 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Eye, Power, ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  Edit,
+  Eye,
+  Power,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  FileText,
+} from "lucide-react";
 import { getUsers, changeUserStatus } from "@/services/user";
+import { ref, getDownloadURL } from "firebase/storage";
+import { getFirebaseStorage } from "@/firebase";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -43,9 +53,11 @@ interface Dealer {
 export default function DealerTable({
   statusFilter = "active",
   searchTerm = "",
+  refreshTrigger = 0,
 }: {
   statusFilter?: string;
   searchTerm?: string;
+  refreshTrigger?: number;
 }) {
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,6 +78,46 @@ export default function DealerTable({
     setSelectedDocs(docs);
     setCurrentDocIndex(index);
     setViewerOpen(true);
+  };
+
+  const handleDocumentClick = async (path: string, label: string) => {
+    if (!path) return;
+    let url = path;
+    if (!url.startsWith("http")) {
+      try {
+        const storage = getFirebaseStorage();
+        url = await getDownloadURL(ref(storage, path));
+      } catch (error) {
+        console.error(`Error resolving ${label} URL:`, error);
+      }
+    }
+
+    let isPdf =
+      url.toLowerCase().includes(".pdf") ||
+      path.toLowerCase().includes(".pdf") ||
+      path.startsWith("users/") ||
+      path.startsWith("dealers/");
+
+    // If it's not explicitly a PDF, sniff the first few bytes to check for PDF magic number
+    // This handles PDFs that are saved by the backend with a .jpg extension
+    if (!isPdf && url.startsWith("http")) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const text = await blob.slice(0, 5).text();
+        if (text === "%PDF-") {
+          isPdf = true;
+        }
+      } catch (e) {
+        // Silently fail if CORS blocks the fetch, it's likely a standard image
+      }
+    }
+
+    if (isPdf) {
+      window.open(url, "_blank");
+    } else {
+      openViewer([{ url, label }], 0);
+    }
   };
 
   const nextDoc = () => {
@@ -103,7 +155,7 @@ export default function DealerTable({
 
   useEffect(() => {
     fetchDealers();
-  }, [statusFilter]);
+  }, [statusFilter, refreshTrigger]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -266,40 +318,50 @@ export default function DealerTable({
                       </div>
 
                       <div className="flex flex-col gap-1">
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 justify-center">
                           {dealer.gstUrl && (
-                            <Link
-                              href={dealer.gstUrl}
-                              target="_blank"
-                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200"
+                            <span
+                              onClick={() =>
+                                handleDocumentClick(dealer.gstUrl, "GST")
+                              }
+                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200 cursor-pointer"
                             >
                               GST
-                            </Link>
+                            </span>
                           )}
                           {dealer.pancardUrl && (
-                            <Link
-                              href={dealer.pancardUrl}
-                              target="_blank"
-                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200"
+                            <span
+                              onClick={() =>
+                                handleDocumentClick(dealer.pancardUrl, "PAN")
+                              }
+                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200 cursor-pointer"
                             >
                               PAN
-                            </Link>
+                            </span>
                           )}
                         </div>
-                        {dealer.aadhaarPath &&
-                          (dealer.aadhaarPath.toLowerCase().includes(".pdf") ? (
-                            <Link
-                              href={dealer.aadhaarPath}
-                              target="_blank"
-                              className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-bold hover:bg-orange-100 border border-orange-100 w-fit"
-                            >
-                              Aadhaar (PDF)
-                            </Link>
-                          ) : (
-                            <span className="text-[10px] text-gray-500 font-medium">
-                              + Aadhaar
-                            </span>
-                          ))}
+                        {dealer.aadhaarPath && (
+                          <div
+                            className="w-fit"
+                            onClick={() =>
+                              handleDocumentClick(dealer.aadhaarPath, "Aadhaar")
+                            }
+                          >
+                            {dealer.aadhaarPath
+                              .toLowerCase()
+                              .includes(".pdf") ||
+                            dealer.aadhaarPath.startsWith("users/") ? (
+                              <div className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-bold hover:bg-orange-100 border border-orange-100 flex items-center gap-1 cursor-pointer">
+                                <FileText className="w-3 h-3" />
+                                Aadhaar
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-gray-500 font-medium cursor-pointer hover:text-orange-500 transition-colors">
+                                + Aadhaar Card
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TableCell>

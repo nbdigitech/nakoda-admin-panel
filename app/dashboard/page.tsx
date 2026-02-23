@@ -27,6 +27,13 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
+        const cached = sessionStorage.getItem("dashboardStats");
+        if (cached) {
+          setAnalytics(JSON.parse(cached));
+          sessionStorage.removeItem("dashboardStats"); // Optional: clear so manual refresh gets new data
+          return;
+        }
+
         const res = await getDashboardAnalytics();
         if (res?.data) {
           setAnalytics(res.data);
@@ -40,6 +47,16 @@ export default function DashboardPage() {
 
   const fetchOrders = async () => {
     try {
+      if (activeTab === "Dealer") {
+        const cachedOrders = sessionStorage.getItem("dashboardOrders");
+        if (cachedOrders) {
+          setOrders(JSON.parse(cachedOrders));
+          setLoading(false);
+          sessionStorage.removeItem("dashboardOrders");
+          return;
+        }
+      }
+
       setLoading(true);
       const data: any =
         activeTab === "Sub Dealer"

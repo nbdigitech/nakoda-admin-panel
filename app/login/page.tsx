@@ -7,6 +7,8 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 
 import { getFirebaseAuth } from "@/firebase";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
+import { getDashboardAnalytics } from "@/services/dashboard";
+import { getDistributorOrders } from "@/services/orders";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,6 +35,34 @@ export default function LoginPage() {
       const auth = getFirebaseAuth();
       const res = await signInWithEmailAndPassword(auth, email, password);
       console.log("Logged in UID:", res.user.uid);
+
+      // Pre-fetch Dashboard Stats & Orders before redirecting
+      try {
+        const [statsResult, ordersResult] = await Promise.allSettled([
+          getDashboardAnalytics(),
+          getDistributorOrders(),
+        ]);
+
+        if (statsResult.status === "fulfilled" && statsResult.value?.data) {
+          sessionStorage.setItem(
+            "dashboardStats",
+            JSON.stringify(statsResult.value.data),
+          );
+        }
+
+        if (
+          ordersResult.status === "fulfilled" &&
+          ordersResult.value?.length >= 0
+        ) {
+          sessionStorage.setItem(
+            "dashboardOrders",
+            JSON.stringify(ordersResult.value),
+          );
+        }
+      } catch (prefetchError) {
+        console.warn("Silent prefetch error", prefetchError);
+      }
+
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Login failed");
