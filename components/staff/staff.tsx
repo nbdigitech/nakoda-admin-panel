@@ -192,44 +192,8 @@ export default function StaffTable({
                   <TableCell className="px-3 py-4 text-md">
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </TableCell>
-                  <TableCell className="px-3 py-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="relative group cursor-pointer"
-                        onClick={() =>
-                          member.imagePath &&
-                          openViewer(
-                            [
-                              {
-                                url: member.imagePath,
-                                label: "Profile Picture",
-                              },
-                            ],
-                            0,
-                          )
-                        }
-                      >
-                        {member.imagePath ? (
-                          <img
-                            src={member.imagePath}
-                            alt={member.name}
-                            className="w-10 h-10 rounded-lg object-cover border-2 border-orange-100 transition-transform group-hover:scale-105 shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-[#F87B1B] font-bold border-2 border-orange-100 uppercase">
-                            {member.name.charAt(0)}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-gray-900 text-sm">
-                          {member.name}
-                        </span>
-                        <span className="text-[10px] text-gray-500 uppercase tracking-wider">
-                          {member.role || "Staff"}
-                        </span>
-                      </div>
-                    </div>
+                  <TableCell className="px-3 py-4 text-sm font-bold text-gray-900">
+                    {member.name}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
                     {member.phoneNumber}
@@ -263,60 +227,67 @@ export default function StaffTable({
                   </TableCell>
 
                   <TableCell className="px-3 py-2">
-                    <div className="flex gap-2 flex-wrap max-w-[150px]">
-                      {member.gstUrl && (
-                        <Link
-                          href={member.gstUrl}
-                          target="_blank"
-                          className="flex items-center gap-1 cursor-pointer hover:opacity-80 bg-gray-100 p-1 rounded"
-                        >
-                          <span className="text-xs text-blue-600 font-medium">
-                            GST
-                          </span>
-                        </Link>
-                      )}
-                      {member.pancardUrl && (
-                        <Link
-                          href={member.pancardUrl}
-                          target="_blank"
-                          className="flex items-center gap-1 cursor-pointer hover:opacity-80 bg-gray-100 p-1 rounded"
-                        >
-                          <span className="text-xs text-blue-600 font-medium">
-                            PAN
-                          </span>
-                        </Link>
-                      )}
+                    <div className="flex items-center gap-3">
+                      {/* Thumbnail as main trigger */}
+                      <div
+                        className="relative cursor-pointer"
+                        onClick={() => {
+                          const sliderDocs: { url: string; label: string }[] =
+                            [];
+                          if (member.imagePath)
+                            sliderDocs.push({
+                              url: member.imagePath,
+                              label: "Profile Image",
+                            });
+                          if (member.aadhaarPath)
+                            sliderDocs.push({
+                              url: member.aadhaarPath,
+                              label: "Aadhaar",
+                            });
+                          if (sliderDocs.length > 0) openViewer(sliderDocs, 0);
+                        }}
+                      >
+                        {member.imagePath ? (
+                          <img
+                            src={member.imagePath}
+                            alt="avatar"
+                            className="w-10 h-10 rounded-lg object-cover border border-gray-200 hover:border-orange-400 transition-colors shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
+                            <Eye className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
 
-                      {(member.aadhaarPath || member.imagePath) && (
-                        <div className="flex flex-col gap-1 w-full">
-                          {(() => {
-                            const sliderDocs: { url: string; label: string }[] =
-                              [];
-                            if (member.aadhaarPath)
-                              sliderDocs.push({
-                                url: member.aadhaarPath,
-                                label: "Aadhaar",
-                              });
-                            if (member.imagePath)
-                              sliderDocs.push({
-                                url: member.imagePath,
-                                label: "Image",
-                              });
-
-                            return sliderDocs.map((doc, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => openViewer(sliderDocs, idx)}
-                                className="flex items-center gap-1 cursor-pointer hover:opacity-80 bg-gray-100 p-1 rounded text-left w-fit"
-                              >
-                                <span className="text-xs text-blue-600 font-medium">
-                                  {doc.label}
-                                </span>
-                              </button>
-                            ));
-                          })()}
+                      {/* Other Links */}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex gap-1">
+                          {member.gstUrl && (
+                            <Link
+                              href={member.gstUrl}
+                              target="_blank"
+                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200"
+                            >
+                              GST
+                            </Link>
+                          )}
+                          {member.pancardUrl && (
+                            <Link
+                              href={member.pancardUrl}
+                              target="_blank"
+                              className="text-[10px] bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded font-medium hover:bg-gray-200"
+                            >
+                              PAN
+                            </Link>
+                          )}
                         </div>
-                      )}
+                        {member.aadhaarPath && (
+                          <span className="text-[10px] text-gray-500 font-medium">
+                            + Aadhaar
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
 
