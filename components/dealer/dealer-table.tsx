@@ -163,9 +163,7 @@ export default function DealerTable({
               <TableHead className="px-3 py-2 font-bold text-xs">
                 ASM ID
               </TableHead>
-              <TableHead className="px-3 py-2 font-bold text-xs">
-                Permissions
-              </TableHead>
+
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Documents
               </TableHead>
@@ -212,23 +210,6 @@ export default function DealerTable({
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
                     {dealer.asmId?.substring(0, 8) || "-"}
-                  </TableCell>
-                  <TableCell className="px-3 py-4">
-                    <div className="flex flex-wrap gap-1 max-w-[200px]">
-                      {dealer.permissions && dealer.permissions.length > 0 ? (
-                        dealer.permissions.map((p, i) => (
-                          <Badge
-                            key={i}
-                            variant="secondary"
-                            className="text-[10px] bg-blue-50 text-blue-600 border-blue-100 whitespace-nowrap"
-                          >
-                            {p}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-gray-400 text-xs">-</span>
-                      )}
-                    </div>
                   </TableCell>
 
                   {/* Documents Column */}

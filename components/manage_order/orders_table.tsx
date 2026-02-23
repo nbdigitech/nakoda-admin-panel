@@ -124,7 +124,7 @@ export default function OrdersTable({ orders, orderSource }: OrdersTableProps) {
                   {formatDate(order.createdAt)}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm">
-                  {order.distributorId || "Unknown"}
+                  {order.distributorId?.slice(0, 6) + "..." || "N/A"}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm">
                   {order.mobileNumber || "-"}

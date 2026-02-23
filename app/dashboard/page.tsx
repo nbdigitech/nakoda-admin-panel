@@ -5,41 +5,11 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import DashboardCards from "@/components/dashboard/dashboard-cards";
 import OrderChart from "@/components/dashboard/order-chart";
 import { Button } from "@/components/ui/button";
-import OrdersTable, { Order } from "@/components/dashboard/orders-table";
+import OrdersTable, { Order } from "@/components/manage_order/orders_table";
 import TodayRateCard from "@/components/dashboard/TodayRateCard";
-import { Plus } from "lucide-react";
+import { Plus, Search, Loader2 } from "lucide-react";
 import { getDashboardAnalytics } from "@/services/dashboard";
-
-/* ================= ORDER DATA ================= */
-const orders: Order[] = [
-  {
-    id: 1,
-    orderId: "#151056",
-    orderDate: "5/12/2025",
-    dealerName: "Kabir Nag",
-    qty: "550t",
-    rate: "45,000",
-    status: "Completed",
-  },
-  {
-    id: 2,
-    orderId: "#151057",
-    orderDate: "5/12/2025",
-    dealerName: "Bharat Sahu",
-    qty: "550t",
-    rate: "45,000",
-    status: "Pending",
-  },
-  {
-    id: 3,
-    orderId: "#151058",
-    orderDate: "5/12/2025",
-    dealerName: "Bhuvan Raj",
-    qty: "550t",
-    rate: "45,000",
-    status: "In Progress",
-  },
-];
+import { getInfluencerOrders, getDistributorOrders } from "@/services/orders";
 
 const tabs = ["Today", "Pending", "Dispatch", "Cancelled", "Completed"];
 
@@ -47,11 +17,17 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("Dealer");
   const [analytics, setAnalytics] = useState<any>(null);
 
+  // Order List State
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         const res = await getDashboardAnalytics();
-        console.log("Dashboard Analytics Response:", res);
         if (res?.data) {
           setAnalytics(res.data);
         }
@@ -61,6 +37,47 @@ export default function DashboardPage() {
     };
     fetchAnalytics();
   }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const data: any =
+        activeTab === "Sub Dealer"
+          ? await getInfluencerOrders()
+          : await getDistributorOrders();
+      setOrders(data);
+    } catch (error) {
+      console.error(`Failed to fetch orders:`, error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, [activeTab]);
+
+  useEffect(() => {
+    let result = [...orders];
+
+    if (statusFilter !== "all") {
+      result = result.filter(
+        (o) => (o.status || "").toLowerCase() === statusFilter.toLowerCase(),
+      );
+    }
+
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      result = result.filter(
+        (o) =>
+          (o.orderId || "").toLowerCase().includes(q) ||
+          (o.distributorId || "").toLowerCase().includes(q) ||
+          (o.location || "").toLowerCase().includes(q) ||
+          (o.mobileNumber || "").toLowerCase().includes(q),
+      );
+    }
+    setFilteredOrders(result);
+  }, [orders, statusFilter, searchTerm]);
 
   return (
     <DashboardLayout>
@@ -108,25 +125,52 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        <div className="flex items-center ">
+        <div className="flex items-center gap-4 w-full lg:w-auto">
+          <div className="relative w-full sm:w-[280px]">
+            <input
+              type="text"
+              placeholder="Search orders..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full py-2.5 pl-10 pr-4 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F87B1B] bg-white text-gray-700"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          </div>
+
           <select
-            className="w-[180px] py-3 px-4 mr-4 border text-[#F87B1B] rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-[#F87B1B]"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-[150px] py-2.5 px-4 border text-[#F87B1B] rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-[#F87B1B] transition-colors"
             style={{ backgroundColor: "#F87B1B1A" }}
           >
-            <option>All</option>
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="inprogress">In Progress</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
-          {/* <button
-            className="bg-[#c8efd9] text-sm text-[#009846] font-bold py-3 px-12 rounded-lg flex items-center transition-colors hover:bg-[#6FEF6C4C]"
-          >
-            <Plus className="w-5 h-5 mr-1" />
-            Add Order
-          </button> */}
         </div>
       </div>
 
       {/* ================= ORDER TABLE ================= */}
-      <div className="mt-6">
-        <OrdersTable orders={orders} />
+      <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h3 className="text-lg font-bold text-gray-800 mb-6">
+          Recent {activeTab} Orders
+        </h3>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center p-20 gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-[#F87B1B]" />
+            <p className="text-gray-500 font-medium text-sm">
+              Loading orders...
+            </p>
+          </div>
+        ) : (
+          <OrdersTable
+            orders={filteredOrders}
+            orderSource={activeTab === "Sub Dealer" ? "sub-dealer" : "dealer"}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
