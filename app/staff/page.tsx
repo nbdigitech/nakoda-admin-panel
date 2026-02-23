@@ -9,6 +9,7 @@ export default function StaffPage() {
   const [activeTab, setActiveTab] = useState("Staff");
   const [statusFilter, setStatusFilter] = useState("active");
   const [searchTerm, setSearchTerm] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   return (
     <DashboardLayout>
@@ -63,6 +64,7 @@ export default function StaffPage() {
               <option value="inactive">Inactive</option>
             </select>
             <AddStaffModal
+              onSuccess={() => setRefreshKey((prev) => prev + 1)}
               trigger={
                 <button className="bg-[#7FFF7C5C] text-sm text-[#009846] font-bold py-3 px-12 rounded-lg flex items-center  transition-colors ">
                   <Plus className="w-5 h-5 mr-1" />
@@ -75,7 +77,11 @@ export default function StaffPage() {
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow ">
-          <StaffTable statusFilter={statusFilter} searchTerm={searchTerm} />
+          <StaffTable
+            statusFilter={statusFilter}
+            searchTerm={searchTerm}
+            refreshTrigger={refreshKey}
+          />
         </div>
       </div>
     </DashboardLayout>

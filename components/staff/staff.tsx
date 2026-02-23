@@ -22,6 +22,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getUsers, changeUserStatus } from "@/services/user";
+import { ref, getDownloadURL } from "firebase/storage";
+import { getFirebaseStorage } from "@/firebase";
 
 interface Staff {
   id: string;
@@ -42,9 +44,11 @@ interface Staff {
 export default function StaffTable({
   statusFilter = "active",
   searchTerm = "",
+  refreshTrigger = 0,
 }: {
   statusFilter?: string;
   searchTerm?: string;
+  refreshTrigger?: number;
 }) {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +106,7 @@ export default function StaffTable({
 
   useEffect(() => {
     fetchStaff();
-  }, [statusFilter]);
+  }, [statusFilter, refreshTrigger]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -296,18 +300,38 @@ export default function StaffTable({
                         {member.aadhaarPath && (
                           <div
                             className="w-fit"
-                            onClick={() => {
+                            onClick={async () => {
+                              let url = member.aadhaarPath;
+                              if (!url.startsWith("http")) {
+                                try {
+                                  const storage = getFirebaseStorage();
+                                  url = await getDownloadURL(
+                                    ref(storage, member.aadhaarPath),
+                                  );
+                                } catch (error) {
+                                  console.error(
+                                    "Error resolving Aadhaar URL:",
+                                    error,
+                                  );
+                                }
+                              }
+
+                              // If it's a PDF (even if named .jpg by backend)
+                              // or if it specifically includes .pdf
+                              // If it's a PDF or a relative storage path (which could be a PDF named .jpg)
                               if (
+                                url.toLowerCase().includes(".pdf") ||
                                 member.aadhaarPath
                                   .toLowerCase()
-                                  .includes(".pdf")
+                                  .includes(".pdf") ||
+                                member.aadhaarPath.startsWith("users/")
                               ) {
-                                window.open(member.aadhaarPath, "_blank");
+                                window.open(url, "_blank");
                               } else {
                                 openViewer(
                                   [
                                     {
-                                      url: member.aadhaarPath,
+                                      url: url,
                                       label: "Aadhaar",
                                     },
                                   ],
@@ -318,7 +342,8 @@ export default function StaffTable({
                           >
                             {member.aadhaarPath
                               .toLowerCase()
-                              .includes(".pdf") ? (
+                              .includes(".pdf") ||
+                            member.aadhaarPath.startsWith("users/") ? (
                               <div className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-bold hover:bg-orange-100 border border-orange-100 flex items-center gap-1 cursor-pointer">
                                 <FileText className="w-3 h-3" />
                                 Aadhaar

@@ -26,8 +26,10 @@ import { Combobox } from "@/components/ui/combobox";
 
 export default function AddStaffModal({
   trigger,
+  onSuccess,
 }: {
   trigger: React.ReactElement<any>;
+  onSuccess?: () => void;
 }) {
   const [step, setStep] = React.useState(1);
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
@@ -56,6 +58,9 @@ export default function AddStaffModal({
   const [password, setPassword] = React.useState<string>("");
   const [dob, setDob] = React.useState<string>("");
   const [aadhaarBase64, setAadhaarBase64] = React.useState<string>("");
+  const [aadhaarFileType, setAadhaarFileType] = React.useState<
+    "image" | "pdf" | null
+  >(null);
   const [imageBase64, setImageBase64] = React.useState<string>("");
 
   // permissions
@@ -75,6 +80,7 @@ export default function AddStaffModal({
     setPassword("");
     setDob("");
     setAadhaarBase64("");
+    setAadhaarFileType(null);
     setImageBase64("");
     setStateId(null);
     setDistrictId(null);
@@ -98,7 +104,29 @@ export default function AddStaffModal({
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const f = e.target.files?.[0];
-    if (!f) return setAadhaarBase64("");
+    if (!f) {
+      setAadhaarBase64("");
+      setAadhaarFileType(null);
+      return;
+    }
+
+    if (f.type === "application/pdf") {
+      if (f.size > 200 * 1024) {
+        toast({
+          title: "File too large",
+          description: "max size 200kb only for pdf",
+          variant: "destructive",
+        });
+        e.target.value = ""; // Clear the input
+        setAadhaarBase64("");
+        setAadhaarFileType(null);
+        return;
+      }
+      setAadhaarFileType("pdf");
+    } else {
+      setAadhaarFileType("image");
+    }
+
     try {
       const b = await fileToBase64(f);
       setAadhaarBase64(b.split(",")[1] ?? b);
@@ -196,6 +224,8 @@ export default function AddStaffModal({
         title: "Success",
         description: "User created successfully!",
       });
+      // Refresh table if callback provided
+      if (onSuccess) onSuccess();
     } catch (err: any) {
       console.error(err);
       toast({
@@ -495,6 +525,7 @@ export default function AddStaffModal({
                     </label>
                     <Input
                       type="file"
+                      accept=".pdf,image/png,image/jpeg,image/jpg"
                       onChange={handleAadhaarChange}
                       className={`w-full border-2 transition ${
                         focusedField === "aadhar"
@@ -504,9 +535,12 @@ export default function AddStaffModal({
                       onFocus={() => setFocusedField("aadhar")}
                       onBlur={() => setFocusedField(null)}
                     />
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      Supported: PNG, JPG, PDF (Max 200KB for PDF)
+                    </p>
                     {aadhaarBase64 && (
                       <p className="text-[10px] text-green-600 mt-1 font-semibold">
-                        ✓ Aadhaar Card Uploaded
+                        ✓ {aadhaarFileType?.toUpperCase()} Uploaded
                       </p>
                     )}
                   </div>
@@ -522,6 +556,7 @@ export default function AddStaffModal({
                     </label>
                     <Input
                       type="file"
+                      accept="image/png,image/jpeg,image/jpg"
                       placeholder="Choose file"
                       onChange={handleImageChange}
                       className={`w-full border-2 transition ${

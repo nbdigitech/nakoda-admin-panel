@@ -3,11 +3,13 @@ import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth"
 import { getFunctions } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 let app;
 let auth;
 let functions;
 let db;
+let storage;
 
 const initializeFirebase = () => {
 
@@ -35,6 +37,9 @@ const initializeFirebase = () => {
     // 🔥 Firestore
     db = getFirestore(app);
 
+    // 📦 Storage
+    storage = getStorage(app);
+
     // 🛡️ App Check (NO debug token in production)
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
     initializeAppCheck(app, {
@@ -59,6 +64,11 @@ export const getFirebaseFunctions = () => {
 export const getFirestoreDB = () => {
   initializeFirebase();
   return db;
+};
+
+export const getFirebaseStorage = () => {
+  initializeFirebase();
+  return storage;
 };
 
 // Lazy getters
