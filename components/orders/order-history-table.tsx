@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,224 +8,201 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { MessageCircle, Edit2, MessageSquare, Edit, X } from "lucide-react"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { MessageSquare, Edit } from "lucide-react";
+import EditOrders from "@/components/manage_order/edit-order";
 
-interface OrderHistory {
-  id: number
-  sNo: number
-  orderID: string
-  orderDate: string
-  dealerName: string
-  qty: string
-  shipTo: string
-  status: "Completed" | "Processing" | "On Hold" | "Pending"
-  message: number
+interface OrderHistoryTableProps {
+  orders: any[];
+  type: "dealer" | "sub-dealer";
 }
 
-const orders: OrderHistory[] = [
-  {
-    id: 1,
-    sNo: 1,
-    orderID: "#151056",
-    orderDate: "5/12/2025",
-    dealerName: "Avyaan Sahu",
-    qty: "550t",
-    shipTo: "Sankar Nagar Raipur",
-    status: "Completed",
-    message: 1,
-  },
-  {
-    id: 2,
-    sNo: 2,
-    orderID: "#151056",
-    orderDate: "5/12/2025",
-    dealerName: "Arjun Kumar",
-    qty: "550t",
-    shipTo: "Ram Nagar Raipur",
-    status: "Completed",
-    message: 1,
-  },
-  {
-    id: 3,
-    sNo: 3,
-    orderID: "#151056",
-    orderDate: "5/12/2025",
-    dealerName: "Jayant Singh",
-    qty: "550t",
-    shipTo: "Puroni Basti Raipur",
-    status: "Completed",
-    message: 1,
-  },
-]
+const statusStyles: Record<string, string> = {
+  pending: "bg-orange-100 text-orange-700",
+  accepted: "bg-green-100 text-green-700",
+  approved: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-700",
+  inprogress: "bg-blue-100 text-blue-700",
+  completed: "bg-green-100 text-green-700",
+};
 
-const statusStyles: Record<OrderHistory["status"], string> = {
-  Completed: "bg-green-100 text-green-800",
-  Processing: "bg-orange-100 text-orange-800",
-  "On Hold": "bg-gray-100 text-gray-800",
-  Pending: "bg-red-100 text-red-800",
-}
+export default function OrderHistoryTable({
+  orders,
+  type,
+}: OrderHistoryTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-export default function OrderHistoryTable() {
-  const [openDrawer, setOpenDrawer] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<OrderHistory | null>(null)
-  const [newStatus, setNewStatus] = useState<OrderHistory["status"]>("Completed")
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "-";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
-  const handleEditClick = (order: OrderHistory) => {
-    setSelectedOrder(order)
-    setNewStatus(order.status)
-    setOpenDrawer(true)
-  }
-
-  const handleStatusChange = () => {
-    // Here you would typically make an API call to update the order status
-    console.log(`Order ${selectedOrder?.orderID} status changed to ${newStatus}`)
-    setOpenDrawer(false)
-  }
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const paginatedOrders = orders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   return (
-    <>
-      <div className="w-full overflow-x-auto">
-        <div className="p-6">
-          <Table className="w-full">
-            {/* Header */}
-            <TableHeader>
-              <TableRow className="border-b bg-white hover:bg-white">
-                <TableHead className="px-4 py-4 text-gray-700 font-semibold">S No.</TableHead>
-                <TableHead className="px-4 py-4 text-gray-700 font-semibold">Order ID</TableHead>
-                <TableHead className="px-4 py-4 text-gray-700 font-semibold">Order Date</TableHead>
-                <TableHead className="px-4 py-4 text-gray-700 font-semibold">Dealer Name</TableHead>
-                <TableHead className="px-4 py-4 text-gray-700 font-semibold">Qty</TableHead>
-                <TableHead className="px-4 py-4 text-gray-700 font-semibold">Ship to</TableHead>
-                <TableHead className="px-4 py-4 text-gray-700 font-semibold">Status</TableHead>
-                <TableHead className="px-4 py-4 text-gray-700 font-semibold">Message</TableHead>
-                <TableHead className="px-4 py-4 text-gray-700 font-semibold">Action</TableHead>
-              </TableRow>
-            </TableHeader>
+    <div className="w-full">
+      <div className="overflow-x-auto">
+        <Table className="w-full">
+          {/* Header */}
+          <TableHeader>
+            <TableRow className="border-b bg-gray-50 hover:bg-gray-50">
+              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                S No.
+              </TableHead>
+              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                Order ID
+              </TableHead>
+              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                Order Date
+              </TableHead>
+              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                {type === "dealer" ? "Distributor" : "Sub Dealer"}
+              </TableHead>
+              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                Qty
+              </TableHead>
+              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                Rate
+              </TableHead>
+              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                Status
+              </TableHead>
+              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase text-right">
+                Action
+              </TableHead>
+            </TableRow>
+          </TableHeader>
 
-            {/* Body */}
-            <TableBody>
-              {orders.map((order) => (
+          {/* Body */}
+          <TableBody>
+            {paginatedOrders.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={8}
+                  className="text-center py-20 text-gray-500 italic"
+                >
+                  No orders found for this category.
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedOrders.map((order, index) => (
                 <TableRow key={order.id} className="hover:bg-gray-50 border-b">
                   {/* S No. */}
-                  <TableCell className="px-4 py-4 text-sm">{order.sNo}</TableCell>
+                  <TableCell className="px-4 py-4 text-sm font-medium">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </TableCell>
 
                   {/* Order ID */}
-                  <TableCell className="px-4 py-4 text-sm font-medium">{order.orderID}</TableCell>
+                  <TableCell className="px-4 py-4 text-sm font-bold text-[#F87B1B]">
+                    #{order.orderId || "N/A"}
+                  </TableCell>
 
                   {/* Order Date */}
-                  <TableCell className="px-4 py-4 text-sm">{order.orderDate}</TableCell>
+                  <TableCell className="px-4 py-4 text-sm whitespace-nowrap">
+                    {formatDate(order.createdAt)}
+                  </TableCell>
 
-                  {/* Dealer Name */}
-                  <TableCell className="px-4 py-4 text-sm">{order.dealerName}</TableCell>
+                  {/* Dealer/Sub Dealer Name */}
+                  <TableCell className="px-4 py-4 text-sm font-semibold text-gray-800">
+                    {order.distributorId || "Unknown"}
+                  </TableCell>
 
                   {/* Qty */}
-                  <TableCell className="px-4 py-4 text-sm">{order.qty}</TableCell>
+                  <TableCell className="px-4 py-4 text-sm font-bold">
+                    {order.totalQtyTons || 0}t
+                  </TableCell>
 
-                  {/* Ship to */}
-                  <TableCell className="px-4 py-4 text-sm">{order.shipTo}</TableCell>
+                  {/* Rate */}
+                  <TableCell className="px-4 py-4 text-sm font-bold text-green-600">
+                    ₹ {order.rate || "0"}
+                  </TableCell>
 
                   {/* Status */}
-                  <TableCell className="px-4 py-4">
-                    <Badge className={`text-xs font-semibold px-3 py-1 ${statusStyles[order.status]}`}>
-                      {order.status}
+                  <TableCell className="px-4 py-4 text-sm">
+                    <Badge
+                      className={`text-[10px] font-bold uppercase ${statusStyles[(order.status || "").toLowerCase()] || "bg-gray-100 text-gray-700"}`}
+                    >
+                      {order.status || "Pending"}
                     </Badge>
                   </TableCell>
 
-                  {/* Message */}
-                  <TableCell className="px-4 py-4">
-                    <div className="flex items-center gap-2 text-orange-400">
-                      <MessageSquare size={18} />
-                      <span className="text-sm">{order.message}</span>
-                    </div>
-                  </TableCell>
-
                   {/* Action */}
-                  <TableCell className="px-4 py-4">
-                    <button
-                      onClick={() => handleEditClick(order)}
-                      className="flex items-center gap-1 text-[#F87B1B] hover:text-[#e86f12] transition"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span className="text-sm font-medium">Edit Order</span>
-                    </button>
+                  <TableCell className="px-4 py-4 text-right">
+                    <EditOrders
+                      order={order}
+                      orderSource={type}
+                      trigger={
+                        <button className="inline-flex items-center gap-1.5 text-[#F87B1B] hover:text-[#e86f12] transition bg-[#F87B1B1A] px-3 py-1.5 rounded-md font-bold text-xs">
+                          <Edit className="w-3.5 h-3.5" />
+                          <span>Edit Order</span>
+                        </button>
+                      }
+                    />
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Footer - Total Order */}
-        <div className="px-6 py-4 border-t text-gray-600 font-medium">
-          Total Order : {orders.length}
-        </div>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
-      {/* Edit Order Status Drawer */}
-      <Sheet open={openDrawer} onOpenChange={setOpenDrawer}>
-        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col">
-          {/* Orange Header */}
-          <div className="bg-[#F87B1B] text-white px-6 py-4 flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold">Edit Order</h2>
-            <div>
-              <p className="text-sm font-semibold">Order ID</p>
-              <p className="text-sm font-semibold">{selectedOrder?.orderID}</p>
-            </div>
+      {/* Footer - Total Order */}
+      <div className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t bg-gray-50 gap-4">
+        <div className="text-gray-700 font-bold text-sm">
+          Total Orders found : {orders.length}
+        </div>
+
+        {/* Pagination Buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
+          >
+            Previous
+          </Button>
+          <div className="flex gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className={
+                  currentPage === page
+                    ? "bg-[#F87B1B] text-white"
+                    : "text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
+                }
+              >
+                {page}
+              </Button>
+            ))}
           </div>
-
-          <div className="space-y-5 px-6 flex-1 overflow-y-auto">
-            {selectedOrder && (
-              <>
-                {/* Dealer Name */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Dealer Name</label>
-                  <input
-                    type="text"
-                    value={selectedOrder.dealerName}
-                    disabled
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 font-medium"
-                  />
-                </div>
-
-                {/* Status Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Change Status</label>
-                  <Select value={newStatus} onValueChange={(value) => setNewStatus(value as OrderHistory["status"])}>
-                    <SelectTrigger className="w-full px-4 py-2 border-2 border-[#F87B1B] rounded-lg focus:outline-none focus:border-[#F87B1B] appearance-none cursor-pointer bg-white text-[#F87B1B] font-semibold">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Completed">Completed</SelectItem>
-                      <SelectItem value="Processing">Processing</SelectItem>
-                      <SelectItem value="On Hold">On Hold</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Save Button */}
-                <button
-                  onClick={handleStatusChange}
-                  className="w-full bg-[#F87B1B] hover:bg-[#e86f12] text-white font-bold py-3 px-4 rounded-lg transition-colors mt-8"
-                >
-                  Save Changes
-                </button>
-              </>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
-    
-    </>
-  )
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }

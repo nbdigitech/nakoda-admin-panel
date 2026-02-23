@@ -150,6 +150,19 @@ export default function AsmSurveyPage() {
     router.push(`/asm-survey/location?tourId=${tourId}`);
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
+
+  const totalPages = Math.ceil(filteredTours.length / itemsPerPage);
+  const paginatedTours = filteredTours.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
   return (
     <DashboardLayout>
       {/* ================= STATS ================= */}
@@ -278,10 +291,12 @@ export default function AsmSurveyPage() {
               )}
 
               {/* Show previous data or new data */}
-              {tours.length > 0 &&
-                filteredTours.map((item, index) => (
+              {paginatedTours.length > 0 &&
+                paginatedTours.map((item, index) => (
                   <TableRow key={item.id} className="hover:bg-gray-50 text-sm">
-                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </TableCell>
 
                     <TableCell className="font-medium">
                       {item.tourName || "—"}
@@ -337,7 +352,7 @@ export default function AsmSurveyPage() {
                   </TableRow>
                 ))}
 
-              {!loading && filteredTours.length === 0 && (
+              {!loading && paginatedTours.length === 0 && (
                 <TableRow>
                   <TableCell
                     colSpan={9}
@@ -349,6 +364,45 @@ export default function AsmSurveyPage() {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex justify-center items-center gap-2 py-6 border-t mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
+          >
+            Previous
+          </Button>
+          <div className="flex gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className={
+                  currentPage === page
+                    ? "bg-[#F87B1B] text-white hover:bg-[#e66a15]"
+                    : "text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
+                }
+              >
+                {page}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
+          >
+            Next
+          </Button>
         </div>
       </div>
     </DashboardLayout>

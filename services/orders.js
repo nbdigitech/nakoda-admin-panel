@@ -1,5 +1,5 @@
 import { getFirestoreDB } from "@/firebase";
-import { collection, getDocs, query, where, doc, getDoc, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc, orderBy, updateDoc } from "firebase/firestore";
 
 export const getInfluencerOrders = async () => {
     try {
@@ -39,6 +39,7 @@ export const getInfluencerOrderFulfillments = async (influencerOrderId) => {
         throw error;
     }
 };
+
 export const getDistributorOrders = async () => {
     try {
         const db = getFirestoreDB();
@@ -51,6 +52,18 @@ export const getDistributorOrders = async () => {
         }));
     } catch (error) {
         console.error("Error fetching distributor orders:", error);
+        throw error;
+    }
+};
+
+export const updateOrder = async (collectionName, orderId, data) => {
+    try {
+        const db = getFirestoreDB();
+        const orderRef = doc(db, collectionName, orderId);
+        await updateDoc(orderRef, data);
+        return true;
+    } catch (error) {
+        console.error("Error updating order:", error);
         throw error;
     }
 };

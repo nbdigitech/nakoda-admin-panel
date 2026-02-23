@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import AddDealerModal from "@/components/dealer/add-dealer-modal";
 import OrdersTable, { Order } from "@/components/manage_order/orders_table";
 import { Plus, Loader2, Search } from "lucide-react";
 import { getInfluencerOrders, getDistributorOrders } from "@/services/orders";
@@ -115,7 +114,9 @@ export default function OrderView({ type }: OrderViewProps) {
               All Orders
             </button>
           </div>
+        </div>
 
+        <div className="flex items-center gap-4 w-full lg:w-auto justify-end">
           <div className="relative w-full sm:w-[320px]">
             <input
               type="text"
@@ -128,9 +129,6 @@ export default function OrderView({ type }: OrderViewProps) {
               <Search className="w-4 h-4" />
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-4 w-full lg:w-auto justify-end">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -143,14 +141,6 @@ export default function OrderView({ type }: OrderViewProps) {
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
           </select>
-          <AddDealerModal
-            trigger={
-              <button className="bg-[#c8efd9] text-sm text-[#009846] font-bold py-3 px-8 rounded-lg flex items-center transition-colors whitespace-nowrap">
-                <Plus className="w-5 h-5 mr-1" />
-                Add Order
-              </button>
-            }
-          />
         </div>
       </div>
 
@@ -164,7 +154,7 @@ export default function OrderView({ type }: OrderViewProps) {
             <Loader2 className="w-8 h-8 animate-spin text-[#F87B1B]" />
           </div>
         ) : (
-          <OrdersTable orders={filteredOrders} />
+          <OrdersTable orders={filteredOrders} orderSource={type} />
         )}
       </div>
     </DashboardLayout>
