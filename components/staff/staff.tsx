@@ -10,25 +10,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Eye, ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getUsers, changeUserStatus } from "@/services/user";
 
 interface Staff {
   id: string;
   name: string;
   phoneNumber: string;
-  organizationName: string;
   districtId: string;
   email: string;
   asmId: string;
   gstUrl: string;
   pancardUrl: string;
   aadhaarPath: string;
+  imagePath: string;
   status: string;
   role: string;
+  permissions?: string[];
 }
 
 export default function StaffTable({
@@ -42,6 +50,32 @@ export default function StaffTable({
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // Image Slider State
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedDocs, setSelectedDocs] = useState<
+    { url: string; label: string }[]
+  >([]);
+  const [currentDocIndex, setCurrentDocIndex] = useState(0);
+
+  const openViewer = (
+    docs: { url: string; label: string }[],
+    index: number,
+  ) => {
+    setSelectedDocs(docs);
+    setCurrentDocIndex(index);
+    setViewerOpen(true);
+  };
+
+  const nextDoc = () => {
+    setCurrentDocIndex((prev) => (prev + 1) % selectedDocs.length);
+  };
+
+  const prevDoc = () => {
+    setCurrentDocIndex(
+      (prev) => (prev - 1 + selectedDocs.length) % selectedDocs.length,
+    );
+  };
 
   const fetchStaff = async () => {
     setLoading(true);
@@ -116,9 +150,7 @@ export default function StaffTable({
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Contact
               </TableHead>
-              <TableHead className="px-3 py-2 font-bold text-xs">
-                Company
-              </TableHead>
+
               <TableHead className="px-3 py-2 font-bold text-xs">
                 District
               </TableHead>
@@ -127,6 +159,9 @@ export default function StaffTable({
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
                 ASM ID
+              </TableHead>
+              <TableHead className="px-3 py-2 font-bold text-xs">
+                Permissions
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Documents
@@ -157,23 +192,74 @@ export default function StaffTable({
                   <TableCell className="px-3 py-4 text-md">
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </TableCell>
-                  <TableCell className="px-3 py-4 text-md">
-                    {member.name}
+                  <TableCell className="px-3 py-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="relative group cursor-pointer"
+                        onClick={() =>
+                          member.imagePath &&
+                          openViewer(
+                            [
+                              {
+                                url: member.imagePath,
+                                label: "Profile Picture",
+                              },
+                            ],
+                            0,
+                          )
+                        }
+                      >
+                        {member.imagePath ? (
+                          <img
+                            src={member.imagePath}
+                            alt={member.name}
+                            className="w-10 h-10 rounded-lg object-cover border-2 border-orange-100 transition-transform group-hover:scale-105 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-[#F87B1B] font-bold border-2 border-orange-100 uppercase">
+                            {member.name.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-gray-900 text-sm">
+                          {member.name}
+                        </span>
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                          {member.role || "Staff"}
+                        </span>
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
                     {member.phoneNumber}
                   </TableCell>
+
                   <TableCell className="px-3 py-4 text-md">
-                    {member.organizationName}
-                  </TableCell>
-                  <TableCell className="px-3 py-4 text-md">
-                    {member.districtId}
+                    {member.districtId?.substring(0, 8) || "-"}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
                     {member.email}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
-                    {member.asmId || "-"}
+                    {member.id?.substring(0, 8) || "-"}
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
+                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      {member.permissions && member.permissions.length > 0 ? (
+                        member.permissions.map((p, i) => (
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="text-[10px] bg-blue-50 text-blue-600 border-blue-100 whitespace-nowrap"
+                          >
+                            {p}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-gray-400 text-xs">-</span>
+                      )}
+                    </div>
                   </TableCell>
 
                   <TableCell className="px-3 py-2">
@@ -200,16 +286,36 @@ export default function StaffTable({
                           </span>
                         </Link>
                       )}
-                      {member.aadhaarPath && (
-                        <Link
-                          href={member.aadhaarPath}
-                          target="_blank"
-                          className="flex items-center gap-1 cursor-pointer hover:opacity-80 bg-gray-100 p-1 rounded"
-                        >
-                          <span className="text-xs text-blue-600 font-medium">
-                            Aadhaar
-                          </span>
-                        </Link>
+
+                      {(member.aadhaarPath || member.imagePath) && (
+                        <div className="flex flex-col gap-1 w-full">
+                          {(() => {
+                            const sliderDocs: { url: string; label: string }[] =
+                              [];
+                            if (member.aadhaarPath)
+                              sliderDocs.push({
+                                url: member.aadhaarPath,
+                                label: "Aadhaar",
+                              });
+                            if (member.imagePath)
+                              sliderDocs.push({
+                                url: member.imagePath,
+                                label: "Image",
+                              });
+
+                            return sliderDocs.map((doc, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => openViewer(sliderDocs, idx)}
+                                className="flex items-center gap-1 cursor-pointer hover:opacity-80 bg-gray-100 p-1 rounded text-left w-fit"
+                              >
+                                <span className="text-xs text-blue-600 font-medium">
+                                  {doc.label}
+                                </span>
+                              </button>
+                            ));
+                          })()}
+                        </div>
                       )}
                     </div>
                   </TableCell>
@@ -275,6 +381,49 @@ export default function StaffTable({
           Next
         </Button>
       </div>
+      {/* Document Viewer Modal */}
+      <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-black/95 border-none">
+          <DialogTitle className="sr-only">Document View</DialogTitle>
+          <div className="relative w-full h-[80vh] flex items-center justify-center">
+            {selectedDocs[currentDocIndex] && (
+              <>
+                <img
+                  src={selectedDocs[currentDocIndex].url}
+                  alt={selectedDocs[currentDocIndex].label}
+                  className="max-w-full max-h-full object-contain"
+                />
+
+                <div className="absolute top-4 left-4 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
+                  {selectedDocs[currentDocIndex].label}
+                </div>
+              </>
+            )}
+
+            {selectedDocs.length > 1 && (
+              <>
+                <button
+                  onClick={prevDoc}
+                  className="absolute left-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-sm"
+                >
+                  <ChevronLeft size={32} />
+                </button>
+
+                <button
+                  onClick={nextDoc}
+                  className="absolute right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors backdrop-blur-sm"
+                >
+                  <ChevronRight size={32} />
+                </button>
+
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-3 py-1 rounded-full text-sm text-white">
+                  {currentDocIndex + 1} / {selectedDocs.length}
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

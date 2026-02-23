@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import AddStaffModal from "@/components/staff/add-staff-modal";
-import { Eye, MapPin, Plus } from "lucide-react";
+import { Eye, MapPin, Plus, Search } from "lucide-react";
 import { getTour, getSurvey } from "@/services/masterData";
 
 // 🔹 DATE FORMATTER
@@ -152,13 +152,26 @@ export default function AsmSurveyPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab]);
+  }, [activeTab, searchTerm]);
 
-  const totalPages = Math.ceil(filteredTours.length / itemsPerPage);
-  const paginatedTours = filteredTours.slice(
+  const searchedTours = useMemo(() => {
+    if (!searchTerm.trim()) return filteredTours;
+    const term = searchTerm.toLowerCase();
+    return filteredTours.filter(
+      (t: any) =>
+        (t.tourName || "").toLowerCase().includes(term) ||
+        (t.staffId || "").toLowerCase().includes(term) ||
+        (t.staffName || "").toLowerCase().includes(term) ||
+        (t.staffPhone || "").toLowerCase().includes(term),
+    );
+  }, [filteredTours, searchTerm]);
+
+  const totalPages = Math.ceil(searchedTours.length / itemsPerPage);
+  const paginatedTours = searchedTours.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
@@ -230,7 +243,20 @@ export default function AsmSurveyPage() {
 
       {/* ================= TABLE ================= */}
       <div className="bg-white rounded-xl shadow p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Survey</h2>
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Recent Survey</h2>
+
+          <div className="relative w-full lg:w-[400px]">
+            <input
+              type="text"
+              placeholder="Search by Title, ASM ID, Name or Mobile..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F87B1B] transition-all text-sm"
+            />
+            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          </div>
+        </div>
 
         {/* Tabs + Action */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

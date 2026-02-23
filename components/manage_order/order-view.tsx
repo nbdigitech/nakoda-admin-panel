@@ -12,7 +12,7 @@ interface OrderViewProps {
 
 export default function OrderView({ type }: OrderViewProps) {
   const [activeTab, setActiveTab] = useState("Today");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
@@ -129,18 +129,6 @@ export default function OrderView({ type }: OrderViewProps) {
               <Search className="w-4 h-4" />
             </div>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-[150px] py-3 px-3 border text-[#F87B1B] rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-[#F87B1B]"
-            style={{ backgroundColor: "#F87B1B1A" }}
-          >
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="inprogress">In Progress</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
         </div>
       </div>
 
