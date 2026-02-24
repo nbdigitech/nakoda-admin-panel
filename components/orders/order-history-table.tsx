@@ -140,16 +140,27 @@ export default function OrderHistoryTable({
 
                   {/* Action */}
                   <TableCell className="px-4 py-4 text-right">
-                    <EditOrders
-                      order={order}
-                      orderSource={type}
-                      trigger={
-                        <button className="inline-flex items-center gap-1.5 text-[#F87B1B] hover:text-[#e86f12] transition bg-[#F87B1B1A] px-3 py-1.5 rounded-md font-bold text-xs">
-                          <Edit className="w-3.5 h-3.5" />
-                          <span>Edit Order</span>
-                        </button>
-                      }
-                    />
+                    {(() => {
+                      const disabled =
+                        (order.status || "").toLowerCase() === "approved";
+                      return (
+                        <EditOrders
+                          order={order}
+                          orderSource={type}
+                          trigger={
+                            <button
+                              disabled={disabled}
+                              className={`inline-flex items-center gap-1.5 text-[#F87B1B] hover:text-[#e86f12] transition bg-[#F87B1B1A] px-3 py-1.5 rounded-md font-bold text-xs ${
+                                disabled ? "opacity-50 cursor-not-allowed" : ""
+                              }`}
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                              <span>Edit Order</span>
+                            </button>
+                          }
+                        />
+                      );
+                    })()}
                   </TableCell>
                 </TableRow>
               ))
