@@ -101,11 +101,7 @@ export default function StaffTable({
         staffData = staffData.filter((u: any) => u.role === "asm");
 
         // Apply manual status filtering
-        if (statusFilter === "inactive") {
-          staffData = staffData.filter(
-            (u: any) => u.status?.toLowerCase() !== "active",
-          );
-        } else if (statusFilter !== "all") {
+        if (statusFilter !== "all") {
           staffData = staffData.filter(
             (u: any) => u.status?.toLowerCase() === statusFilter.toLowerCase(),
           );
@@ -415,17 +411,29 @@ export default function StaffTable({
 
                   <TableCell className="px-3 py-4 text-md">
                     <div className="flex flex-col items-center gap-1">
-                      <Switch
-                        checked={member.status === "active"}
-                        onCheckedChange={() =>
-                          handleStatusChange(member.id, member.status)
-                        }
-                        className={`${member.status === "active" ? "bg-green-500" : "bg-red-500"}`}
-                      />
+                      {member.status !== "pending" && (
+                        <Switch
+                          checked={member.status === "active"}
+                          onCheckedChange={() =>
+                            handleStatusChange(member.id, member.status)
+                          }
+                          className={`${member.status === "active" ? "bg-green-500" : "bg-red-500"}`}
+                        />
+                      )}
                       <span
-                        className={`text-xs font-semibold ${member.status === "active" ? "text-green-600" : "text-red-600"}`}
+                        className={`text-xs font-semibold ${
+                          member.status === "active"
+                            ? "text-green-600"
+                            : member.status === "inactive"
+                              ? "text-red-600"
+                              : "text-orange-500"
+                        }`}
                       >
-                        {member.status === "active" ? "Active" : "Inactive"}
+                        {member.status === "active"
+                          ? "Active"
+                          : member.status === "inactive"
+                            ? "Inactive"
+                            : "Pending"}
                       </span>
                     </div>
                   </TableCell>

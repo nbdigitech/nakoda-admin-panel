@@ -752,7 +752,9 @@ export default function AddDealerModal({
                     searchPlaceholder="Search district..."
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${
@@ -776,9 +778,6 @@ export default function AddDealerModal({
                     onBlur={() => setFocusedField(null)}
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${

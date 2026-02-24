@@ -146,11 +146,7 @@ export default function DealerTable({
         let dealersData = res.data;
         dealersData = dealersData.filter((u: any) => u.role === "dealer");
 
-        if (statusFilter === "inactive") {
-          dealersData = dealersData.filter(
-            (u: any) => u.status?.toLowerCase() !== "active",
-          );
-        } else if (statusFilter !== "all") {
+        if (statusFilter !== "all") {
           dealersData = dealersData.filter(
             (u: any) => u.status?.toLowerCase() === statusFilter.toLowerCase(),
           );

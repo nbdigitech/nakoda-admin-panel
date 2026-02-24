@@ -107,12 +107,7 @@ export default function SubDealerTable({
         (u: any) => u.role === "influencer",
       );
 
-      if (statusFilter === "inactive") {
-        // of those influencers, only show ones that are not active
-        subDealersData = subDealersData.filter(
-          (u: any) => u.status?.toLowerCase() !== "active",
-        );
-      } else if (statusFilter !== "all") {
+      if (statusFilter !== "all") {
         subDealersData = subDealersData.filter(
           (u: any) => u.status?.toLowerCase() === statusFilter.toLowerCase(),
         );
@@ -369,19 +364,29 @@ export default function SubDealerTable({
 
                   <TableCell className="px-3 py-4 text-md">
                     <div className="flex flex-col items-center gap-1">
-                      {dealer.status === "active" && (
+                      {dealer.status !== "pending" && (
                         <Switch
                           checked={dealer.status === "active"}
                           onCheckedChange={() =>
                             handleStatusChange(dealer.id, dealer.status)
                           }
-                          className="bg-green-500"
+                          className={`${dealer.status === "active" ? "bg-green-500" : "bg-red-500"}`}
                         />
                       )}
                       <span
-                        className={`text-xs font-semibold ${dealer.status === "active" ? "text-green-600" : "text-red-600"}`}
+                        className={`text-xs font-semibold ${
+                          dealer.status === "active"
+                            ? "text-green-600"
+                            : dealer.status === "inactive"
+                              ? "text-red-600"
+                              : "text-orange-500"
+                        }`}
                       >
-                        {dealer.status === "active" ? "Active" : "Inactive"}
+                        {dealer.status === "active"
+                          ? "Active"
+                          : dealer.status === "inactive"
+                            ? "Inactive"
+                            : "Pending"}
                       </span>
                     </div>
                   </TableCell>
