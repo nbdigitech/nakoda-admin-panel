@@ -332,13 +332,15 @@ export default function SubDealerTable({
 
                   <TableCell className="px-3 py-4 text-md">
                     <div className="flex flex-col items-center gap-1">
-                      <Switch
-                        checked={dealer.status === "active"}
-                        onCheckedChange={() =>
-                          handleStatusChange(dealer.id, dealer.status)
-                        }
-                        className={`${dealer.status === "active" ? "bg-green-500" : "bg-red-500"}`}
-                      />
+                      {dealer.status === "active" && (
+                        <Switch
+                          checked={dealer.status === "active"}
+                          onCheckedChange={() =>
+                            handleStatusChange(dealer.id, dealer.status)
+                          }
+                          className="bg-green-500"
+                        />
+                      )}
                       <span
                         className={`text-xs font-semibold ${dealer.status === "active" ? "text-green-600" : "text-red-600"}`}
                       >

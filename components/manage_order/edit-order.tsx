@@ -216,7 +216,7 @@ export default function EditOrders({
                 </label>
                 <input
                   type="text"
-                  value={formState.totalQtyTons}
+                  value={formState.totalQtyTons ?? ""}
                   disabled
                   className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-lg bg-gray-50 text-gray-700 font-bold cursor-not-allowed"
                 />
@@ -228,7 +228,7 @@ export default function EditOrders({
                 <input
                   type="number"
                   step="0.01"
-                  value={formState.fulfilledQtyTons}
+                  value={formState.fulfilledQtyTons ?? ""}
                   onChange={(e) => handleFulfilledChange(e.target.value)}
                   className="w-full px-4 py-2.5 border-2 border-[#F87B1B4D] rounded-lg focus:outline-none focus:border-[#F87B1B] bg-white text-gray-800 font-bold"
                   placeholder="Enter qty"
