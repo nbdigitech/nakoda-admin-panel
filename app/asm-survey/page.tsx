@@ -110,6 +110,75 @@ export default function AsmSurveyPage() {
     fetchAllSurveys();
   }, []);
 
+  // ✅ PRE-FETCH OSRM ROUTING BACKGROUND TASK
+  useEffect(() => {
+    if (tours.length === 0 || allSurveys.length === 0) return;
+
+    let isCancelled = false;
+    const prefetchRoutes = async () => {
+      // Prioritize active tours
+      const activeTours = tours.filter((t: any) => t.status === true);
+      for (const tour of activeTours) {
+        if (isCancelled) break;
+        const tourId = tour.id;
+        if (!tourId) continue;
+
+        // Skip if already perfectly cached
+        if (localStorage.getItem(`osrm_${tourId}`)) continue;
+
+        const surveyPoints = allSurveys.filter((s) => s.tourId === tourId);
+        const mappedData = surveyPoints
+          .map((s: any) => ({
+            id: s.id,
+            latitude: s.latLong?.latitude,
+            longitude: s.latLong?.longitude,
+          }))
+          .filter((loc: any) => loc.latitude && loc.longitude);
+
+        if (mappedData.length > 1) {
+          const coords = mappedData
+            .map((loc) => `${loc.longitude},${loc.latitude}`)
+            .join(";");
+
+          let fetchCoords = coords;
+          if (mappedData.length > 90) {
+            fetchCoords = mappedData
+              .slice(0, 90)
+              .map((loc) => `${loc.longitude},${loc.latitude}`)
+              .join(";");
+          }
+          try {
+            const res = await fetch(
+              `https://router.project-osrm.org/route/v1/driving/${fetchCoords}?overview=full&geometries=geojson`,
+            );
+            const data = await res.json();
+            if (data.code === "Ok" && data.routes && data.routes.length > 0) {
+              const route = data.routes[0];
+              const pathInfo = route.geometry.coordinates.map((c: any) => [
+                c[1],
+                c[0],
+              ]);
+              const routeLegs = route.legs || [];
+              localStorage.setItem(
+                `osrm_${tourId}`,
+                JSON.stringify({ pathInfo, routeLegs }),
+              );
+            }
+            // Throttle to prevent overloading OSRM API (1 request per second max)
+            await new Promise((r) => setTimeout(r, 600));
+          } catch (err) {
+            console.warn("Silent OSRM Prefetch Error", err);
+          }
+        }
+      }
+    };
+    prefetchRoutes();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [tours, allSurveys]);
+
   const filteredTours = useMemo(() => {
     return activeTab === "ACTIVE TOUR"
       ? tours.filter((t: any) => t.status === true)

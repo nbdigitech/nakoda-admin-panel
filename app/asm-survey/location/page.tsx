@@ -38,6 +38,9 @@ function LocationMap() {
   const [isMounted, setIsMounted] = useState(false);
   const [locationData, setLocationData] = useState<LocationData[]>([]);
   const [totalExpense, setTotalExpense] = useState(0);
+  const [routePath, setRoutePath] = useState<[number, number][]>([]);
+  const [routeLegs, setRouteLegs] = useState<any[]>([]);
+  const [isRouteLoading, setIsRouteLoading] = useState(true);
 
   useEffect(() => {
     setIsMounted(true);
@@ -105,6 +108,78 @@ function LocationMap() {
     fetchExpenses();
   }, [tourId]);
 
+  useEffect(() => {
+    if (locationData.length > 1) {
+      if (!tourId) return;
+
+      const cachedRoute = localStorage.getItem(`osrm_${tourId}`);
+      if (cachedRoute) {
+        try {
+          const parsed = JSON.parse(cachedRoute);
+          if (parsed && parsed.pathInfo && parsed.routeLegs) {
+            setRoutePath(parsed.pathInfo);
+            setRouteLegs(parsed.routeLegs);
+            setIsRouteLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error("OSRM cache parse error", e);
+        }
+      }
+
+      const fetchRoute = async () => {
+        try {
+          const coords = locationData
+            .map((loc) => `${loc.longitude},${loc.latitude}`)
+            .join(";");
+
+          let fetchCoords = coords;
+          if (locationData.length > 90) {
+            fetchCoords = locationData
+              .slice(0, 90)
+              .map((loc) => `${loc.longitude},${loc.latitude}`)
+              .join(";");
+          }
+
+          const res = await fetch(
+            `https://router.project-osrm.org/route/v1/driving/${fetchCoords}?overview=full&geometries=geojson`,
+          );
+          const data = await res.json();
+          if (data.code === "Ok" && data.routes && data.routes.length > 0) {
+            const route = data.routes[0];
+            const pathInfo = route.geometry.coordinates.map((c: any) => [
+              c[1],
+              c[0],
+            ]);
+            setRoutePath(pathInfo);
+            setRouteLegs(route.legs || []);
+            localStorage.setItem(
+              `osrm_${tourId}`,
+              JSON.stringify({ pathInfo, routeLegs: route.legs || [] }),
+            );
+          } else {
+            setRoutePath(
+              locationData.map((loc) => [loc.latitude, loc.longitude]),
+            );
+            setRouteLegs([]);
+          }
+        } catch (err) {
+          console.error("OSRM Routing error", err);
+          setRoutePath(
+            locationData.map((loc) => [loc.latitude, loc.longitude]),
+          );
+          setRouteLegs([]);
+        }
+      };
+
+      const timer = setTimeout(fetchRoute, 600);
+      return () => clearTimeout(timer);
+    } else {
+      setRoutePath(locationData.map((loc) => [loc.latitude, loc.longitude]));
+      setRouteLegs([]);
+    }
+  }, [locationData]);
+
   const getNumberedIcon = (number: number) => {
     if (typeof window === "undefined") return undefined;
     const L = require("leaflet");
@@ -154,6 +229,10 @@ function LocationMap() {
   };
 
   const calculateTotalDistance = (data: LocationData[]) => {
+    if (routeLegs.length > 0) {
+      const total = routeLegs.reduce((sum, leg) => sum + leg.distance, 0);
+      return (total / 1000).toFixed(2);
+    }
     let total = 0;
     for (let i = 0; i < data.length - 1; i++) {
       total += calculateDistance(
@@ -176,7 +255,10 @@ function LocationMap() {
         ? [locationData[0].latitude, locationData[0].longitude]
         : [21.25, 81.63];
 
-  const path = locationData.map((loc) => [loc.latitude, loc.longitude]);
+  const path =
+    routePath.length > 0
+      ? routePath
+      : locationData.map((loc) => [loc.latitude, loc.longitude]);
 
   return (
     <DashboardLayout>
@@ -211,8 +293,9 @@ function LocationMap() {
         <div className="flex  mt-12 gap-12">
           <div className="flex overflow-x-auto gap-2 items-center text-sm text-gray-700 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent px-1">
             {locationData.map((loc, index) => {
-              const distNext =
-                index < locationData.length - 1
+              const distNext = routeLegs[index]
+                ? (routeLegs[index].distance / 1000).toFixed(2)
+                : index < locationData.length - 1
                   ? calculateDistance(
                       loc.latitude,
                       loc.longitude,
