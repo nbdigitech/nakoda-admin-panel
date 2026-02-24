@@ -18,6 +18,7 @@ interface EditOrderDrawerProps {
   order: any;
   orderSource: "dealer" | "sub-dealer";
   trigger?: React.ReactNode;
+  onUpdate?: () => void;
 }
 
 export default function EditOrders({
@@ -28,6 +29,7 @@ export default function EditOrders({
       Edit
     </button>
   ),
+  onUpdate,
 }: EditOrderDrawerProps) {
   const [open, setOpen] = useState(false);
   const [fulfillments, setFulfillments] = useState<Fulfillment[]>([]);
@@ -120,10 +122,9 @@ export default function EditOrders({
       });
       setOpen(false);
 
-      // Auto refresh the page
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      if (onUpdate) {
+        onUpdate();
+      }
     } catch (error) {
       console.error("Error updating order:", error);
       toast({

@@ -128,6 +128,7 @@ export default function OrderHistoryPage() {
             <OrderHistoryTable
               orders={filteredOrders}
               type={activeTab === "Dealer" ? "dealer" : "sub-dealer"}
+              onUpdate={fetchOrders}
             />
           )}
         </div>

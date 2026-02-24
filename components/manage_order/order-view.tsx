@@ -12,7 +12,7 @@ interface OrderViewProps {
 
 export default function OrderView({ type }: OrderViewProps) {
   const [activeTab, setActiveTab] = useState("Today");
-  const [statusFilter, setStatusFilter] = useState("pending");
+  const [statusFilter, setStatusFilter] = useState("pending,rejected");
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
@@ -57,8 +57,9 @@ export default function OrderView({ type }: OrderViewProps) {
 
     // Status Filter
     if (status !== "all") {
-      result = result.filter(
-        (order) => (order.status || "").toLowerCase() === status.toLowerCase(),
+      const statuses = status.split(",").map((s) => s.trim().toLowerCase());
+      result = result.filter((order) =>
+        statuses.includes((order.status || "").toLowerCase()),
       );
     }
 
@@ -142,7 +143,11 @@ export default function OrderView({ type }: OrderViewProps) {
             <Loader2 className="w-8 h-8 animate-spin text-[#F87B1B]" />
           </div>
         ) : (
-          <OrdersTable orders={filteredOrders} orderSource={type} />
+          <OrdersTable
+            orders={filteredOrders}
+            orderSource={type}
+            onUpdate={fetchOrders}
+          />
         )}
       </div>
     </DashboardLayout>

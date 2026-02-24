@@ -17,6 +17,7 @@ import EditOrders from "@/components/manage_order/edit-order";
 interface OrderHistoryTableProps {
   orders: any[];
   type: "dealer" | "sub-dealer";
+  onUpdate?: () => void;
 }
 
 const statusStyles: Record<string, string> = {
@@ -31,6 +32,7 @@ const statusStyles: Record<string, string> = {
 export default function OrderHistoryTable({
   orders,
   type,
+  onUpdate,
 }: OrderHistoryTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -147,6 +149,7 @@ export default function OrderHistoryTable({
                         <EditOrders
                           order={order}
                           orderSource={type}
+                          onUpdate={onUpdate}
                           trigger={
                             <button
                               disabled={disabled}

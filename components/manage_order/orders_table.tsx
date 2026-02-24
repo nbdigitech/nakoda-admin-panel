@@ -31,6 +31,7 @@ export interface Order {
 interface OrdersTableProps {
   orders: Order[];
   orderSource: "dealer" | "sub-dealer";
+  onUpdate?: () => void;
 }
 
 const statusStyles: Record<string, string> = {
@@ -41,7 +42,11 @@ const statusStyles: Record<string, string> = {
   inprogress: "bg-blue-100 text-blue-700",
 };
 
-export default function OrdersTable({ orders, orderSource }: OrdersTableProps) {
+export default function OrdersTable({
+  orders,
+  orderSource,
+  onUpdate,
+}: OrdersTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -157,6 +162,7 @@ export default function OrdersTable({ orders, orderSource }: OrdersTableProps) {
                   <EditOrders
                     order={order}
                     orderSource={orderSource}
+                    onUpdate={onUpdate}
                     trigger={
                       <Button
                         variant="ghost"
