@@ -77,6 +77,7 @@ export default function UpdateRateDrawer({
         oldPrice: currentRate,
         newPrice: Number(updateRate),
         difference: difference,
+        date: date?.toISOString() || new Date().toISOString(),
         createdAt: serverTimestamp(),
       };
 

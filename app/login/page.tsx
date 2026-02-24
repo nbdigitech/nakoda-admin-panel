@@ -38,10 +38,15 @@ export default function LoginPage() {
 
       // Pre-fetch Dashboard Stats & Orders before redirecting
       try {
-        const [statsResult, ordersResult] = await Promise.allSettled([
-          getDashboardAnalytics(),
-          getDistributorOrders(),
-        ]);
+        const [statsResult, distOrdersResult, infOrdersResult, usersResult] =
+          await Promise.allSettled([
+            getDashboardAnalytics(),
+            getDistributorOrders(),
+            // @ts-ignore
+            import("@/services/orders").then((m) => m.getInfluencerOrders()),
+            // @ts-ignore
+            import("@/services/user").then((m) => m.getUsers({})),
+          ]);
 
         if (statsResult.status === "fulfilled" && statsResult.value?.data) {
           sessionStorage.setItem(
@@ -51,12 +56,29 @@ export default function LoginPage() {
         }
 
         if (
-          ordersResult.status === "fulfilled" &&
-          ordersResult.value?.length >= 0
+          distOrdersResult.status === "fulfilled" &&
+          distOrdersResult.value?.length >= 0
         ) {
           sessionStorage.setItem(
-            "dashboardOrders",
-            JSON.stringify(ordersResult.value),
+            "distributorOrders",
+            JSON.stringify(distOrdersResult.value),
+          );
+        }
+
+        if (
+          infOrdersResult.status === "fulfilled" &&
+          infOrdersResult.value?.length >= 0
+        ) {
+          sessionStorage.setItem(
+            "influencerOrders",
+            JSON.stringify(infOrdersResult.value),
+          );
+        }
+
+        if (usersResult.status === "fulfilled" && usersResult.value?.data) {
+          sessionStorage.setItem(
+            "allUsers",
+            JSON.stringify(usersResult.value.data),
           );
         }
       } catch (prefetchError) {

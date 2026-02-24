@@ -84,53 +84,22 @@ export default function StaffTable({
   };
 
   const fetchStaff = async () => {
-    setLoading(true);
-    try {
-      let payload: any;
-      if (statusFilter === "all" || statusFilter === "inactive") {
-        payload = {};
-      } else {
-        payload = { role: "asm", status: statusFilter };
+    const applyFiltersAndSort = (rawData: any[]) => {
+      let staffData = rawData.filter((u: any) => u.role === "asm");
+
+      if (statusFilter !== "all") {
+        staffData = staffData.filter(
+          (u: any) => u.status?.toLowerCase() === statusFilter.toLowerCase(),
+        );
       }
 
-      const res = await getUsers(payload);
-      if (res?.data) {
-        let staffData = res.data;
+      if (activeTab === "Today") {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
 
-        // Keep only asm
-        staffData = staffData.filter((u: any) => u.role === "asm");
-
-        // Apply manual status filtering
-        if (statusFilter !== "all") {
-          staffData = staffData.filter(
-            (u: any) => u.status?.toLowerCase() === statusFilter.toLowerCase(),
-          );
-        }
-
-        if (activeTab === "Today") {
-          const startOfToday = new Date();
-          startOfToday.setHours(0, 0, 0, 0);
-          const endOfToday = new Date();
-          endOfToday.setHours(23, 59, 59, 999);
-
-          staffData = staffData.filter((u: any) => {
-            const parseDate = (d: any) => {
-              if (!d) return 0;
-              if (d._seconds) return d._seconds * 1000;
-              if (typeof d === "string" || typeof d === "number")
-                return new Date(d).getTime();
-              if (d.toDate) return d.toDate().getTime();
-              return 0;
-            };
-            const dTime = parseDate(u.createdAt);
-            return (
-              dTime >= startOfToday.getTime() && dTime <= endOfToday.getTime()
-            );
-          });
-        }
-
-        // Sort from newest to oldest
-        staffData.sort((a: any, b: any) => {
+        staffData = staffData.filter((u: any) => {
           const parseDate = (d: any) => {
             if (!d) return 0;
             if (d._seconds) return d._seconds * 1000;
@@ -139,13 +108,48 @@ export default function StaffTable({
             if (d.toDate) return d.toDate().getTime();
             return 0;
           };
-          return parseDate(b.createdAt) - parseDate(a.createdAt);
+          const dTime = parseDate(u.createdAt);
+          return (
+            dTime >= startOfToday.getTime() && dTime <= endOfToday.getTime()
+          );
         });
+      }
 
-        setStaff(staffData);
+      staffData.sort((a: any, b: any) => {
+        const parseDate = (d: any) => {
+          if (!d) return 0;
+          if (d._seconds) return d._seconds * 1000;
+          if (typeof d === "string" || typeof d === "number")
+            return new Date(d).getTime();
+          if (d.toDate) return d.toDate().getTime();
+          return 0;
+        };
+        return parseDate(b.createdAt) - parseDate(a.createdAt);
+      });
+      return staffData;
+    };
+
+    try {
+      // 1. Instantly pull from cache if it exists
+      const cachedUsers = sessionStorage.getItem("allUsers");
+      if (cachedUsers) {
+        setStaff(applyFiltersAndSort(JSON.parse(cachedUsers)));
+        setLoading(false); // Make it feel instant
+      } else {
+        setLoading(true); // Visual indicator only if no cache exists
+      }
+
+      // 2. Background fetch latest
+      let payload: any = {};
+
+      const res = await getUsers(payload);
+      if (res?.data) {
+        // 3. Keep cache up-to-date
+        sessionStorage.setItem("allUsers", JSON.stringify(res.data));
+        setStaff(applyFiltersAndSort(res.data));
         setCurrentPage(1); // Reset to first page
       } else {
-        setStaff([]);
+        if (!cachedUsers) setStaff([]);
       }
     } catch (error) {
       console.error("Failed to fetch staff:", error);

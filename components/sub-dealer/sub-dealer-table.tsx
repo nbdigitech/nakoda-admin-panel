@@ -80,32 +80,8 @@ export default function SubDealerTable({
   };
 
   const fetchSubDealers = async () => {
-    setLoading(true);
-    try {
-      // payload for `all` and `inactive` is identical (empty object),
-      // otherwise include role and status as usual
-      let payload: any;
-      if (statusFilter === "all" || statusFilter === "inactive") {
-        payload = {};
-      } else {
-        payload = { role: "influencer", status: statusFilter };
-      }
-
-      const res = await getUsers(payload);
-      let subDealersData = res?.data || [];
-
-      // fallback for cases like pending returning nothing
-      if (subDealersData.length === 0 && statusFilter === "pending") {
-        const fallbackRes = await getUsers({});
-        if (fallbackRes?.data) {
-          subDealersData = fallbackRes.data;
-        }
-      }
-
-      // always limit to influencers
-      subDealersData = subDealersData.filter(
-        (u: any) => u.role === "influencer",
-      );
+    const applyFiltersAndSort = (rawData: any[]) => {
+      let subDealersData = rawData.filter((u: any) => u.role === "influencer");
 
       if (statusFilter !== "all") {
         subDealersData = subDealersData.filter(
@@ -135,7 +111,6 @@ export default function SubDealerTable({
         });
       }
 
-      // Sort from newest to oldest
       subDealersData.sort((a: any, b: any) => {
         const parseDate = (d: any) => {
           if (!d) return 0;
@@ -148,8 +123,31 @@ export default function SubDealerTable({
         return parseDate(b.createdAt) - parseDate(a.createdAt);
       });
 
-      setSubDealers(subDealersData);
-      setCurrentPage(1);
+      return subDealersData;
+    };
+
+    try {
+      // 1. Instantly pull from generic 'allUsers' cache
+      const cachedUsers = sessionStorage.getItem("allUsers");
+      if (cachedUsers) {
+        setSubDealers(applyFiltersAndSort(JSON.parse(cachedUsers)));
+        setLoading(false); // Make it feel instant
+      } else {
+        setLoading(true); // Visual indicator only if no cache exists
+      }
+
+      // 2. Background fetch latest global users
+      const fallbackRes = await getUsers({});
+      let allUsers = fallbackRes?.data || [];
+
+      if (allUsers.length > 0) {
+        // 3. Keep cache up-to-date
+        sessionStorage.setItem("allUsers", JSON.stringify(allUsers));
+        setSubDealers(applyFiltersAndSort(allUsers));
+        setCurrentPage(1);
+      } else {
+        if (!cachedUsers) setSubDealers([]);
+      }
     } catch (error) {
       console.error("Failed to fetch sub-dealers:", error);
     } finally {

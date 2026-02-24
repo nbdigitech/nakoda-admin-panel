@@ -46,7 +46,7 @@ export default function OrderChart() {
 
     const q = query(
       collection(db, "daily_price"),
-      orderBy("date", "desc"),
+      orderBy("createdAt", "desc"),
       limit(limitCount),
     );
 
@@ -56,7 +56,11 @@ export default function OrderChart() {
         const fetchedData = snapshot.docs
           .map((doc) => {
             const d = doc.data();
-            const dateObj = d.date ? new Date(d.date) : new Date();
+            const dateObj = d.date
+              ? new Date(d.date)
+              : d.createdAt?.toDate
+                ? d.createdAt.toDate()
+                : new Date(d.createdAt || Date.now());
             let dayStr = "";
             if (filter === "week") {
               dayStr = format(dateObj, "EEE");

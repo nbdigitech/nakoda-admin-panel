@@ -30,12 +30,11 @@ export default function DashboardPage() {
         const cached = sessionStorage.getItem("dashboardStats");
         if (cached) {
           setAnalytics(JSON.parse(cached));
-          sessionStorage.removeItem("dashboardStats"); // Optional: clear so manual refresh gets new data
-          return;
         }
 
         const res = await getDashboardAnalytics();
         if (res?.data) {
+          sessionStorage.setItem("dashboardStats", JSON.stringify(res.data));
           setAnalytics(res.data);
         }
       } catch (error) {
@@ -47,22 +46,29 @@ export default function DashboardPage() {
 
   const fetchOrders = async () => {
     try {
-      if (activeTab === "Dealer") {
-        const cachedOrders = sessionStorage.getItem("dashboardOrders");
-        if (cachedOrders) {
-          setOrders(JSON.parse(cachedOrders));
-          setLoading(false);
-          sessionStorage.removeItem("dashboardOrders");
-          return;
-        }
+      const cacheKey =
+        activeTab === "Dealer" ? "distributorOrders" : "influencerOrders";
+
+      // 1. Instantly pull from cache if it exists
+      const cachedOrders = sessionStorage.getItem(cacheKey);
+      if (cachedOrders) {
+        setOrders(JSON.parse(cachedOrders));
+        setLoading(false); // Make it feel instant
+      } else {
+        setLoading(true); // Only load visually if no cache exists
       }
 
-      setLoading(true);
+      // 2. Background fetch latest
       const data: any =
         activeTab === "Sub Dealer"
           ? await getInfluencerOrders()
           : await getDistributorOrders();
-      setOrders(data);
+
+      // 3. Keep cache up-to-date and apply fresh state silently
+      if (data?.length >= 0) {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      }
+      setOrders(data || []);
     } catch (error) {
       console.error(`Failed to fetch orders:`, error);
     } finally {

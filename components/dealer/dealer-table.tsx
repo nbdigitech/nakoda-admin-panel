@@ -133,49 +133,22 @@ export default function DealerTable({
   };
 
   const fetchDealers = async () => {
-    setLoading(true);
-    try {
-      let payload: any;
-      if (statusFilter === "all" || statusFilter === "inactive") {
-        payload = {};
-      } else {
-        payload = { role: "dealer", status: statusFilter };
+    const applyFiltersAndSort = (rawData: any[]) => {
+      let dealersData = rawData.filter((u: any) => u.role === "dealer");
+
+      if (statusFilter !== "all") {
+        dealersData = dealersData.filter(
+          (u: any) => u.status?.toLowerCase() === statusFilter.toLowerCase(),
+        );
       }
-      const res = await getUsers(payload);
-      if (res?.data) {
-        let dealersData = res.data;
-        dealersData = dealersData.filter((u: any) => u.role === "dealer");
 
-        if (statusFilter !== "all") {
-          dealersData = dealersData.filter(
-            (u: any) => u.status?.toLowerCase() === statusFilter.toLowerCase(),
-          );
-        }
+      if (activeTab === "Today") {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
 
-        if (activeTab === "Today") {
-          const startOfToday = new Date();
-          startOfToday.setHours(0, 0, 0, 0);
-          const endOfToday = new Date();
-          endOfToday.setHours(23, 59, 59, 999);
-
-          dealersData = dealersData.filter((u: any) => {
-            const parseDate = (d: any) => {
-              if (!d) return 0;
-              if (d._seconds) return d._seconds * 1000;
-              if (typeof d === "string" || typeof d === "number")
-                return new Date(d).getTime();
-              if (d.toDate) return d.toDate().getTime();
-              return 0;
-            };
-            const dTime = parseDate(u.createdAt);
-            return (
-              dTime >= startOfToday.getTime() && dTime <= endOfToday.getTime()
-            );
-          });
-        }
-
-        // Sort from newest to oldest
-        dealersData.sort((a: any, b: any) => {
+        dealersData = dealersData.filter((u: any) => {
           const parseDate = (d: any) => {
             if (!d) return 0;
             if (d._seconds) return d._seconds * 1000;
@@ -184,13 +157,48 @@ export default function DealerTable({
             if (d.toDate) return d.toDate().getTime();
             return 0;
           };
-          return parseDate(b.createdAt) - parseDate(a.createdAt);
+          const dTime = parseDate(u.createdAt);
+          return (
+            dTime >= startOfToday.getTime() && dTime <= endOfToday.getTime()
+          );
         });
+      }
 
-        setDealers(dealersData);
-        setCurrentPage(1); // Reset to first page on new fetch
+      dealersData.sort((a: any, b: any) => {
+        const parseDate = (d: any) => {
+          if (!d) return 0;
+          if (d._seconds) return d._seconds * 1000;
+          if (typeof d === "string" || typeof d === "number")
+            return new Date(d).getTime();
+          if (d.toDate) return d.toDate().getTime();
+          return 0;
+        };
+        return parseDate(b.createdAt) - parseDate(a.createdAt);
+      });
+      return dealersData;
+    };
+
+    try {
+      // 1. Instantly pull from global generic 'allUsers' cache
+      const cachedUsers = sessionStorage.getItem("allUsers");
+      if (cachedUsers) {
+        setDealers(applyFiltersAndSort(JSON.parse(cachedUsers)));
+        setLoading(false); // Make it feel instant
       } else {
-        setDealers([]);
+        setLoading(true); // Only visual loader if no cache exists
+      }
+
+      // 2. Background fetch latest
+      let payload: any = {};
+
+      const res = await getUsers(payload);
+      if (res?.data) {
+        // 3. Keep global cache up-to-date
+        sessionStorage.setItem("allUsers", JSON.stringify(res.data));
+        setDealers(applyFiltersAndSort(res.data));
+        setCurrentPage(1);
+      } else {
+        if (!cachedUsers) setDealers([]);
       }
     } catch (error) {
       console.error("Failed to fetch dealers:", error);
