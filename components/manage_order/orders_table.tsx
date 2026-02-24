@@ -159,21 +159,35 @@ export default function OrdersTable({
 
                 {/* Action */}
                 <TableCell className="px-4 py-4">
-                  <EditOrders
-                    order={order}
-                    orderSource={orderSource}
-                    onUpdate={onUpdate}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        className="flex items-center gap-2 text-[#F87B1B] px-3 py-2 rounded-lg font-semibold hover:bg-[#F87B1B1A]"
-                        style={{ backgroundColor: "#F87B1B1A" }}
-                      >
-                        <Edit className="w-4 h-4" />
-                        Edit Order
-                      </Button>
-                    }
-                  />
+                  {["approved", "rejected"].includes(
+                    (order.status || "").toLowerCase(),
+                  ) ? (
+                    <Button
+                      variant="ghost"
+                      disabled
+                      className="flex items-center gap-2 text-gray-400 px-3 py-2 rounded-lg font-semibold cursor-not-allowed"
+                      style={{ backgroundColor: "#F3F4F6" }}
+                    >
+                      <Edit className="w-4 h-4" />
+                      Edit Order
+                    </Button>
+                  ) : (
+                    <EditOrders
+                      order={order}
+                      orderSource={orderSource}
+                      onUpdate={onUpdate}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          className="flex items-center gap-2 text-[#F87B1B] px-3 py-2 rounded-lg font-semibold hover:bg-[#F87B1B1A]"
+                          style={{ backgroundColor: "#F87B1B1A" }}
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit Order
+                        </Button>
+                      }
+                    />
+                  )}
                 </TableCell>
               </TableRow>
             ))}

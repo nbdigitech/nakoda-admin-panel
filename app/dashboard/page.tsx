@@ -30,6 +30,8 @@ export default function DashboardPage() {
         const cached = sessionStorage.getItem("dashboardStats");
         if (cached) {
           setAnalytics(JSON.parse(cached));
+          // If we have stats from prefetch/cache, skip the repetitive refetch!
+          return;
         }
 
         const res = await getDashboardAnalytics();
