@@ -684,7 +684,7 @@ export default function AddDealerModal({
             </h3>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-xs font-semibold block mb-2 text-gray-700">
                     State
