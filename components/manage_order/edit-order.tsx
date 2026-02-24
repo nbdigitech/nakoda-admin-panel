@@ -80,16 +80,21 @@ export default function EditOrders({
   };
 
   const handleFulfilledChange = (val: string) => {
-    const numVal = parseFloat(val) || 0;
+    let numVal = parseFloat(val) || 0;
     const total = parseFloat(formState.totalQtyTons) || 0;
+
+    if (numVal > total) {
+      numVal = total;
+      val = total.toString();
+    }
 
     let newStatus = formState.status;
     if (numVal > 0 && numVal < total) {
       newStatus = "inprogress";
-    } else if (numVal > 0 && numVal === total) {
+    } else if (numVal > 0 && numVal >= total) {
       newStatus = "approved";
     } else if (numVal === 0) {
-      newStatus = "pending";
+      newStatus = formState.status === "rejected" ? "rejected" : "pending";
     }
 
     setFormState({
@@ -233,24 +238,31 @@ export default function EditOrders({
 
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                Current Status{" "}
-                {isFulfillmentEntered && (
-                  <span className="text-[10px] text-gray-400 normal-case font-normal">
-                    (Auto-managed)
-                  </span>
-                )}
+                Current Status
               </label>
               <select
                 value={formState.status}
-                disabled={isFulfillmentEntered}
-                onChange={(e) =>
-                  setFormState({ ...formState, status: e.target.value })
-                }
-                className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#F87B1B] cursor-pointer bg-white text-[#F87B1B] font-bold transition-colors ${isFulfillmentEntered ? "bg-gray-50 cursor-not-allowed opacity-80" : ""}`}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "rejected" || val === "pending") {
+                    setFormState({
+                      ...formState,
+                      status: val,
+                      fulfilledQtyTons: "",
+                    });
+                  } else {
+                    setFormState({ ...formState, status: val });
+                  }
+                }}
+                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#F87B1B] cursor-pointer bg-white text-[#F87B1B] font-bold transition-colors"
               >
                 <option value="pending">PENDING</option>
                 <option value="inprogress">IN PROGRESS</option>
-                <option value="approved">APPROVED</option>
+                {formState.status === "approved" && (
+                  <option value="approved" disabled>
+                    APPROVED
+                  </option>
+                )}
                 <option value="rejected">REJECTED</option>
               </select>
             </div>
