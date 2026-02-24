@@ -81,9 +81,6 @@ export default function OrderHistoryTable({
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
                 Status
               </TableHead>
-              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase text-right">
-                Action
-              </TableHead>
             </TableRow>
           </TableHeader>
 
@@ -92,7 +89,7 @@ export default function OrderHistoryTable({
             {paginatedOrders.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={7}
                   className="text-center py-20 text-gray-500 italic"
                 >
                   No orders found for this category.
@@ -138,32 +135,6 @@ export default function OrderHistoryTable({
                     >
                       {order.status || "Pending"}
                     </Badge>
-                  </TableCell>
-
-                  {/* Action */}
-                  <TableCell className="px-4 py-4 text-right">
-                    {(() => {
-                      const disabled =
-                        (order.status || "").toLowerCase() === "approved";
-                      return (
-                        <EditOrders
-                          order={order}
-                          orderSource={type}
-                          onUpdate={onUpdate}
-                          trigger={
-                            <button
-                              disabled={disabled}
-                              className={`inline-flex items-center gap-1.5 text-[#F87B1B] hover:text-[#e86f12] transition bg-[#F87B1B1A] px-3 py-1.5 rounded-md font-bold text-xs ${
-                                disabled ? "opacity-50 cursor-not-allowed" : ""
-                              }`}
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                              <span>Edit Order</span>
-                            </button>
-                          }
-                        />
-                      );
-                    })()}
                   </TableCell>
                 </TableRow>
               ))
