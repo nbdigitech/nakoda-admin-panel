@@ -93,6 +93,16 @@ export default function DashboardPage() {
           (o.mobileNumber || "").toLowerCase().includes(q),
       );
     }
+    result.sort((a, b) => {
+      const dateA = a.createdAt?.toDate
+        ? a.createdAt.toDate()
+        : new Date(a.createdAt || 0);
+      const dateB = b.createdAt?.toDate
+        ? b.createdAt.toDate()
+        : new Date(b.createdAt || 0);
+      return dateB.getTime() - dateA.getTime();
+    });
+
     setFilteredOrders(result);
   }, [orders, statusFilter, searchTerm]);
 
@@ -184,7 +194,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <OrdersTable
-            orders={filteredOrders}
+            orders={filteredOrders.slice(0, 10)}
             orderSource={activeTab === "Sub Dealer" ? "sub-dealer" : "dealer"}
           />
         )}

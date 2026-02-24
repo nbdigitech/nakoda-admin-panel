@@ -40,9 +40,11 @@ interface SubDealer {
 }
 
 export default function SubDealerTable({
+  activeTab = "All",
   statusFilter = "active",
   searchTerm = "",
 }: {
+  activeTab?: string;
   statusFilter?: string;
   searchTerm?: string;
 }) {
@@ -116,6 +118,41 @@ export default function SubDealerTable({
         );
       }
 
+      if (activeTab === "Today") {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
+
+        subDealersData = subDealersData.filter((u: any) => {
+          const parseDate = (d: any) => {
+            if (!d) return 0;
+            if (d._seconds) return d._seconds * 1000;
+            if (typeof d === "string" || typeof d === "number")
+              return new Date(d).getTime();
+            if (d.toDate) return d.toDate().getTime();
+            return 0;
+          };
+          const dTime = parseDate(u.createdAt);
+          return (
+            dTime >= startOfToday.getTime() && dTime <= endOfToday.getTime()
+          );
+        });
+      }
+
+      // Sort from newest to oldest
+      subDealersData.sort((a: any, b: any) => {
+        const parseDate = (d: any) => {
+          if (!d) return 0;
+          if (d._seconds) return d._seconds * 1000;
+          if (typeof d === "string" || typeof d === "number")
+            return new Date(d).getTime();
+          if (d.toDate) return d.toDate().getTime();
+          return 0;
+        };
+        return parseDate(b.createdAt) - parseDate(a.createdAt);
+      });
+
       setSubDealers(subDealersData);
       setCurrentPage(1);
     } catch (error) {
@@ -127,7 +164,7 @@ export default function SubDealerTable({
 
   useEffect(() => {
     fetchSubDealers();
-  }, [statusFilter]);
+  }, [statusFilter, activeTab]);
 
   useEffect(() => {
     setCurrentPage(1);

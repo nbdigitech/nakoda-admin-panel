@@ -51,10 +51,12 @@ interface Dealer {
 }
 
 export default function DealerTable({
+  activeTab = "All",
   statusFilter = "active",
   searchTerm = "",
   refreshTrigger = 0,
 }: {
+  activeTab?: string;
   statusFilter?: string;
   searchTerm?: string;
   refreshTrigger?: number;
@@ -133,14 +135,62 @@ export default function DealerTable({
   const fetchDealers = async () => {
     setLoading(true);
     try {
-      const payload: any =
-        statusFilter !== "all" ? { role: "dealer", status: statusFilter } : {};
+      let payload: any;
+      if (statusFilter === "all" || statusFilter === "inactive") {
+        payload = {};
+      } else {
+        payload = { role: "dealer", status: statusFilter };
+      }
       const res = await getUsers(payload);
       if (res?.data) {
         let dealersData = res.data;
-        if (statusFilter === "all") {
-          dealersData = dealersData.filter((u: any) => u.role === "dealer");
+        dealersData = dealersData.filter((u: any) => u.role === "dealer");
+
+        if (statusFilter === "inactive") {
+          dealersData = dealersData.filter(
+            (u: any) => u.status?.toLowerCase() !== "active",
+          );
+        } else if (statusFilter !== "all") {
+          dealersData = dealersData.filter(
+            (u: any) => u.status?.toLowerCase() === statusFilter.toLowerCase(),
+          );
         }
+
+        if (activeTab === "Today") {
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+          const endOfToday = new Date();
+          endOfToday.setHours(23, 59, 59, 999);
+
+          dealersData = dealersData.filter((u: any) => {
+            const parseDate = (d: any) => {
+              if (!d) return 0;
+              if (d._seconds) return d._seconds * 1000;
+              if (typeof d === "string" || typeof d === "number")
+                return new Date(d).getTime();
+              if (d.toDate) return d.toDate().getTime();
+              return 0;
+            };
+            const dTime = parseDate(u.createdAt);
+            return (
+              dTime >= startOfToday.getTime() && dTime <= endOfToday.getTime()
+            );
+          });
+        }
+
+        // Sort from newest to oldest
+        dealersData.sort((a: any, b: any) => {
+          const parseDate = (d: any) => {
+            if (!d) return 0;
+            if (d._seconds) return d._seconds * 1000;
+            if (typeof d === "string" || typeof d === "number")
+              return new Date(d).getTime();
+            if (d.toDate) return d.toDate().getTime();
+            return 0;
+          };
+          return parseDate(b.createdAt) - parseDate(a.createdAt);
+        });
+
         setDealers(dealersData);
         setCurrentPage(1); // Reset to first page on new fetch
       } else {
@@ -155,7 +205,7 @@ export default function DealerTable({
 
   useEffect(() => {
     fetchDealers();
-  }, [statusFilter, refreshTrigger]);
+  }, [statusFilter, refreshTrigger, activeTab]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -368,19 +418,29 @@ export default function DealerTable({
 
                   <TableCell className="px-3 py-4 text-md">
                     <div className="flex flex-col items-center gap-1">
-                      {dealer.status === "active" && (
+                      {dealer.status !== "pending" && (
                         <Switch
                           checked={dealer.status === "active"}
                           onCheckedChange={() =>
                             handleStatusChange(dealer.id, dealer.status)
                           }
-                          className="bg-green-500"
+                          className={`${dealer.status === "active" ? "bg-green-500" : "bg-red-500"}`}
                         />
                       )}
                       <span
-                        className={`text-xs font-semibold ${dealer.status === "active" ? "text-green-600" : "text-red-600"}`}
+                        className={`text-xs font-semibold ${
+                          dealer.status === "active"
+                            ? "text-green-600"
+                            : dealer.status === "inactive"
+                              ? "text-red-600"
+                              : "text-orange-500"
+                        }`}
                       >
-                        {dealer.status === "active" ? "Active" : "Inactive"}
+                        {dealer.status === "active"
+                          ? "Active"
+                          : dealer.status === "inactive"
+                            ? "Inactive"
+                            : "Pending"}
                       </span>
                     </div>
                   </TableCell>

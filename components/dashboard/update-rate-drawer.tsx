@@ -76,9 +76,8 @@ export default function UpdateRateDrawer({
       const payload = {
         oldPrice: currentRate,
         newPrice: Number(updateRate),
-        date: date ? date.toISOString() : new Date().toISOString(),
+        difference: difference,
         createdAt: serverTimestamp(),
-        status: status.toLowerCase(),
       };
 
       await addDoc(collection(db, "daily_price"), payload);

@@ -6,7 +6,7 @@ import AddStaffModal from "@/components/staff/add-staff-modal";
 import { Plus } from "lucide-react";
 
 export default function StaffPage() {
-  const [activeTab, setActiveTab] = useState("Staff");
+  const [activeTab, setActiveTab] = useState("Today");
   const [statusFilter, setStatusFilter] = useState("active");
   const [searchTerm, setSearchTerm] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -18,30 +18,30 @@ export default function StaffPage() {
         <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-4">
           <div className="flex gap-4">
             <button
-              onClick={() => setActiveTab("Dealer")}
+              onClick={() => setActiveTab("Today")}
               className="px-6 py-2 rounded-lg font-semibold whitespace-nowrap"
               style={
-                activeTab === "Dealer"
+                activeTab === "Today"
                   ? { backgroundColor: "#F87B1B1A", color: "#F87B1B" }
                   : {
                       color: "#F87B1B",
                     }
               }
             >
-              All
+              Today
             </button>
             <button
-              onClick={() => setActiveTab("Sub Dealer")}
+              onClick={() => setActiveTab("All")}
               className="px-6 py-2 rounded-lg font-semibold whitespace-nowrap"
               style={
-                activeTab === "Sub Dealer"
+                activeTab === "All"
                   ? { backgroundColor: "#F87B1B1A", color: "#F87B1B" }
                   : {
                       color: "#F87B1B",
                     }
               }
             >
-              ASM
+              All Staff
             </button>
           </div>
 
@@ -78,6 +78,7 @@ export default function StaffPage() {
         {/* Table */}
         <div className="bg-white rounded-lg shadow ">
           <StaffTable
+            activeTab={activeTab}
             statusFilter={statusFilter}
             searchTerm={searchTerm}
             refreshTrigger={refreshKey}

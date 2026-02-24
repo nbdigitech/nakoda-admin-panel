@@ -27,6 +27,7 @@ import {
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface FormState {
   // Step 1 - Personal Info
@@ -221,31 +222,13 @@ export default function AddDealerModal({
   // Validate form data
   const validateStep = (stepNum: number): boolean => {
     if (stepNum === 1) {
-      // Check if all fields are filled and phone is not already registered
-      return !!(
-        formData.name &&
-        formData.phoneNumber &&
-        formData.password &&
-        formData.dob &&
-        !isPhoneRegistered
-      );
+      return !!(formData.name && formData.phoneNumber && !isPhoneRegistered);
     }
     if (stepNum === 2) {
-      return !!(
-        formData.organizationName &&
-        formData.logoBase64 &&
-        formData.gstBase64 &&
-        formData.pancardBase64 &&
-        formData.aadhaarBase64
-      );
+      return true;
     }
     if (stepNum === 3) {
-      return !!(
-        formData.stateId &&
-        formData.districtId &&
-        formData.city &&
-        formData.asmId
-      );
+      return true;
     }
     return false;
   };
@@ -447,7 +430,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    Password *
+                    Password
                   </label>
                   <Input
                     value={formData.password}
@@ -476,7 +459,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    DOB *
+                    DOB
                   </label>
                   <Input
                     value={formData.dob}
@@ -524,7 +507,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    Organization Name *
+                    Organization Name
                   </label>
                   <Input
                     value={formData.organizationName}
@@ -549,7 +532,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    Upload Logo *
+                    Upload Logo
                   </label>
                   <Input
                     type="file"
@@ -582,7 +565,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    Upload GST *
+                    Upload GST
                   </label>
                   <Input
                     type="file"
@@ -613,7 +596,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    Upload Pan Card *
+                    Upload Pan Card
                   </label>
                   <Input
                     type="file"
@@ -647,7 +630,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    Upload Aadhar *
+                    Upload Aadhar
                   </label>
                   <Input
                     type="file"
@@ -704,7 +687,7 @@ export default function AddDealerModal({
               <div className="grid grid-cols-3 gap-6">
                 <div>
                   <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    State *
+                    State
                   </label>
                   <Combobox
                     options={states.map((s) => ({
@@ -737,7 +720,7 @@ export default function AddDealerModal({
 
                 <div>
                   <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    District *
+                    District
                   </label>
                   <Combobox
                     options={districts.map((d) => ({
@@ -778,7 +761,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    City *
+                    City
                   </label>
                   <Input
                     value={formData.city}
@@ -804,7 +787,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    ASM ID (Current User) *
+                    ASM ID (Current User)
                   </label>
                   <Input
                     value={formData.asmName}
@@ -825,11 +808,18 @@ export default function AddDealerModal({
                 Back
               </Button>
               <Button
-                className="bg-[#F87B1B] hover:bg-[#e86f12] text-white px-12"
+                className="bg-[#F87B1B] hover:bg-[#e86f12] text-white px-12 flex items-center justify-center"
                 onClick={handleSubmit}
                 disabled={loading || !validateStep(3)}
               >
-                {loading ? "Submitting..." : "Submit"}
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </Button>
             </div>
           </div>

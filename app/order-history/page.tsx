@@ -50,6 +50,11 @@ export default function OrderHistoryPage() {
       result = result.filter(
         (o) => (o.status || "").toLowerCase() === statusFilter.toLowerCase(),
       );
+    } else {
+      result = result.filter((o) => {
+        const s = (o.status || "").toLowerCase();
+        return s === "approved" || s === "rejected";
+      });
     }
 
     // Apply search filter
@@ -109,8 +114,6 @@ export default function OrderHistoryPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="inprogress">In Progress</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>

@@ -42,10 +42,12 @@ interface Staff {
 }
 
 export default function StaffTable({
+  activeTab = "All",
   statusFilter = "active",
   searchTerm = "",
   refreshTrigger = 0,
 }: {
+  activeTab?: string;
   statusFilter?: string;
   searchTerm?: string;
   refreshTrigger?: number;
@@ -84,14 +86,66 @@ export default function StaffTable({
   const fetchStaff = async () => {
     setLoading(true);
     try {
-      const payload: any =
-        statusFilter !== "all" ? { role: "asm", status: statusFilter } : {};
+      let payload: any;
+      if (statusFilter === "all" || statusFilter === "inactive") {
+        payload = {};
+      } else {
+        payload = { role: "asm", status: statusFilter };
+      }
+
       const res = await getUsers(payload);
       if (res?.data) {
         let staffData = res.data;
-        if (statusFilter === "all") {
-          staffData = staffData.filter((u: any) => u.role === "asm");
+
+        // Keep only asm
+        staffData = staffData.filter((u: any) => u.role === "asm");
+
+        // Apply manual status filtering
+        if (statusFilter === "inactive") {
+          staffData = staffData.filter(
+            (u: any) => u.status?.toLowerCase() !== "active",
+          );
+        } else if (statusFilter !== "all") {
+          staffData = staffData.filter(
+            (u: any) => u.status?.toLowerCase() === statusFilter.toLowerCase(),
+          );
         }
+
+        if (activeTab === "Today") {
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+          const endOfToday = new Date();
+          endOfToday.setHours(23, 59, 59, 999);
+
+          staffData = staffData.filter((u: any) => {
+            const parseDate = (d: any) => {
+              if (!d) return 0;
+              if (d._seconds) return d._seconds * 1000;
+              if (typeof d === "string" || typeof d === "number")
+                return new Date(d).getTime();
+              if (d.toDate) return d.toDate().getTime();
+              return 0;
+            };
+            const dTime = parseDate(u.createdAt);
+            return (
+              dTime >= startOfToday.getTime() && dTime <= endOfToday.getTime()
+            );
+          });
+        }
+
+        // Sort from newest to oldest
+        staffData.sort((a: any, b: any) => {
+          const parseDate = (d: any) => {
+            if (!d) return 0;
+            if (d._seconds) return d._seconds * 1000;
+            if (typeof d === "string" || typeof d === "number")
+              return new Date(d).getTime();
+            if (d.toDate) return d.toDate().getTime();
+            return 0;
+          };
+          return parseDate(b.createdAt) - parseDate(a.createdAt);
+        });
+
         setStaff(staffData);
         setCurrentPage(1); // Reset to first page
       } else {
@@ -106,7 +160,7 @@ export default function StaffTable({
 
   useEffect(() => {
     fetchStaff();
-  }, [statusFilter, refreshTrigger]);
+  }, [statusFilter, refreshTrigger, activeTab]);
 
   useEffect(() => {
     setCurrentPage(1);

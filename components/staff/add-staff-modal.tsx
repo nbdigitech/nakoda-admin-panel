@@ -23,6 +23,7 @@ import { Timestamp } from "firebase/firestore";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Combobox } from "@/components/ui/combobox";
+import { Loader2 } from "lucide-react";
 
 export default function AddStaffModal({
   trigger,
@@ -71,6 +72,7 @@ export default function AddStaffModal({
   const [isPhoneRegistered, setIsPhoneRegistered] =
     React.useState<boolean>(false);
   const [checkingPhone, setCheckingPhone] = React.useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
 
   const resetForm = () => {
     setStep(1);
@@ -216,6 +218,7 @@ export default function AddStaffModal({
     console.log("CREATE USER PAYLOAD", payload);
 
     try {
+      setIsSubmitting(true);
       const res = await createUserByPhone(payload);
       console.log("User created:", res);
       resetForm();
@@ -233,6 +236,8 @@ export default function AddStaffModal({
         description: err?.message || "Failed to create user",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -320,7 +325,7 @@ export default function AddStaffModal({
                           : "text-gray-700"
                       }`}
                     >
-                      Staff Name
+                      Staff Name *
                     </label>
                     <Input
                       placeholder="Kunal"
@@ -343,7 +348,7 @@ export default function AddStaffModal({
                           : "text-gray-700"
                       }`}
                     >
-                      Phone No.
+                      Phone No. *
                     </label>
                     <Input
                       placeholder="9405005285"
@@ -455,7 +460,7 @@ export default function AddStaffModal({
                           : "text-gray-700"
                       }`}
                     >
-                      Allotment Area
+                      Allotment Area *
                     </label>
                     <Combobox
                       options={districts.map((d) => ({
@@ -474,7 +479,13 @@ export default function AddStaffModal({
               <div className="flex justify-center pt-6">
                 <Button
                   className="bg-[#F87B1B] hover:bg-[#e86f12] text-white px-12"
-                  disabled={isPhoneRegistered || checkingPhone}
+                  disabled={
+                    !staffName ||
+                    !phone ||
+                    !districtId ||
+                    isPhoneRegistered ||
+                    checkingPhone
+                  }
                   onClick={() => setStep(2)}
                 >
                   Next
@@ -500,7 +511,7 @@ export default function AddStaffModal({
                           : "text-gray-700"
                       }`}
                     >
-                      Designation
+                      Designation *
                     </label>
                     <Combobox
                       options={designations.map((d) => ({
@@ -641,6 +652,7 @@ export default function AddStaffModal({
                 </Button>
                 <Button
                   className="bg-[#F87B1B] hover:bg-[#e86f12] text-white px-12"
+                  disabled={!designationId}
                   onClick={() => setStep(3)}
                 >
                   Next
@@ -742,10 +754,18 @@ export default function AddStaffModal({
                   Back
                 </Button>
                 <Button
-                  className="bg-[#F87B1B] hover:bg-[#e86f12] text-white px-12"
+                  className="bg-[#F87B1B] hover:bg-[#e86f12] text-white px-12 flex items-center justify-center"
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                 >
-                  Submit
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
                 </Button>
               </div>
             </div>
