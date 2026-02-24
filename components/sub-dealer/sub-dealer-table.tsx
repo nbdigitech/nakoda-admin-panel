@@ -80,17 +80,19 @@ export default function SubDealerTable({
   const fetchSubDealers = async () => {
     setLoading(true);
     try {
-      // Pass role as requested, and status if not 'all'
-      const payload: any =
-        statusFilter === "all"
-          ? {}
-          : { role: "influencer", status: statusFilter };
-      const res = await getUsers(payload);
+      // payload for `all` and `inactive` is identical (empty object),
+      // otherwise include role and status as usual
+      let payload: any;
+      if (statusFilter === "all" || statusFilter === "inactive") {
+        payload = {};
+      } else {
+        payload = { role: "influencer", status: statusFilter };
+      }
 
+      const res = await getUsers(payload);
       let subDealersData = res?.data || [];
 
-      // If the specific 'inactive' query returns nothing, but the user says they appear in 'all',
-      // we fallback to fetching everything and filtering on the client for maximum reliability.
+      // fallback for cases like pending returning nothing
       if (subDealersData.length === 0 && statusFilter === "pending") {
         const fallbackRes = await getUsers({});
         if (fallbackRes?.data) {
@@ -98,11 +100,17 @@ export default function SubDealerTable({
         }
       }
 
-      // Always apply strict client-side filtering for role and status (case-insensitive)
+      // always limit to influencers
       subDealersData = subDealersData.filter(
         (u: any) => u.role === "influencer",
       );
-      if (statusFilter !== "all") {
+
+      if (statusFilter === "inactive") {
+        // of those influencers, only show ones that are not active
+        subDealersData = subDealersData.filter(
+          (u: any) => u.status?.toLowerCase() !== "active",
+        );
+      } else if (statusFilter !== "all") {
         subDealersData = subDealersData.filter(
           (u: any) => u.status?.toLowerCase() === statusFilter.toLowerCase(),
         );
