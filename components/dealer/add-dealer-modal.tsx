@@ -28,6 +28,7 @@ import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { toast as toastifyToast } from "react-toastify";
 
 interface FormState {
   // Step 1 - Personal Info
@@ -94,7 +95,7 @@ export default function AddDealerModal({
   const [cities, setCities] = React.useState<any[]>([]);
 
   // Firebase auth
-  const { user, authReady } = useFirebaseAuth();
+  const { user, userData, authReady } = useFirebaseAuth();
 
   // Load states on mount
   React.useEffect(() => {
@@ -115,6 +116,8 @@ export default function AddDealerModal({
   React.useEffect(() => {
     if (authReady && user && typeof user === "object") {
       const asmName =
+        (userData as any)?.name ||
+        (userData as any)?.organizationName ||
         (user as any).displayName ||
         (user as any).name ||
         (user as any).email ||
@@ -124,7 +127,7 @@ export default function AddDealerModal({
         (user as any).uid || (user as any).id || (user as any)._id || "";
       setFormData((prev) => ({ ...prev, asmId, asmName }));
     }
-  }, [authReady, user]);
+  }, [authReady, user, userData]);
 
   // Handle text input changes
   const handleInputChange = (field: keyof FormState, value: string) => {
@@ -172,6 +175,16 @@ export default function AddDealerModal({
   const handleFileChange = (field: keyof FormState, file: File | undefined) => {
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      toastifyToast.error(
+        "File size exceeds 5MB limit. Please upload a smaller file.",
+        {
+          position: "bottom-right",
+        },
+      );
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
@@ -191,22 +204,33 @@ export default function AddDealerModal({
       return;
     }
 
-    if (f.type === "application/pdf") {
-      if (f.size > 5 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Max size is 5MB for PDF",
-          variant: "destructive",
-        });
-        e.target.value = ""; // Clear the input
-        handleInputChange("aadhaarBase64", "");
-        setAadhaarFileType(null);
-        return;
-      }
-      setAadhaarFileType("pdf");
-    } else {
-      setAadhaarFileType("image");
+    if (f.size > 5 * 1024 * 1024) {
+      toastifyToast.error(
+        "File size exceeds 5MB limit for Aadhaar. Please upload a smaller file.",
+        {
+          position: "bottom-right",
+        },
+      );
+      e.target.value = ""; // Clear the input
+      handleInputChange("aadhaarBase64", "");
+      setAadhaarFileType(null);
+      return;
     }
+
+    if (f.type === "application/pdf") {
+      toastifyToast.error(
+        "PDF files are not allowed for Aadhaar. Please upload an image.",
+        {
+          position: "bottom-right",
+        },
+      );
+      e.target.value = ""; // Clear the input
+      handleInputChange("aadhaarBase64", "");
+      setAadhaarFileType(null);
+      return;
+    }
+
+    setAadhaarFileType("image");
 
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -263,7 +287,7 @@ export default function AddDealerModal({
         districtId: formData.districtId,
         city: formData.city,
         asmId: formData.asmId,
-        asmName: formData.name,
+        asmName: formData.asmName,
       };
 
       const response = await createDealer(payload);
@@ -286,7 +310,7 @@ export default function AddDealerModal({
         districtId: "",
         city: "",
         asmId: formData.asmId,
-        asmName: formData.name,
+        asmName: formData.asmName,
       });
       setStep(1);
       setOpen(false);
@@ -442,35 +466,6 @@ export default function AddDealerModal({
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "password"
-                        ? "text-[#F87B1B]"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    Password
-                  </label>
-                  <Input
-                    value={formData.password}
-                    onChange={(e) =>
-                      handleInputChange("password", e.target.value)
-                    }
-                    placeholder="••••••••"
-                    type="password"
-                    className={`w-full border-2 transition ${
-                      focusedField === "password"
-                        ? "!border-[#F87B1B]"
-                        : "!border-gray-300"
-                    }`}
-                    onFocus={() => setFocusedField("password")}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label
-                    className={`text-xs font-semibold block mb-2 transition ${
                       focusedField === "dob"
                         ? "text-[#F87B1B]"
                         : "text-gray-700"
@@ -561,12 +556,12 @@ export default function AddDealerModal({
                         return;
                       }
                       if (f.type === "application/pdf") {
-                        toast({
-                          title: "Invalid file",
-                          description:
-                            "PDF files are not allowed for Logo. Please upload an image (.jpg, .jpeg, .png).",
-                          variant: "destructive",
-                        });
+                        toastifyToast.error(
+                          "PDF files are not allowed for Logo. Please upload an image.",
+                          {
+                            position: "bottom-right",
+                          },
+                        );
                         e.target.value = "";
                         handleFileChange("logoBase64", undefined);
                         return;
@@ -610,21 +605,23 @@ export default function AddDealerModal({
                         return;
                       }
                       if (f.type !== "application/pdf") {
-                        toast({
-                          title: "Invalid file",
-                          description: "Only PDF files are allowed for GST",
-                          variant: "destructive",
-                        });
+                        toastifyToast.error(
+                          "Only PDF files are allowed for GST",
+                          {
+                            position: "bottom-right",
+                          },
+                        );
                         e.target.value = "";
                         handleFileChange("gstBase64", undefined);
                         return;
                       }
                       if (f.size > 5 * 1024 * 1024) {
-                        toast({
-                          title: "File too large",
-                          description: "Max size is 5MB for PDF",
-                          variant: "destructive",
-                        });
+                        toastifyToast.error(
+                          "GST file size exceeds 5MB limit. Please upload a smaller file.",
+                          {
+                            position: "bottom-right",
+                          },
+                        );
                         e.target.value = "";
                         handleFileChange("gstBase64", undefined);
                         return;
@@ -658,10 +655,26 @@ export default function AddDealerModal({
                   </label>
                   <Input
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                      handleFileChange("pancardBase64", e.target.files?.[0])
-                    }
+                    accept=".jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) {
+                        handleFileChange("pancardBase64", undefined);
+                        return;
+                      }
+                      if (f.type === "application/pdf") {
+                        toastifyToast.error(
+                          "PDF files are not allowed for PAN Card. Please upload an image.",
+                          {
+                            position: "bottom-right",
+                          },
+                        );
+                        e.target.value = "";
+                        handleFileChange("pancardBase64", undefined);
+                        return;
+                      }
+                      handleFileChange("pancardBase64", f);
+                    }}
                     placeholder="Choose file"
                     className={`w-full border-2 transition ${
                       focusedField === "pancardBase64"
@@ -692,7 +705,7 @@ export default function AddDealerModal({
                   </label>
                   <Input
                     type="file"
-                    accept=".pdf,image/png,image/jpeg,image/jpg"
+                    accept=".jpg,.jpeg,.png"
                     onChange={handleAadhaarChange}
                     placeholder="Choose file"
                     className={`w-full border-2 transition ${
@@ -704,7 +717,7 @@ export default function AddDealerModal({
                     onBlur={() => setFocusedField(null)}
                   />
                   <p className="text-[10px] text-gray-400 mt-1">
-                    Supported: PNG, JPG, PDF (Max 5MB)
+                    Supported: PNG, JPG (Max 5MB)
                   </p>
                   {formData.aadhaarBase64 && (
                     <p className="text-[10px] text-green-600 mt-1 font-semibold">
@@ -844,7 +857,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    ASM ID (Current User)
+                    ASM Name
                   </label>
                   <Input
                     value={formData.asmName}

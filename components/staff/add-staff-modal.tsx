@@ -421,33 +421,6 @@ export default function AddStaffModal({
                   <div>
                     <label
                       className={`text-xs font-semibold block mb-2 transition ${
-                        focusedField === "password"
-                          ? "text-[#F87B1B]"
-                          : "text-gray-700"
-                      }`}
-                    >
-                      Password
-                    </label>
-                    <Input
-                      placeholder="••••••••"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className={`w-full border-2 transition ${
-                        focusedField === "password"
-                          ? "!border-[#F87B1B]"
-                          : "!border-gray-300"
-                      }`}
-                      onFocus={() => setFocusedField("password")}
-                      onBlur={() => setFocusedField(null)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label
-                      className={`text-xs font-semibold block mb-2 transition ${
                         focusedField === "dob"
                           ? "text-[#F87B1B]"
                           : "text-gray-700"
@@ -469,6 +442,9 @@ export default function AddStaffModal({
                       onBlur={() => setFocusedField(null)}
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
                   {/* <div>
                     <label
                       className={`text-xs font-semibold block mb-2 transition ${

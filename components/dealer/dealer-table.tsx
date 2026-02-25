@@ -36,6 +36,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import EditDealerModal from "./edit-dealer-modal";
+import { getDistrict } from "@/services/masterData";
 
 interface Dealer {
   id: string;
@@ -45,6 +46,7 @@ interface Dealer {
   districtId: string;
   email: string;
   asmId: string;
+  asmName?: string;
   gstUrl: string;
   pancardUrl: string;
   aadhaarPath: string;
@@ -68,6 +70,7 @@ export default function DealerTable({
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [districts, setDistricts] = useState<any[]>([]);
   const itemsPerPage = 5;
 
   // Image Slider State
@@ -269,6 +272,19 @@ export default function DealerTable({
   }, [statusFilter, refreshTrigger, activeTab]);
 
   useEffect(() => {
+    const fetchDistricts = async () => {
+      try {
+        const res: any = await getDistrict({});
+        const data = res?.data?.data || res?.data || res || [];
+        setDistricts(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to load districts for dealer table", error);
+      }
+    };
+    fetchDistricts();
+  }, []);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
@@ -339,7 +355,7 @@ export default function DealerTable({
                 E-Mail
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                ASM ID
+                ASM Name
               </TableHead>
 
               <TableHead className="px-3 py-2 font-bold text-xs">
@@ -418,13 +434,24 @@ export default function DealerTable({
                     {dealer.organizationName}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
-                    {dealer.districtId?.substring(0, 8) || "-"}
+                    {districts.find(
+                      (d: any) =>
+                        d.id === dealer.districtId ||
+                        d._id === dealer.districtId,
+                    )?.districtName ||
+                      districts.find(
+                        (d: any) =>
+                          d.id === dealer.districtId ||
+                          d._id === dealer.districtId,
+                      )?.name ||
+                      dealer.districtId?.substring(0, 8) ||
+                      "-"}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md text-gray-500">
                     {dealer.email}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
-                    {dealer.asmId?.substring(0, 8) || "-"}
+                    {dealer.asmName || "-"}
                   </TableCell>
 
                   {/* Documents Column */}

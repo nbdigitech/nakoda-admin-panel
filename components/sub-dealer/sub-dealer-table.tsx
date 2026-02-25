@@ -11,7 +11,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Power, ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  Eye,
+  Power,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Edit,
+  Trash2,
+} from "lucide-react";
 import { getUsers, changeUserStatus } from "@/services/user";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
@@ -21,12 +29,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getSubDealers, deleteSubDealer } from "@/services/sub-dealer";
+import EditSubDealerModal from "./edit-sub-dealer-modal";
 
 interface SubDealer {
   id: string;
   name: string;
   phoneNumber: string;
-  organizationName: string;
   districtId: string;
   email: string;
   influencerCategory: string;
@@ -36,7 +45,8 @@ interface SubDealer {
   status: string;
   role: string;
   imagePath?: string;
-  permissions?: string[];
+  distributorName: string;
+  address: string;
 }
 
 export default function SubDealerTable({
@@ -137,8 +147,8 @@ export default function SubDealerTable({
       }
 
       // 2. Background fetch latest global users
-      const fallbackRes = await getUsers({});
-      let allUsers = fallbackRes?.data || [];
+      const fallbackRes = await getSubDealers();
+      let allUsers = fallbackRes || [];
 
       if (allUsers.length > 0) {
         // 3. Keep cache up-to-date
@@ -179,6 +189,21 @@ export default function SubDealerTable({
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (
+      confirm(
+        "Are you sure you want to delete this sub-dealer? This action cannot be undone.",
+      )
+    ) {
+      try {
+        await deleteSubDealer(id);
+        fetchSubDealers();
+      } catch (error) {
+        console.error("Failed to delete sub-dealer:", error);
+      }
+    }
+  };
+
   const filteredSubDealers = subDealers.filter((dealer) =>
     dealer.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -200,16 +225,16 @@ export default function SubDealerTable({
                 S No.
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                Dealer Name
+                Sub-Dealer Name
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Contact
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                Company
+                Distributor Name
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                District
+                Address
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
                 E-Mail
@@ -224,6 +249,9 @@ export default function SubDealerTable({
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Status
               </TableHead>
+              <TableHead className="px-3 py-2 font-bold text-xs">
+                Action
+              </TableHead>
             </TableRow>
           </TableHeader>
 
@@ -231,13 +259,13 @@ export default function SubDealerTable({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-4">
+                <TableCell colSpan={10} className="text-center py-4">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : paginatedSubDealers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-4">
+                <TableCell colSpan={10} className="text-center py-4">
                   No sub-dealers found
                 </TableCell>
               </TableRow>
@@ -257,10 +285,10 @@ export default function SubDealerTable({
                     {dealer.phoneNumber}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md text-[#44444A]">
-                    {dealer.organizationName}
+                    {dealer.distributorName}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md text-[#44444A]">
-                    {dealer.districtId?.substring(0, 8) || "-"}
+                    {dealer.address}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md text-gray-500">
                     {dealer.email}
@@ -386,6 +414,34 @@ export default function SubDealerTable({
                             ? "Inactive"
                             : "Pending"}
                       </span>
+                    </div>
+                  </TableCell>
+
+                  <TableCell className="px-3 py-4 text-md">
+                    <div className="flex items-center gap-2">
+                      <EditSubDealerModal
+                        dealer={dealer}
+                        onSuccess={fetchSubDealers}
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            className="flex items-center gap-2 text-[#F87B1B] px-3 py-2 rounded-lg font-semibold hover:bg-[#F87B1B1A]"
+                            style={{ backgroundColor: "#F87B1B1A" }}
+                          >
+                            <Edit className="w-4 h-4" />
+                            Edit
+                          </Button>
+                        }
+                      />
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleDelete(dealer.id)}
+                        className="flex items-center gap-2 text-red-600 px-3 py-2 rounded-lg font-semibold hover:bg-red-50"
+                        style={{ backgroundColor: "#fee2e2" }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>

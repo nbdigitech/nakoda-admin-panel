@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getState, getDistrict, getCity } from "@/services/masterData";
-import { updateDealer } from "@/services/dealer";
+import { updateSubDealer } from "@/services/sub-dealer";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +38,7 @@ interface FormState {
   logoBase64: string;
   gstBase64: string;
   pancardBase64: string;
-  aadhaarBase64: string;
+  aadhaar: string;
 
   // Step 3 - Address
   stateId: string;
@@ -48,7 +48,7 @@ interface FormState {
   asmName: string;
 }
 
-export default function EditDealerModal({
+export default function EditSubDealerModal({
   trigger,
   onSuccess,
   dealer,
@@ -61,15 +61,6 @@ export default function EditDealerModal({
   const [step, setStep] = React.useState(1);
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [aadhaarFileType, setAadhaarFileType] = React.useState<
-    "image" | "pdf" | null
-  >(
-    dealer?.aadhaarPath?.includes(".pdf")
-      ? "pdf"
-      : dealer?.aadhaarPath
-        ? "image"
-        : null,
-  );
   const { toast } = useToast();
 
   const [formData, setFormData] = React.useState<FormState>({
@@ -82,7 +73,7 @@ export default function EditDealerModal({
     logoBase64: dealer?.logoUrl || "",
     gstBase64: dealer?.gstUrl || "",
     pancardBase64: dealer?.pancardUrl || "",
-    aadhaarBase64: dealer?.aadhaarPath || "",
+    aadhaar: dealer?.aadhaar || dealer?.aadhaarPath || "",
     stateId: dealer?.stateId || "",
     districtId: dealer?.districtId || "",
     city: dealer?.city || "",
@@ -103,7 +94,7 @@ export default function EditDealerModal({
         logoBase64: dealer?.logoUrl || "",
         gstBase64: dealer?.gstUrl || "",
         pancardBase64: dealer?.pancardUrl || "",
-        aadhaarBase64: dealer?.aadhaarPath || "",
+        aadhaar: dealer?.aadhaar || dealer?.aadhaarPath || "",
         stateId: dealer?.stateId || "",
         districtId: dealer?.districtId || "",
         city: dealer?.city || "",
@@ -120,8 +111,7 @@ export default function EditDealerModal({
   const [cities, setCities] = React.useState<any[]>([]);
 
   // Firebase auth
-  // Firebase auth
-  const { user, userData, authReady } = useFirebaseAuth();
+  const { user, authReady } = useFirebaseAuth();
 
   // Load states on mount
   React.useEffect(() => {
@@ -142,8 +132,6 @@ export default function EditDealerModal({
   React.useEffect(() => {
     if (authReady && user && typeof user === "object") {
       const asmName =
-        (userData as any)?.name ||
-        (userData as any)?.organizationName ||
         (user as any).displayName ||
         (user as any).name ||
         (user as any).email ||
@@ -153,30 +141,7 @@ export default function EditDealerModal({
         (user as any).uid || (user as any).id || (user as any)._id || "";
       setFormData((prev) => ({ ...prev, asmId, asmName }));
     }
-  }, [authReady, user, userData]);
-
-  // Load initial location options if stateId exists but options are empty
-  React.useEffect(() => {
-    if (open && formData.stateId && districts.length === 0) {
-      getDistrict({ stateId: formData.stateId })
-        .then((res: any) => {
-          const data = res?.data?.data || res?.data || res || [];
-          setDistricts(Array.isArray(data) ? data : []);
-        })
-        .catch((err) => console.error("Failed to load init districts", err));
-    }
-  }, [open, formData.stateId, districts.length]);
-
-  React.useEffect(() => {
-    if (open && formData.districtId && cities.length === 0) {
-      getCity({ districtId: formData.districtId })
-        .then((res: any) => {
-          const data = res?.data?.data || res?.data || res || [];
-          setCities(Array.isArray(data) ? data : []);
-        })
-        .catch((err) => console.error("Failed to load init cities", err));
-    }
-  }, [open, formData.districtId, cities.length]);
+  }, [authReady, user]);
 
   // Handle text input changes
   const handleInputChange = (field: keyof FormState, value: string) => {
@@ -208,52 +173,6 @@ export default function EditDealerModal({
       console.log(`${field} converted to base64`);
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleAadhaarChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const f = e.target.files?.[0];
-    if (!f) {
-      handleInputChange("aadhaarBase64", "");
-      setAadhaarFileType(null);
-      return;
-    }
-
-    if (f.type === "application/pdf") {
-      toastifyToast.error(
-        "PDF files are not allowed for Aadhaar. Please upload an image.",
-        {
-          position: "bottom-right",
-        },
-      );
-      e.target.value = ""; // Clear the input
-      handleInputChange("aadhaarBase64", "");
-      setAadhaarFileType(null);
-      return;
-    }
-
-    if (f.size > 5 * 1024 * 1024) {
-      toastifyToast.error(
-        "File size exceeds 5MB limit for Aadhaar. Please upload a smaller file.",
-        {
-          position: "bottom-right",
-        },
-      );
-      e.target.value = ""; // Clear the input
-      handleInputChange("aadhaarBase64", "");
-      setAadhaarFileType(null);
-      return;
-    }
-
-    setAadhaarFileType("image");
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      handleInputChange("aadhaarBase64", base64String);
-    };
-    reader.readAsDataURL(f);
   };
 
   // Validate form data
@@ -290,10 +209,10 @@ export default function EditDealerModal({
         name: formData.name,
         dob: formData.dob,
         organizationName: formData.organizationName,
-        aadhaarBase64: formData.aadhaarBase64,
         logoBase64: formData.logoBase64,
         gstBase64: formData.gstBase64,
         pancardBase64: formData.pancardBase64,
+        aadhaar: formData.aadhaar,
         stateId: formData.stateId,
         districtId: formData.districtId,
         city: formData.city,
@@ -301,8 +220,8 @@ export default function EditDealerModal({
         asmName: formData.asmName,
       };
 
-      await updateDealer(dealer.id, payload);
-      alert("Dealer updated successfully!");
+      await updateSubDealer(dealer.id, payload);
+      alert("Sub-Dealer updated successfully!");
 
       // Reset form
       setFormData({
@@ -315,7 +234,7 @@ export default function EditDealerModal({
         logoBase64: "",
         gstBase64: "",
         pancardBase64: "",
-        aadhaarBase64: "",
+        aadhaar: "",
         stateId: "",
         districtId: "",
         city: "",
@@ -326,8 +245,8 @@ export default function EditDealerModal({
       setOpen(false);
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("Error creating dealer:", error);
-      alert("Failed to create dealer. Please try again.");
+      console.error("Error updating sub-dealer:", error);
+      alert("Failed to update sub-dealer. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -340,7 +259,7 @@ export default function EditDealerModal({
       <DialogContent className="max-w-3xl rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">
-            Edit Dealer
+            Edit Sub Dealer
           </DialogTitle>
         </DialogHeader>
 
@@ -381,12 +300,12 @@ export default function EditDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    Dealer Name *
+                    Sub Dealer Name *
                   </label>
                   <Input
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="Enter dealer name"
+                    placeholder="Enter sub dealer name"
                     className={`w-full border-2 transition ${
                       focusedField === "name"
                         ? "!border-[#F87B1B]"
@@ -698,34 +617,36 @@ export default function EditDealerModal({
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "aadhaarBase64"
+                      focusedField === "aadhaar"
                         ? "text-[#F87B1B]"
                         : "text-gray-700"
                     }`}
                   >
-                    Upload Aadhar
+                    Aadhaar Number
                   </label>
                   <Input
-                    type="file"
-                    accept=".jpg,.jpeg,.png"
-                    onChange={handleAadhaarChange}
-                    placeholder="Choose file"
+                    type="text"
+                    maxLength={12}
+                    value={formData.aadhaar}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      handleInputChange("aadhaar", val);
+                    }}
+                    placeholder="Enter 12 digit Aadhaar number"
                     className={`w-full border-2 transition ${
-                      focusedField === "aadhaarBase64"
+                      focusedField === "aadhaar"
                         ? "border-[#F87B1B]"
                         : "border-gray-300"
                     }`}
-                    onFocus={() => setFocusedField("aadhaarBase64")}
+                    onFocus={() => setFocusedField("aadhaar")}
                     onBlur={() => setFocusedField(null)}
                   />
-                  <p className="text-[10px] text-gray-400 mt-1">
-                    Supported: PNG, JPG (Max 5MB)
-                  </p>
-                  {formData.aadhaarBase64 && (
-                    <p className="text-[10px] text-green-600 mt-1 font-semibold">
-                      ✓ {aadhaarFileType?.toUpperCase() || "AADHAAR"} Uploaded
-                    </p>
-                  )}
+                  {formData.aadhaar?.length > 0 &&
+                    formData.aadhaar?.length !== 12 && (
+                      <p className="text-[10px] text-red-500 mt-1">
+                        Aadhaar must be exactly 12 digits.
+                      </p>
+                    )}
                 </div>
               </div>
             </div>
@@ -859,7 +780,7 @@ export default function EditDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    ASM Name
+                    ASM ID (Current User)
                   </label>
                   <Input
                     value={formData.asmName}

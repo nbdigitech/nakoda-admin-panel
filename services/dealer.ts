@@ -41,10 +41,9 @@ export const getDealers = async () => {
 
 export const createDealer = async (dealerData: any) => {
   const db = getFirestoreDB();
-  const dealerRef = doc(collection(db, "users"));
-  const dealerId = dealerRef.id;
-
   const phone = dealerData.phoneNumber;
+  const dealerRef = doc(db, "users", phone);
+  const dealerId = phone;
   const updates: any = {};
 
   if (dealerData.logoBase64)
