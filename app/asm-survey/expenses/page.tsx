@@ -12,15 +12,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, Loader2 } from "lucide-react";
+import { Plus, Minus, Loader2, Edit } from "lucide-react";
 import { getExpenses } from "@/services/masterData";
 import { RemarksDrawer } from "@/components/expenses/remarks-drawer";
+import { getFirestoreDB } from "@/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 interface Expense {
-  id: string | number;
+  id: string;
   category: string;
-  amount: string | number;
+  amount: number;
   image?: string;
+  status?: string;
+  remarks?: string;
+  tourId?: string;
 }
 
 interface SurveyRoute {
@@ -40,9 +45,9 @@ function ExpensesContent() {
   const [surveyRoutes, setSurveyRoutes] = useState<SurveyRoute[]>([]);
   const [expandedRoutes, setExpandedRoutes] = useState<(string | number)[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterValue, setFilterValue] = useState("0"); // 0: current, 1: 1 month, 2: 3 months
+  const [filterValue, setFilterValue] = useState("0"); // 0: today, 1: 1 month, 2: 3 months
   const [remarkDrawerOpen, setRemarkDrawerOpen] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState<SurveyRoute | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
   const fetchExpenses = async () => {
     if (!tourId) {
@@ -52,32 +57,34 @@ function ExpensesContent() {
 
     try {
       setLoading(true);
-      const payload = { tourId, filter: parseInt(filterValue) };
-      const res: any = await getExpenses(payload);
+      const db = getFirestoreDB();
+      const expensesRef = collection(db, "expenses");
+      const q = query(expensesRef, where("tourId", "==", tourId));
+      const querySnapshot = await getDocs(q);
 
-      const data = res?.data?.data || res?.data || res || [];
+      const data: any[] = [];
+      querySnapshot.forEach((doc) => {
+        data.push({ id: doc.id, ...doc.data() });
+      });
 
       if (Array.isArray(data)) {
         const mappedExpenses: Expense[] = data.map((item: any) => ({
-          id: item.id || item._id || Math.random().toString(),
+          id: item.id,
           category: item.category || item.description || "General",
-          amount: `₹ ${item.amount || 0}`,
+          amount: Number(item.amount) || 0,
           image: item.image,
+          status: item.status || "pending",
+          remarks: item.remarks || "",
+          tourId: item.tourId,
         }));
 
-        const total = data.reduce(
-          (sum: number, item: any) => sum + (Number(item.amount) || 0),
+        const total = mappedExpenses.reduce(
+          (sum: number, item: any) => sum + item.amount,
           0,
         );
 
         const getDateString = (item: any): string => {
-          const dateField =
-            item?.createdAt ||
-            item?.created_at ||
-            item?.createdDate ||
-            item?.date ||
-            item?.timestamp;
-
+          const dateField = item?.createdAt;
           if (!dateField) return "Recent";
 
           try {
@@ -98,8 +105,6 @@ function ExpensesContent() {
               return "Recent";
             }
 
-            if (isNaN(date.getTime())) return "Recent";
-
             return date.toLocaleDateString("en-IN", {
               day: "2-digit",
               month: "short",
@@ -116,8 +121,6 @@ function ExpensesContent() {
           date: data[0] ? getDateString(data[0]) : "Recent",
           expenses: mappedExpenses,
           totalExpense: total,
-          status: data[0]?.status || "Pending",
-          remarks: data[0]?.remarks || "",
         };
 
         setSurveyRoutes([route]);
@@ -142,14 +145,14 @@ function ExpensesContent() {
     );
   };
 
-  const openRemarkDrawer = (route: SurveyRoute) => {
-    setSelectedRoute(route);
+  const openRemarkDrawer = (expense: Expense) => {
+    setSelectedExpense(expense);
     setRemarkDrawerOpen(true);
   };
 
   const closeRemarkDrawer = () => {
     setRemarkDrawerOpen(false);
-    setSelectedRoute(null);
+    setSelectedExpense(null);
   };
 
   if (loading) {
@@ -208,14 +211,6 @@ function ExpensesContent() {
                     )}
                   </button>
                 </div>
-                <div className=" flex justify-end">
-                  <Button
-                    onClick={() => openRemarkDrawer(route)}
-                    className="bg-[#F87B1B] hover:bg-[#E86A0A] text-white font-semibold  text-md px-8 py-6"
-                  >
-                    Remark
-                  </Button>
-                </div>
               </div>
               {expandedRoutes.includes(route.id) && (
                 <div className="bg-white rounded-lg border p-5 w-full lg:w-[87%]">
@@ -225,7 +220,9 @@ function ExpensesContent() {
                         <TableHead>S No.</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Image</TableHead>
+                        <TableHead>Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -233,8 +230,21 @@ function ExpensesContent() {
                         <TableRow key={exp.id}>
                           <TableCell>{index + 1}</TableCell>
                           <TableCell>{exp.category}</TableCell>
-                          <TableCell className="font-semibold">
-                            {exp.amount}
+                          <TableCell className="font-semibold text-orange-600">
+                            ₹ {exp.amount}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
+                                exp.status === "approved"
+                                  ? "bg-green-100 text-green-700"
+                                  : exp.status === "rejected"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                              }`}
+                            >
+                              {exp.status || "pending"}
+                            </span>
                           </TableCell>
                           <TableCell>
                             {exp.image ? (
@@ -256,6 +266,17 @@ function ExpensesContent() {
                               </div>
                             )}
                           </TableCell>
+                          <TableCell>
+                            <Button
+                              onClick={() => openRemarkDrawer(exp)}
+                              variant="ghost"
+                              size="sm"
+                              className="text-[#F87B1B] hover:text-[#E86A0A] hover:bg-[#F87B1B1A]"
+                            >
+                              <Edit className="w-4 h-4 mr-1" />
+                              Edit
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -276,7 +297,7 @@ function ExpensesContent() {
       <RemarksDrawer
         isOpen={remarkDrawerOpen}
         onClose={closeRemarkDrawer}
-        route={selectedRoute}
+        expense={selectedExpense}
         onRefresh={fetchExpenses}
       />
     </div>

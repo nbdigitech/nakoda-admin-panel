@@ -3,64 +3,55 @@
 import { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { changeExpenseStatus } from "@/services/masterData";
 import { toast } from "react-toastify";
+import { doc, updateDoc } from "firebase/firestore";
+import { getFirestoreDB } from "@/firebase";
 
 interface Expense {
-  id: string | number;
+  id: string;
   category: string;
-  amount: string | number;
+  amount: number;
   image?: string;
-}
-
-interface SurveyRoute {
-  id: string | number;
-  title: string;
-  date: string;
-  expenses: Expense[];
-  totalExpense: number;
-  remarks?: string;
   status?: string;
+  remarks?: string;
 }
 
 interface RemarksDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  route: SurveyRoute | null;
+  expense: Expense | null;
   onRefresh: () => void;
 }
 
 export function RemarksDrawer({
   isOpen,
   onClose,
-  route,
+  expense,
   onRefresh,
 }: RemarksDrawerProps) {
   const [remarkText, setRemarkText] = useState("");
-  const [remarkStatus, setRemarkStatus] = useState("Approved");
+  const [remarkStatus, setRemarkStatus] = useState("pending");
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    if (route) {
-      setRemarkText(route.remarks || "");
-      setRemarkStatus(route.status || "Approved");
+    if (expense) {
+      setRemarkText(expense.remarks || "");
+      setRemarkStatus(expense.status || "pending");
     }
-  }, [route]);
+  }, [expense]);
 
   const handleUpdate = async () => {
-    if (!route) return;
+    if (!expense?.id) return;
 
     try {
       setIsUpdating(true);
-      const payload = {
-        id: route.id,
+      const db = getFirestoreDB();
+      const expenseRef = doc(db, "expenses", expense.id);
+
+      await updateDoc(expenseRef, {
         status: remarkStatus,
         remarks: remarkText,
-      };
-
-      console.log("Updating expense status:", payload);
-      const res: any = await changeExpenseStatus(payload);
-      console.log("Update response:", res);
+      });
 
       toast.success("Expense status updated successfully");
       onRefresh();
@@ -90,30 +81,22 @@ export function RemarksDrawer({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-5">
-        {/* Location Name */}
+        {/* Category */}
         <div>
           <label className="text-sm font-semibold text-gray-700 block mb-2">
-            Location
+            Category
           </label>
-          <p className="text-gray-800 font-medium">{route?.title}</p>
+          <p className="text-gray-800 font-medium">{expense?.category}</p>
         </div>
 
-        {/* Date */}
+        {/* Amount */}
         <div>
           <label className="text-sm font-semibold text-gray-700 block mb-2">
-            Date
-          </label>
-          <p className="text-gray-800">{route?.date}</p>
-        </div>
-
-        {/* Total Expense */}
-        <div>
-          <label className="text-sm font-semibold text-gray-700 block mb-2">
-            Total Expense
+            Amount
           </label>
           <input
             type="text"
-            value={`₹ ${route?.totalExpense}`}
+            value={`₹ ${expense?.amount}`}
             disabled
             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 focus:outline-none"
           />
@@ -143,9 +126,9 @@ export function RemarksDrawer({
             onChange={(e) => setRemarkStatus(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F87B1B] bg-white cursor-pointer"
           >
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
         </div>
       </div>
