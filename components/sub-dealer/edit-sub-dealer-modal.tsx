@@ -585,7 +585,7 @@ export default function EditSubDealerModal({
                       }
                       if (f.type === "application/pdf") {
                         toastifyToast.error(
-                          "PDF files are not allowed for PAN Card. Please upload an image.",
+                          "PDF files are not allowed for PAN Card. Please upload an image (.jpg, .jpeg, .png).",
                           {
                             position: "bottom-right",
                           },
@@ -605,6 +605,9 @@ export default function EditSubDealerModal({
                     onFocus={() => setFocusedField("pancardBase64")}
                     onBlur={() => setFocusedField(null)}
                   />
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Supported: PNG, JPG (Max 5MB)
+                  </p>
                   {formData.pancardBase64 && (
                     <p className="text-xs text-green-600 mt-1">
                       ✓ PAN Card uploaded
@@ -625,14 +628,28 @@ export default function EditSubDealerModal({
                     Aadhaar Number
                   </label>
                   <Input
-                    type="text"
-                    maxLength={12}
-                    value={formData.aadhaar}
+                    type="file"
+                    accept=".jpg,.jpeg,.png"
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, "");
-                      handleInputChange("aadhaar", val);
+                      const f = e.target.files?.[0];
+                      if (!f) {
+                        setFormData((prev) => ({ ...prev, aadhaar: "" }));
+                        return;
+                      }
+                      if (f.type === "application/pdf") {
+                        toastifyToast.error(
+                          "PDF files are not allowed for Aadhaar. Please upload an image (.jpg, .jpeg, .png).",
+                          {
+                            position: "bottom-right",
+                          },
+                        );
+                        e.target.value = "";
+                        setFormData((prev) => ({ ...prev, aadhaar: "" }));
+                        return;
+                      }
+                      handleFileChange("aadhaar", f);
                     }}
-                    placeholder="Enter 12 digit Aadhaar number"
+                    placeholder="Choose file"
                     className={`w-full border-2 transition ${
                       focusedField === "aadhaar"
                         ? "border-[#F87B1B]"
@@ -641,12 +658,14 @@ export default function EditSubDealerModal({
                     onFocus={() => setFocusedField("aadhaar")}
                     onBlur={() => setFocusedField(null)}
                   />
-                  {formData.aadhaar?.length > 0 &&
-                    formData.aadhaar?.length !== 12 && (
-                      <p className="text-[10px] text-red-500 mt-1">
-                        Aadhaar must be exactly 12 digits.
-                      </p>
-                    )}
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Supported: PNG, JPG (Max 5MB)
+                  </p>
+                  {formData.aadhaar && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ Aadhaar image uploaded
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

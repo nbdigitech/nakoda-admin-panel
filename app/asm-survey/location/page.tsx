@@ -27,8 +27,8 @@ interface LocationData {
   id: string;
   latitude: number;
   longitude: number;
-  location?: string;
-  personName?: string;
+  name?: string;
+  createdAt?: any;
 }
 
 function LocationMap() {
@@ -74,10 +74,20 @@ function LocationMap() {
               id: s.id,
               latitude: s.latLong?.latitude,
               longitude: s.latLong?.longitude,
-              location: s.location || s.shopName,
-              personName: s.name,
+              name:
+                s.name ||
+                s.shopName ||
+                s.location ||
+                s.label ||
+                `Stop ${s.id?.substring(0, 4) || ""}`,
+              createdAt: s.createdAt,
             }))
-            .filter((loc: any) => loc.latitude && loc.longitude);
+            .filter((loc: any) => loc.latitude && loc.longitude)
+            .sort((a: any, b: any) => {
+              const timeA = a.createdAt?._seconds || 0;
+              const timeB = b.createdAt?._seconds || 0;
+              return timeA - timeB;
+            });
 
           setLocationData(mappedData);
           localStorage.setItem(`locs_${tourId}`, JSON.stringify(mappedData));
@@ -87,6 +97,8 @@ function LocationMap() {
       }
     };
 
+    // Force refresh cache once on mount to handle mapping changes
+    localStorage.removeItem(`locs_${tourId}`);
     fetchLocations();
 
     const fetchExpenses = async () => {
@@ -314,9 +326,9 @@ function LocationMap() {
                     </div>
                     <span
                       className="font-medium text-gray-800 max-w-[120px] truncate"
-                      title={loc.location || `Stop ${index + 1}`}
+                      title={loc.name || "N/A"}
                     >
-                      {loc.location || `Stop ${index + 1}`}
+                      {loc.name || "-"}
                     </span>
                   </div>
 

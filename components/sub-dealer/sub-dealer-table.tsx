@@ -47,6 +47,7 @@ interface SubDealer {
   imagePath?: string;
   distributorName: string;
   address: string;
+  createdAt: Date;
 }
 
 export default function SubDealerTable({
@@ -99,6 +100,17 @@ export default function SubDealerTable({
         );
       }
 
+      const parseDate = (d: any) => {
+        if (!d) return 0;
+        if (d._seconds) return d._seconds * 1000;
+        if (d.seconds) return d.seconds * 1000;
+        if (d instanceof Date) return d.getTime();
+        if (typeof d === "string" || typeof d === "number")
+          return new Date(d).getTime();
+        if (typeof d.toDate === "function") return d.toDate().getTime();
+        return 0;
+      };
+
       if (activeTab === "Today") {
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -106,14 +118,6 @@ export default function SubDealerTable({
         endOfToday.setHours(23, 59, 59, 999);
 
         subDealersData = subDealersData.filter((u: any) => {
-          const parseDate = (d: any) => {
-            if (!d) return 0;
-            if (d._seconds) return d._seconds * 1000;
-            if (typeof d === "string" || typeof d === "number")
-              return new Date(d).getTime();
-            if (d.toDate) return d.toDate().getTime();
-            return 0;
-          };
           const dTime = parseDate(u.createdAt);
           return (
             dTime >= startOfToday.getTime() && dTime <= endOfToday.getTime()
@@ -122,14 +126,6 @@ export default function SubDealerTable({
       }
 
       subDealersData.sort((a: any, b: any) => {
-        const parseDate = (d: any) => {
-          if (!d) return 0;
-          if (d._seconds) return d._seconds * 1000;
-          if (typeof d === "string" || typeof d === "number")
-            return new Date(d).getTime();
-          if (d.toDate) return d.toDate().getTime();
-          return 0;
-        };
         return parseDate(b.createdAt) - parseDate(a.createdAt);
       });
 
@@ -225,8 +221,12 @@ export default function SubDealerTable({
                 S No.
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
+                Date
+              </TableHead>
+              <TableHead className="px-3 py-2 font-bold text-xs">
                 Sub-Dealer Name
               </TableHead>
+
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Contact
               </TableHead>
@@ -275,6 +275,22 @@ export default function SubDealerTable({
                 >
                   <TableCell className="px-3 py-4 text-md text-[#44444A]">
                     {(currentPage - 1) * itemsPerPage + index + 1}
+                  </TableCell>
+                  <TableCell className="px-3 py-4 text-md text-[#44444A]">
+                    {(() => {
+                      const d = dealer.createdAt as any;
+                      if (!d) return "N/A";
+                      if (d._seconds)
+                        return new Date(d._seconds * 1000).toLocaleDateString();
+                      if (d.seconds)
+                        return new Date(d.seconds * 1000).toLocaleDateString();
+                      if (d instanceof Date) return d.toLocaleDateString();
+                      if (typeof d === "string" || typeof d === "number")
+                        return new Date(d).toLocaleDateString();
+                      if (typeof d.toDate === "function")
+                        return d.toDate().toLocaleDateString();
+                      return "N/A";
+                    })()}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md text-[#44444A]">
                     {dealer.name}

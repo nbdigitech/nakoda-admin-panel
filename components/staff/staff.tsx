@@ -31,6 +31,9 @@ import {
 import { getUsers, changeUserStatus } from "@/services/user";
 import { ref, getDownloadURL } from "firebase/storage";
 import { getFirebaseStorage } from "@/firebase";
+import { getDistrict } from "@/services/masterData";
+import EditStaffModal from "./edit-staff-modal";
+import { Edit } from "lucide-react";
 
 interface Staff {
   id: string;
@@ -46,6 +49,11 @@ interface Staff {
   status: string;
   role: string;
   address: string;
+  asmName?: string;
+  stateId?: string;
+  staffCategoryId?: string;
+  dob?: string;
+  permissions?: string[];
 }
 
 export default function StaffTable({
@@ -62,6 +70,7 @@ export default function StaffTable({
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [districts, setDistricts] = useState<any[]>([]);
   const itemsPerPage = 5;
 
   // Image Slider State
@@ -170,6 +179,19 @@ export default function StaffTable({
   }, [statusFilter, refreshTrigger, activeTab]);
 
   useEffect(() => {
+    const fetchDistricts = async () => {
+      try {
+        const res: any = await getDistrict({});
+        const data = res?.data?.data || res?.data || res || [];
+        setDistricts(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to load districts for staff table", error);
+      }
+    };
+    fetchDistricts();
+  }, []);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
@@ -232,7 +254,13 @@ export default function StaffTable({
                 Documents
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
+                ASM Name
+              </TableHead>
+              <TableHead className="px-3 py-2 font-bold text-xs">
                 Status
+              </TableHead>
+              <TableHead className="px-3 py-2 font-bold text-xs">
+                Action
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -308,7 +336,13 @@ export default function StaffTable({
                   </TableCell>
 
                   <TableCell className="px-3 py-4 text-md">
-                    {member.districtId?.substring(0, 8) || "-"}
+                    {districts.find(
+                      (d: any) =>
+                        d.id === member.districtId ||
+                        d._id === member.districtId,
+                    )?.districtName ||
+                      member.districtId?.substring(0, 8) ||
+                      "-"}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
                     {member.email}
@@ -407,6 +441,9 @@ export default function StaffTable({
                   </TableCell>
 
                   <TableCell className="px-3 py-4 text-md">
+                    {member.asmName || "-"}
+                  </TableCell>
+                  <TableCell className="px-3 py-4 text-md">
                     <div className="flex flex-col items-center gap-1">
                       {member.status !== "pending" && (
                         <Switch
@@ -433,6 +470,22 @@ export default function StaffTable({
                             : "Pending"}
                       </span>
                     </div>
+                  </TableCell>
+                  <TableCell className="px-3 py-4 text-md">
+                    <EditStaffModal
+                      staff={member}
+                      onSuccess={fetchStaff}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          className="flex items-center gap-2 text-[#F87B1B] px-3 py-2 rounded-lg font-semibold hover:bg-[#F87B1B1A]"
+                          style={{ backgroundColor: "#F87B1B1A" }}
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit
+                        </Button>
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               ))
