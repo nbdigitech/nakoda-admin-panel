@@ -37,7 +37,7 @@ interface SubDealer {
   name: string;
   phoneNumber: string;
   districtId: string;
-  email: string;
+  categoryName: string;
   influencerCategory: string;
   gstUrl: string;
   pancardUrl: string;
@@ -230,17 +230,15 @@ export default function SubDealerTable({
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Contact
               </TableHead>
-              <TableHead className="px-3 py-2 font-bold text-xs">
-                Distributor Name
-              </TableHead>
+
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Address
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                E-Mail
+                Influencer categoryName
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                Influencer Category
+                Distributor Name
               </TableHead>
 
               <TableHead className="px-3 py-2 font-bold text-xs">
@@ -249,9 +247,9 @@ export default function SubDealerTable({
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Status
               </TableHead>
-              <TableHead className="px-3 py-2 font-bold text-xs">
+              {/* <TableHead className="px-3 py-2 font-bold text-xs">
                 Action
-              </TableHead>
+              </TableHead> */}
             </TableRow>
           </TableHeader>
 
@@ -284,17 +282,15 @@ export default function SubDealerTable({
                   <TableCell className="px-3 py-4 text-md text-[#44444A]">
                     {dealer.phoneNumber}
                   </TableCell>
-                  <TableCell className="px-3 py-4 text-md text-[#44444A]">
-                    {dealer.distributorName}
-                  </TableCell>
+
                   <TableCell className="px-3 py-4 text-md text-[#44444A]">
                     {dealer.address}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md text-gray-500">
-                    {dealer.email}
+                    {dealer.categoryName}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md text-[#44444A]">
-                    {dealer.influencerCategory || "-"}
+                    {dealer.distributorName}
                   </TableCell>
 
                   <TableCell className="px-3 py-2">
@@ -417,7 +413,7 @@ export default function SubDealerTable({
                     </div>
                   </TableCell>
 
-                  <TableCell className="px-3 py-4 text-md">
+                  {/* <TableCell className="px-3 py-4 text-md">
                     <div className="flex items-center gap-2">
                       <EditSubDealerModal
                         dealer={dealer}
@@ -443,7 +439,7 @@ export default function SubDealerTable({
                         Delete
                       </Button>
                     </div>
-                  </TableCell>
+                  </TableCell> */}
                 </TableRow>
               ))
             )}
