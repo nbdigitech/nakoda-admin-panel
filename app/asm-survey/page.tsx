@@ -17,6 +17,8 @@ import {
 import AddStaffModal from "@/components/staff/add-staff-modal";
 import { Eye, MapPin, Plus, Search } from "lucide-react";
 import { getTour, getSurvey } from "@/services/masterData";
+import { getFirestoreDB } from "@/firebase";
+import { collection, getDocs, query } from "firebase/firestore";
 
 // 🔹 DATE FORMATTER
 const formatDate = (timestamp: any) => {
@@ -53,6 +55,9 @@ export default function AsmSurveyPage() {
 
   // Surveys
   const [allSurveys, setAllSurveys] = useState<any[]>([]);
+
+  // Expenses
+  const [allExpenses, setAllExpenses] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -108,6 +113,29 @@ export default function AsmSurveyPage() {
     };
 
     fetchAllSurveys();
+  }, []);
+
+  // Fetch all expenses to compute stats
+  useEffect(() => {
+    const fetchAllExpenses = async () => {
+      try {
+        const db = getFirestoreDB();
+        const expensesRef = collection(db, "expenses");
+        const querySnapshot = await getDocs(expensesRef);
+
+        const data: any[] = [];
+        querySnapshot.forEach((doc) => {
+          data.push({ id: doc.id, ...doc.data() });
+        });
+
+        if (Array.isArray(data)) {
+          setAllExpenses(data);
+        }
+      } catch (error) {
+        console.error("Error fetching all expenses from collection:", error);
+      }
+    };
+    fetchAllExpenses();
   }, []);
 
   // ✅ PRE-FETCH OSRM ROUTING BACKGROUND TASK
@@ -221,6 +249,36 @@ export default function AsmSurveyPage() {
     };
   }, [allSurveys, filteredTours]);
 
+  const expenseStats = useMemo(() => {
+    const todayStr = new Date().toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+    const stats = {
+      total: allExpenses.reduce((sum, item) => {
+        const amt = parseFloat(String(item?.amount || 0));
+        return sum + (isNaN(amt) ? 0 : amt);
+      }, 0),
+      today: allExpenses
+        .filter((e) => {
+          const matched = formatDate(e.createdAt) === todayStr;
+          return matched;
+        })
+        .reduce((sum, item) => {
+          const amt = parseFloat(String(item?.amount || 0));
+          return sum + (isNaN(amt) ? 0 : amt);
+        }, 0),
+    };
+
+    console.log("Today Date String:", todayStr);
+    console.log("Expense Stats Calculated:", stats);
+    console.log("All Expenses Data:", allExpenses);
+
+    return stats;
+  }, [allExpenses]);
+
   const tabs = ["ACTIVE TOUR", "All TOUR"];
 
   // ✅ SEND TOUR ID
@@ -306,7 +364,9 @@ export default function AsmSurveyPage() {
             />
             <div>
               <p className="text-sm text-gray-500 pb-2">Today Expense</p>
-              <h3 className="text-2xl font-bold">00</h3>
+              <h3 className="text-2xl font-bold">
+                ₹{expenseStats.today.toLocaleString("en-IN")}
+              </h3>
             </div>
           </CardContent>
         </Card>
@@ -321,7 +381,9 @@ export default function AsmSurveyPage() {
             />
             <div>
               <p className="text-sm text-gray-500 pb-2">Total Expense</p>
-              <h3 className="text-2xl font-bold">00</h3>
+              <h3 className="text-2xl font-bold">
+                ₹{expenseStats.total.toLocaleString("en-IN")}
+              </h3>
             </div>
           </CardContent>
         </Card>
