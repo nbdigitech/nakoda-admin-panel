@@ -40,8 +40,7 @@ export default function EditOrders({
   const [formState, setFormState] = useState({
     distributorId: order.distributorId,
     mobileNumber: order.mobileNumber,
-    totalQtyTons: order.totalQtyTons,
-    fulfilledQtyTons: order.fulfilledQtyTons,
+    newFulfilledQtyTons: "",
     status: order.status,
     rate: order.rate,
   });
@@ -52,8 +51,7 @@ export default function EditOrders({
       setFormState({
         distributorId: order.distributorId,
         mobileNumber: order.mobileNumber,
-        totalQtyTons: order.totalQtyTons,
-        fulfilledQtyTons: order.fulfilledQtyTons,
+        newFulfilledQtyTons: "",
         status: order.status,
         rate: order.rate,
       });
@@ -81,25 +79,31 @@ export default function EditOrders({
 
   const handleFulfilledChange = (val: string) => {
     let numVal = parseFloat(val) || 0;
-    const total = parseFloat(formState.totalQtyTons) || 0;
+    const initialPending =
+      (parseFloat(order.totalQtyTons) || 0) -
+      (parseFloat(order.fulfilledQtyTons) || 0);
 
-    if (numVal > total) {
-      numVal = total;
-      val = total.toString();
+    if (numVal > initialPending) {
+      numVal = initialPending;
+      val = initialPending.toString();
     }
 
+    const totalFulfilledNow =
+      (parseFloat(order.fulfilledQtyTons) || 0) + numVal;
+    const totalQty = parseFloat(order.totalQtyTons) || 0;
+
     let newStatus = formState.status;
-    if (numVal > 0 && numVal < total) {
+    if (totalFulfilledNow > 0 && totalFulfilledNow < totalQty) {
       newStatus = "inprogress";
-    } else if (numVal > 0 && numVal >= total) {
+    } else if (totalFulfilledNow > 0 && totalFulfilledNow >= totalQty) {
       newStatus = "approved";
-    } else if (numVal === 0) {
-      newStatus = formState.status === "rejected" ? "rejected" : "pending";
+    } else if (totalFulfilledNow === 0) {
+      newStatus = order.status === "rejected" ? "rejected" : "pending";
     }
 
     setFormState({
       ...formState,
-      fulfilledQtyTons: val,
+      newFulfilledQtyTons: val,
       status: newStatus,
     });
   };
@@ -111,11 +115,14 @@ export default function EditOrders({
       const collectionName =
         orderSource === "dealer" ? "distributor_orders" : "influencer_orders";
 
+      const newFulfillment = parseFloat(formState.newFulfilledQtyTons) || 0;
+      const initialFulfilled = parseFloat(order.fulfilledQtyTons) || 0;
+      const totalQty = parseFloat(order.totalQtyTons) || 0;
+      const finalFulfilled = initialFulfilled + newFulfillment;
+
       const payload = {
-        fulfilledQtyTons: parseFloat(formState.fulfilledQtyTons) || 0,
-        pendingQtyTons:
-          (parseFloat(formState.totalQtyTons) || 0) -
-          (parseFloat(formState.fulfilledQtyTons) || 0),
+        fulfilledQtyTons: finalFulfilled,
+        pendingQtyTons: Math.max(0, totalQty - finalFulfilled),
         status: formState.status,
       };
 
@@ -153,11 +160,12 @@ export default function EditOrders({
   };
 
   const remainingQty =
-    (parseFloat(formState.totalQtyTons) || 0) -
-    (parseFloat(formState.fulfilledQtyTons) || 0);
+    (parseFloat(order.totalQtyTons) || 0) -
+    (parseFloat(order.fulfilledQtyTons) || 0) -
+    (parseFloat(formState.newFulfilledQtyTons) || 0);
 
   const isFulfillmentEntered =
-    (parseFloat(formState.fulfilledQtyTons) || 0) > 0;
+    (parseFloat(formState.newFulfilledQtyTons) || 0) > 0;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -212,23 +220,26 @@ export default function EditOrders({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                  Total Quantity
+                  Pending Quantity
                 </label>
                 <input
                   type="text"
-                  value={formState.totalQtyTons ?? ""}
+                  value={(
+                    (parseFloat(order.totalQtyTons) || 0) -
+                    (parseFloat(order.fulfilledQtyTons) || 0)
+                  ).toFixed(2)}
                   disabled
                   className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-lg bg-gray-50 text-gray-700 font-bold cursor-not-allowed"
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-[#F87B1B] uppercase mb-1.5">
-                  Fulfilled Quantity
+                  Add Fulfill Qty
                 </label>
                 <input
                   type="number"
                   step="0.01"
-                  value={formState.fulfilledQtyTons ?? ""}
+                  value={formState.newFulfilledQtyTons ?? ""}
                   onChange={(e) => handleFulfilledChange(e.target.value)}
                   className="w-full px-4 py-2.5 border-2 border-[#F87B1B4D] rounded-lg focus:outline-none focus:border-[#F87B1B] bg-white text-gray-800 font-bold"
                   placeholder="Enter qty"
@@ -248,7 +259,7 @@ export default function EditOrders({
                     setFormState({
                       ...formState,
                       status: val,
-                      fulfilledQtyTons: "",
+                      newFulfilledQtyTons: "",
                     });
                   } else {
                     setFormState({ ...formState, status: val });
