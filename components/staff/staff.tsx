@@ -38,7 +38,7 @@ interface Staff {
   imagePath: string;
   status: string;
   role: string;
-  permissions?: string[];
+  address: string;
 }
 
 export default function StaffTable({
@@ -219,7 +219,7 @@ export default function StaffTable({
                 ASM ID
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                Permissions
+                address
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Documents
@@ -267,21 +267,7 @@ export default function StaffTable({
                     {member.id?.substring(0, 8) || "-"}
                   </TableCell>
                   <TableCell className="px-3 py-4">
-                    <div className="flex flex-wrap gap-1 max-w-[200px]">
-                      {member.permissions && member.permissions.length > 0 ? (
-                        member.permissions.map((p, i) => (
-                          <Badge
-                            key={i}
-                            variant="secondary"
-                            className="text-[10px] bg-blue-50 text-blue-600 border-blue-100 whitespace-nowrap"
-                          >
-                            {p}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-gray-400 text-xs">-</span>
-                      )}
-                    </div>
+                    {member.address || "-"}
                   </TableCell>
 
                   <TableCell className="px-3 py-2">

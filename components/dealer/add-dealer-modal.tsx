@@ -194,10 +194,10 @@ export default function AddDealerModal({
     }
 
     if (f.type === "application/pdf") {
-      if (f.size > 200 * 1024) {
+      if (f.size > 5 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: "max size 200kb only for pdf",
+          description: "Max size is 5MB for PDF",
           variant: "destructive",
         });
         e.target.value = ""; // Clear the input
@@ -222,7 +222,15 @@ export default function AddDealerModal({
   // Validate form data
   const validateStep = (stepNum: number): boolean => {
     if (stepNum === 1) {
-      return !!(formData.name && formData.phoneNumber && !isPhoneRegistered);
+      const cleanPhone = formData.phoneNumber
+        .replace(/^\+91/, "")
+        .replace(/\D/g, "");
+      return !!(
+        formData.name &&
+        cleanPhone.length === 10 &&
+        !isPhoneRegistered &&
+        !checkingPhone
+      );
     }
     if (stepNum === 2) {
       return true;
@@ -373,8 +381,13 @@ export default function AddDealerModal({
                     value={formData.phoneNumber}
                     onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="9405005285"
+                    maxLength={10}
                     className={`w-full border-2 transition ${
-                      isPhoneRegistered
+                      isPhoneRegistered ||
+                      (formData.phoneNumber.length > 0 &&
+                        formData.phoneNumber
+                          .replace(/^\+91/, "")
+                          .replace(/\D/g, "").length !== 10)
                         ? "!border-red-500"
                         : focusedField === "phoneNumber"
                           ? "!border-[#F87B1B]"
@@ -383,6 +396,13 @@ export default function AddDealerModal({
                     onFocus={() => setFocusedField("phoneNumber")}
                     onBlur={() => setFocusedField(null)}
                   />
+                  {formData.phoneNumber.length > 0 &&
+                    formData.phoneNumber.replace(/^\+91/, "").replace(/\D/g, "")
+                      .length !== 10 && (
+                      <p className="text-[10px] text-red-500 mt-1">
+                        Phone number must be exactly 10 digits.
+                      </p>
+                    )}
                   {checkingPhone && (
                     <p className="text-[10px] text-gray-400 mt-1">
                       Checking phone number...
@@ -536,10 +556,26 @@ export default function AddDealerModal({
                   </label>
                   <Input
                     type="file"
-                    accept=".pdf,image/*,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                      handleFileChange("logoBase64", e.target.files?.[0])
-                    }
+                    accept=".png,.jpg,.jpeg"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) {
+                        handleFileChange("logoBase64", undefined);
+                        return;
+                      }
+                      if (f.type === "application/pdf") {
+                        toast({
+                          title: "Invalid file",
+                          description:
+                            "PDF files are not allowed for Logo. Please upload an image (.jpg, .jpeg, .png).",
+                          variant: "destructive",
+                        });
+                        e.target.value = "";
+                        handleFileChange("logoBase64", undefined);
+                        return;
+                      }
+                      handleFileChange("logoBase64", f);
+                    }}
                     className={`w-full border-2 transition ${
                       focusedField === "logoBase64"
                         ? "border-[#F87B1B]"
@@ -569,10 +605,35 @@ export default function AddDealerModal({
                   </label>
                   <Input
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) =>
-                      handleFileChange("gstBase64", e.target.files?.[0])
-                    }
+                    accept=".pdf"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) {
+                        handleFileChange("gstBase64", undefined);
+                        return;
+                      }
+                      if (f.type !== "application/pdf") {
+                        toast({
+                          title: "Invalid file",
+                          description: "Only PDF files are allowed for GST",
+                          variant: "destructive",
+                        });
+                        e.target.value = "";
+                        handleFileChange("gstBase64", undefined);
+                        return;
+                      }
+                      if (f.size > 5 * 1024 * 1024) {
+                        toast({
+                          title: "File too large",
+                          description: "Max size is 5MB for PDF",
+                          variant: "destructive",
+                        });
+                        e.target.value = "";
+                        handleFileChange("gstBase64", undefined);
+                        return;
+                      }
+                      handleFileChange("gstBase64", f);
+                    }}
                     placeholder="Choose file"
                     className={`w-full border-2 transition ${
                       focusedField === "gstBase64"
@@ -646,7 +707,7 @@ export default function AddDealerModal({
                     onBlur={() => setFocusedField(null)}
                   />
                   <p className="text-[10px] text-gray-400 mt-1">
-                    Supported: PNG, JPG, PDF (Max 200KB for PDF)
+                    Supported: PNG, JPG, PDF (Max 5MB)
                   </p>
                   {formData.aadhaarBase64 && (
                     <p className="text-[10px] text-green-600 mt-1 font-semibold">

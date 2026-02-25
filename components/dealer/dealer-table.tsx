@@ -46,7 +46,7 @@ interface Dealer {
   aadhaarPath: string;
   status: string;
   role: string;
-  imagePath?: string;
+  logoUrl?: string;
   permissions?: string[];
 }
 
@@ -95,23 +95,18 @@ export default function DealerTable({
     }
 
     let isPdf =
-      url.toLowerCase().includes(".pdf") ||
-      path.toLowerCase().includes(".pdf") ||
-      path.startsWith("users/") ||
-      path.startsWith("dealers/");
+      url?.toLowerCase().includes(".pdf") ||
+      path?.toLowerCase().includes(".pdf");
 
-    // If it's not explicitly a PDF, sniff the first few bytes to check for PDF magic number
-    // This handles PDFs that are saved by the backend with a .jpg extension
-    if (!isPdf && url.startsWith("http")) {
+    // Check actual file content since backend sometimes saves images with .pdf extension
+    if (url.startsWith("http")) {
       try {
         const response = await fetch(url);
         const blob = await response.blob();
         const text = await blob.slice(0, 5).text();
-        if (text === "%PDF-") {
-          isPdf = true;
-        }
+        isPdf = text === "%PDF-";
       } catch (e) {
-        // Silently fail if CORS blocks the fetch, it's likely a standard image
+        // Silently fail if CORS blocks the fetch, fallback to extension
       }
     }
 
@@ -130,6 +125,76 @@ export default function DealerTable({
     setCurrentDocIndex(
       (prev) => (prev - 1 + selectedDocs.length) % selectedDocs.length,
     );
+  };
+
+  const handleAvatarClick = async (dealer: Dealer) => {
+    let logoUrlStr = dealer.logoUrl;
+    if (logoUrlStr && !logoUrlStr.startsWith("http")) {
+      try {
+        const storage = getFirebaseStorage();
+        logoUrlStr = await getDownloadURL(ref(storage, logoUrlStr));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const sniffIsPdf = async (
+      testUrl: string | undefined,
+    ): Promise<boolean> => {
+      if (!testUrl) return false;
+      let isPdfExt = testUrl.toLowerCase().includes(".pdf");
+      if (testUrl.startsWith("http")) {
+        try {
+          const response = await fetch(testUrl);
+          const blob = await response.blob();
+          const text = await blob.slice(0, 5).text();
+          return text === "%PDF-";
+        } catch {
+          return isPdfExt;
+        }
+      }
+      return isPdfExt;
+    };
+
+    const isLogoPdf = await sniffIsPdf(logoUrlStr);
+
+    if (logoUrlStr && isLogoPdf) {
+      window.open(logoUrlStr, "_blank");
+      return;
+    }
+
+    const sliderDocs: { url: string; label: string }[] = [];
+    if (logoUrlStr) {
+      sliderDocs.push({
+        url: logoUrlStr,
+        label: "Profile Image",
+      });
+    }
+
+    let aadhaarPdf = false;
+    let aadhaarUrlStr = dealer.aadhaarPath;
+    if (aadhaarUrlStr) {
+      if (!aadhaarUrlStr.startsWith("http")) {
+        try {
+          const storage = getFirebaseStorage();
+          aadhaarUrlStr = await getDownloadURL(ref(storage, aadhaarUrlStr));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      aadhaarPdf = await sniffIsPdf(aadhaarUrlStr);
+    }
+
+    if (aadhaarUrlStr && !aadhaarPdf) {
+      sliderDocs.push({
+        url: aadhaarUrlStr,
+        label: "Aadhaar",
+      });
+    }
+
+    if (sliderDocs.length > 0) {
+      openViewer(sliderDocs, 0);
+    }
   };
 
   const fetchDealers = async () => {
@@ -322,51 +387,35 @@ export default function DealerTable({
                   <TableCell className="px-3 py-2">
                     <div className="flex items-center gap-3">
                       {/* Thumbnail trigger */}
-                      <div
-                        className="relative cursor-pointer"
-                        onClick={() => {
-                          const isPdf = (url: string) =>
-                            url?.toLowerCase().includes(".pdf");
-                          const sliderDocs: { url: string; label: string }[] =
-                            [];
-
-                          // If main image is PDF, open in browser
-                          if (dealer.imagePath && isPdf(dealer.imagePath)) {
-                            window.open(dealer.imagePath, "_blank");
-                            return;
-                          }
-
-                          if (dealer.imagePath)
-                            sliderDocs.push({
-                              url: dealer.imagePath,
-                              label: "Profile Image",
-                            });
-
-                          // Only add non-PDF Aadhaar to slider
-                          if (
-                            dealer.aadhaarPath &&
-                            !isPdf(dealer.aadhaarPath)
-                          ) {
-                            sliderDocs.push({
-                              url: dealer.aadhaarPath,
-                              label: "Aadhaar",
-                            });
-                          }
-
-                          if (sliderDocs.length > 0) {
-                            openViewer(sliderDocs, 0);
-                          }
-                        }}
-                      >
-                        {dealer.imagePath ? (
-                          <img
-                            src={dealer.imagePath}
-                            alt="avatar"
-                            className="w-10 h-10 rounded-lg object-cover border border-gray-200 hover:border-orange-400 transition-colors shadow-sm"
-                          />
+                      <div className="relative">
+                        {dealer.logoUrl ? (
+                          dealer.logoUrl.toLowerCase().includes(".pdf") ? (
+                            <div
+                              onClick={() => handleAvatarClick(dealer)}
+                              className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-200 cursor-pointer hover:bg-orange-100"
+                              title="View PDF Logo"
+                            >
+                              <FileText className="w-5 h-5" />
+                            </div>
+                          ) : dealer.logoUrl.startsWith("http") ? (
+                            <img
+                              src={dealer.logoUrl}
+                              alt="avatar"
+                              className="w-10 h-10 rounded-lg object-cover border border-gray-200 hover:border-orange-400 transition-colors shadow-sm cursor-pointer"
+                              onClick={() => handleAvatarClick(dealer)}
+                            />
+                          ) : (
+                            <div
+                              onClick={() => handleAvatarClick(dealer)}
+                              className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-200 cursor-pointer hover:bg-blue-100"
+                              title="View Logo"
+                            >
+                              <Eye className="w-5 h-5" />
+                            </div>
+                          )
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-4 h-4 opacity-30" />
                           </div>
                         )}
                       </div>
@@ -411,7 +460,8 @@ export default function DealerTable({
                               </div>
                             ) : (
                               <span className="text-[10px] text-gray-500 font-medium cursor-pointer hover:text-orange-500 transition-colors">
-                                + Aadhaar Card
+                                <Eye className="w-3 h-3 inline mr-1" />
+                                Aadhaar
                               </span>
                             )}
                           </div>

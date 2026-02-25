@@ -74,6 +74,17 @@ export default function AddStaffModal({
   const [checkingPhone, setCheckingPhone] = React.useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
 
+  const currentRoleValue = React.useMemo(() => {
+    const selectedDesignation = designations.find(
+      (d) => String(d.id) === designationId,
+    );
+    return selectedDesignation
+      ? (selectedDesignation.staffCategoryName || "").toLowerCase()
+      : "";
+  }, [designations, designationId]);
+
+  const isAsm = currentRoleValue === "asm";
+
   const resetForm = () => {
     setStep(1);
     setStaffName("");
@@ -113,10 +124,10 @@ export default function AddStaffModal({
     }
 
     if (f.type === "application/pdf") {
-      if (f.size > 200 * 1024) {
+      if (f.size > 5 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: "max size 200kb only for pdf",
+          description: "Max size is 5MB for PDF",
           variant: "destructive",
         });
         e.target.value = ""; // Clear the input
@@ -188,23 +199,18 @@ export default function AddStaffModal({
       return;
     }
     const permissions: string[] = [];
-    if (orderManagement) permissions.push("order_management");
-    if (staffManagement) permissions.push("staff_management");
-    if (masterDataManagement) permissions.push("master_data_management");
-
-    const selectedDesignation = designations.find(
-      (d) => String(d.id) === designationId,
-    );
-    const roleValue = selectedDesignation
-      ? (selectedDesignation.staffCategoryName || "").toLowerCase()
-      : "";
+    if (!isAsm) {
+      if (orderManagement) permissions.push("order_management");
+      if (staffManagement) permissions.push("staff_management");
+      if (masterDataManagement) permissions.push("master_data_management");
+    }
 
     const payload = {
       email: email || null,
       phoneNumber: phone ? phone.replace(/^\+91/, "").replace(/\D/g, "") : null,
       name: staffName,
       permissions: permissions,
-      allotment_area: districtId,
+      // allotment_area: districtId,
       dob: dob ? new Date(dob).toISOString() : null,
       aadhaarBase64: aadhaarBase64 || "",
       imageBase64: imageBase64 || "",
@@ -212,7 +218,7 @@ export default function AddStaffModal({
       districtId: districtId ? String(districtId) : null,
       city: city,
       staffCategoryId: designationId,
-      role: roleValue,
+      role: currentRoleValue,
     };
 
     console.log("CREATE USER PAYLOAD", payload);
@@ -354,8 +360,12 @@ export default function AddStaffModal({
                       placeholder="9405005285"
                       value={phone}
                       onChange={(e) => handlePhoneChange(e.target.value)}
+                      maxLength={10}
                       className={`w-full border-2 transition ${
-                        isPhoneRegistered
+                        isPhoneRegistered ||
+                        (phone.length > 0 &&
+                          phone.replace(/^\+91/, "").replace(/\D/g, "")
+                            .length !== 10)
                           ? "!border-red-500"
                           : focusedField === "phone"
                             ? "!border-[#F87B1B]"
@@ -364,6 +374,13 @@ export default function AddStaffModal({
                       onFocus={() => setFocusedField("phone")}
                       onBlur={() => setFocusedField(null)}
                     />
+                    {phone.length > 0 &&
+                      phone.replace(/^\+91/, "").replace(/\D/g, "").length !==
+                        10 && (
+                        <p className="text-[10px] text-red-500 mt-1">
+                          Phone number must be exactly 10 digits.
+                        </p>
+                      )}
                     {isPhoneRegistered && (
                       <p className="text-[10px] text-red-500 mt-1">
                         phone number already register use differ
@@ -452,7 +469,7 @@ export default function AddStaffModal({
                       onBlur={() => setFocusedField(null)}
                     />
                   </div>
-                  <div>
+                  {/* <div>
                     <label
                       className={`text-xs font-semibold block mb-2 transition ${
                         focusedField === "allotmentArea"
@@ -472,7 +489,7 @@ export default function AddStaffModal({
                       placeholder="Select District"
                       searchPlaceholder="Search district..."
                     />
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -482,7 +499,8 @@ export default function AddStaffModal({
                   disabled={
                     !staffName ||
                     !phone ||
-                    !districtId ||
+                    phone.replace(/^\+91/, "").replace(/\D/g, "").length !==
+                      10 ||
                     isPhoneRegistered ||
                     checkingPhone
                   }
@@ -502,7 +520,7 @@ export default function AddStaffModal({
               </h3>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label
                       className={`text-xs font-semibold block mb-2 transition ${
@@ -536,7 +554,7 @@ export default function AddStaffModal({
                     </label>
                     <Input
                       type="file"
-                      accept=".pdf,image/png,image/jpeg,image/jpg"
+                      accept=".pdf,.png,.jpg,.jpeg"
                       onChange={handleAadhaarChange}
                       className={`w-full border-2 transition ${
                         focusedField === "aadhar"
@@ -547,7 +565,7 @@ export default function AddStaffModal({
                       onBlur={() => setFocusedField(null)}
                     />
                     <p className="text-[10px] text-gray-400 mt-1">
-                      Supported: PNG, JPG, PDF (Max 200KB for PDF)
+                      Supported: .PNG, .JPG, .JPEG, .PDF (Max 5MB)
                     </p>
                     {aadhaarBase64 && (
                       <p className="text-[10px] text-green-600 mt-1 font-semibold">
@@ -567,7 +585,7 @@ export default function AddStaffModal({
                     </label>
                     <Input
                       type="file"
-                      accept="image/png,image/jpeg,image/jpg"
+                      accept=".png,.jpg,.jpeg"
                       placeholder="Choose file"
                       onChange={handleImageChange}
                       className={`w-full border-2 transition ${
@@ -578,6 +596,9 @@ export default function AddStaffModal({
                       onFocus={() => setFocusedField("selfie")}
                       onBlur={() => setFocusedField(null)}
                     />
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      Supported: .PNG, .JPG, .JPEG
+                    </p>
                     {imageBase64 && (
                       <p className="text-[10px] text-green-600 mt-1 font-semibold">
                         ✓ Selfie Uploaded
@@ -590,18 +611,19 @@ export default function AddStaffModal({
                   <label className="text-sm font-semibold text-gray-700 block mb-4">
                     Permissions
                   </label>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-6">
                     <div className="flex items-center">
                       <input
                         type="checkbox"
                         id="orderManagement"
                         checked={orderManagement}
                         onChange={(e) => setOrderManagement(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-[#F87B1B] cursor-pointer"
+                        disabled={isAsm}
+                        className={`w-4 h-4 rounded border-gray-300 text-[#F87B1B] ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                       />
                       <label
                         htmlFor="orderManagement"
-                        className="ml-2 text-sm text-gray-700 cursor-pointer"
+                        className={`ml-2 text-sm text-gray-700 ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                       >
                         Order Management
                       </label>
@@ -612,11 +634,12 @@ export default function AddStaffModal({
                         id="staffManagement"
                         checked={staffManagement}
                         onChange={(e) => setStaffManagement(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-[#F87B1B] cursor-pointer"
+                        disabled={isAsm}
+                        className={`w-4 h-4 rounded border-gray-300 text-[#F87B1B] ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                       />
                       <label
                         htmlFor="staffManagement"
-                        className="ml-2 text-sm text-gray-700 cursor-pointer"
+                        className={`ml-2 text-sm text-gray-700 ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                       >
                         Staff Management
                       </label>
@@ -629,11 +652,12 @@ export default function AddStaffModal({
                         onChange={(e) =>
                           setMasterDataManagement(e.target.checked)
                         }
-                        className="w-4 h-4 rounded border-gray-300 text-[#F87B1B] cursor-pointer"
+                        disabled={isAsm}
+                        className={`w-4 h-4 rounded border-gray-300 text-[#F87B1B] ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                       />
                       <label
                         htmlFor="masterDataManagement"
-                        className="ml-2 text-sm text-gray-700 cursor-pointer"
+                        className={`ml-2 text-sm text-gray-700 ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                       >
                         Master Data Management
                       </label>
@@ -642,7 +666,7 @@ export default function AddStaffModal({
                 </div>
               </div>
 
-              <div className="flex justify-between pt-6">
+              <div className="flex justify-between ">
                 <Button
                   variant="outline"
                   className="border-orange-300 text-orange-600 hover:bg-orange-50 px-8"
