@@ -17,13 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  checkUserBeforeLogin,
-  getState,
-  getDistrict,
-  getCity,
-} from "@/services/masterData";
-import { createDealer } from "@/services/dealer";
+import { getState, getDistrict, getCity } from "@/services/masterData";
+import { updateDealer } from "@/services/dealer";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/hooks/use-toast";
@@ -52,41 +47,71 @@ interface FormState {
   asmName: string;
 }
 
-export default function AddDealerModal({
+export default function EditDealerModal({
   trigger,
   onSuccess,
+  dealer,
 }: {
   trigger: React.ReactNode;
   onSuccess?: () => void;
+  dealer: any;
 }) {
   const [open, setOpen] = React.useState(false);
   const [step, setStep] = React.useState(1);
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [isPhoneRegistered, setIsPhoneRegistered] = React.useState(false);
-  const [checkingPhone, setCheckingPhone] = React.useState(false);
   const [aadhaarFileType, setAadhaarFileType] = React.useState<
     "image" | "pdf" | null
-  >(null);
+  >(
+    dealer?.aadhaarPath?.includes(".pdf")
+      ? "pdf"
+      : dealer?.aadhaarPath
+        ? "image"
+        : null,
+  );
   const { toast } = useToast();
 
   const [formData, setFormData] = React.useState<FormState>({
-    name: "",
-    phoneNumber: "",
-    email: "",
-    password: "",
-    dob: "",
-    organizationName: "",
-    logoBase64: "",
-    gstBase64: "",
-    pancardBase64: "",
-    aadhaarBase64: "",
-    stateId: "",
-    districtId: "",
-    city: "",
-    asmId: "",
-    asmName: "",
+    name: dealer?.name || "",
+    phoneNumber: dealer?.phoneNumber || "",
+    email: dealer?.email || "",
+    password: dealer?.password || "",
+    dob: dealer?.dob || "",
+    organizationName: dealer?.organizationName || "",
+    logoBase64: dealer?.logoUrl || "",
+    gstBase64: dealer?.gstUrl || "",
+    pancardBase64: dealer?.pancardUrl || "",
+    aadhaarBase64: dealer?.aadhaarPath || "",
+    stateId: dealer?.stateId || "",
+    districtId: dealer?.districtId || "",
+    city: dealer?.city || "",
+    asmId: dealer?.asmId || "",
+    asmName: dealer?.asmName || "",
   });
+
+  // Re-initialize when modal opens
+  React.useEffect(() => {
+    if (open) {
+      setFormData({
+        name: dealer?.name || "",
+        phoneNumber: dealer?.phoneNumber || "",
+        email: dealer?.email || "",
+        password: dealer?.password || "",
+        dob: dealer?.dob || "",
+        organizationName: dealer?.organizationName || "",
+        logoBase64: dealer?.logoUrl || "",
+        gstBase64: dealer?.gstUrl || "",
+        pancardBase64: dealer?.pancardUrl || "",
+        aadhaarBase64: dealer?.aadhaarPath || "",
+        stateId: dealer?.stateId || "",
+        districtId: dealer?.districtId || "",
+        city: dealer?.city || "",
+        asmId: dealer?.asmId || "",
+        asmName: dealer?.asmName || "",
+      });
+      setStep(1);
+    }
+  }, [open, dealer]);
 
   // Location lists
   const [states, setStates] = React.useState<any[]>([]);
@@ -131,41 +156,8 @@ export default function AddDealerModal({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Handle phone number input with real-time validation
   const handlePhoneChange = async (val: string) => {
     handleInputChange("phoneNumber", val);
-
-    // Clean phone number: remove +91 prefix and non-digits
-    const cleanPhone = val.replace(/^\+91/, "").replace(/\D/g, "");
-
-    if (cleanPhone.length === 10) {
-      try {
-        setCheckingPhone(true);
-        setIsPhoneRegistered(false);
-        const payload = { phoneNumber: cleanPhone };
-        const res: any = await checkUserBeforeLogin(payload);
-
-        console.log("Phone validation response:", res);
-
-        // Check if user already exists (adjust based on actual response structure)
-        if (
-          res?.data?.data?.length > 0 ||
-          res?.data?.length > 0 ||
-          res?.length > 0
-        ) {
-          setIsPhoneRegistered(true);
-        } else {
-          setIsPhoneRegistered(false);
-        }
-      } catch (err) {
-        console.error("Phone check error:", err);
-        setIsPhoneRegistered(false);
-      } finally {
-        setCheckingPhone(false);
-      }
-    } else {
-      setIsPhoneRegistered(false);
-    }
   };
 
   // Convert file to base64
@@ -175,7 +167,9 @@ export default function AddDealerModal({
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
-      setFormData((prev) => ({ ...prev, [field]: base64String }));
+      // Remove data:image/png;base64, part to get just the base64 string
+      const base64Only = base64String.split(",")[1] || base64String;
+      setFormData((prev) => ({ ...prev, [field]: base64Only }));
       console.log(`${field} converted to base64`);
     };
     reader.readAsDataURL(file);
@@ -211,7 +205,8 @@ export default function AddDealerModal({
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
-      handleInputChange("aadhaarBase64", base64String);
+      const base64Only = base64String.split(",")[1] || base64String;
+      handleInputChange("aadhaarBase64", base64Only);
     };
     reader.readAsDataURL(f);
   };
@@ -222,12 +217,7 @@ export default function AddDealerModal({
       const cleanPhone = formData.phoneNumber
         .replace(/^\+91/, "")
         .replace(/\D/g, "");
-      return !!(
-        formData.name &&
-        cleanPhone.length === 10 &&
-        !isPhoneRegistered &&
-        !checkingPhone
-      );
+      return !!(formData.name && cleanPhone.length === 10);
     }
     if (stepNum === 2) {
       return true;
@@ -266,9 +256,8 @@ export default function AddDealerModal({
         asmName: formData.name,
       };
 
-      const response = await createDealer(payload);
-      console.log("Dealer created successfully:", response);
-      alert("Dealer created successfully!");
+      await updateDealer(dealer.id, payload);
+      alert("Dealer updated successfully!");
 
       // Reset form
       setFormData({
@@ -306,7 +295,7 @@ export default function AddDealerModal({
       <DialogContent className="max-w-3xl rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">
-            Add Dealer
+            Edit Dealer
           </DialogTitle>
         </DialogHeader>
 
@@ -364,53 +353,16 @@ export default function AddDealerModal({
                 </div>
                 <div>
                   <label
-                    className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "phoneNumber"
-                        ? "text-[#F87B1B]"
-                        : isPhoneRegistered
-                          ? "text-red-600"
-                          : "text-gray-700"
-                    }`}
+                    className={`text-xs font-semibold block mb-2 text-gray-700`}
                   >
                     Phone No. *
                   </label>
                   <Input
                     value={formData.phoneNumber}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    disabled
                     placeholder="9405005285"
-                    maxLength={10}
-                    className={`w-full border-2 transition ${
-                      isPhoneRegistered ||
-                      (formData.phoneNumber.length > 0 &&
-                        formData.phoneNumber
-                          .replace(/^\+91/, "")
-                          .replace(/\D/g, "").length !== 10)
-                        ? "!border-red-500"
-                        : focusedField === "phoneNumber"
-                          ? "!border-[#F87B1B]"
-                          : "!border-gray-300"
-                    }`}
-                    onFocus={() => setFocusedField("phoneNumber")}
-                    onBlur={() => setFocusedField(null)}
+                    className={`w-full border-2 bg-gray-50 text-gray-500 cursor-not-allowed`}
                   />
-                  {formData.phoneNumber.length > 0 &&
-                    formData.phoneNumber.replace(/^\+91/, "").replace(/\D/g, "")
-                      .length !== 10 && (
-                      <p className="text-[10px] text-red-500 mt-1">
-                        Phone number must be exactly 10 digits.
-                      </p>
-                    )}
-                  {checkingPhone && (
-                    <p className="text-[10px] text-gray-400 mt-1">
-                      Checking phone number...
-                    </p>
-                  )}
-                  {isPhoneRegistered && !checkingPhone && (
-                    <p className="text-[10px] text-red-500 mt-1">
-                      ⚠ Phone number already registered. Please use a different
-                      phone number.
-                    </p>
-                  )}
                 </div>
               </div>
 

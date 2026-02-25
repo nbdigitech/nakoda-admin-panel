@@ -21,8 +21,10 @@ import {
   X,
   FileText,
   User,
+  Trash2,
 } from "lucide-react";
-import { getUsers, changeUserStatus } from "@/services/user";
+import { changeUserStatus } from "@/services/user";
+import { getDealers, deleteDealer } from "@/services/dealer";
 import { ref, getDownloadURL } from "firebase/storage";
 import { getFirebaseStorage } from "@/firebase";
 import Link from "next/link";
@@ -33,6 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import EditDealerModal from "./edit-dealer-modal";
 
 interface Dealer {
   id: string;
@@ -200,7 +203,7 @@ export default function DealerTable({
 
   const fetchDealers = async () => {
     const applyFiltersAndSort = (rawData: any[]) => {
-      let dealersData = rawData.filter((u: any) => u.role === "dealer");
+      let dealersData = [...rawData];
 
       if (statusFilter !== "all") {
         dealersData = dealersData.filter(
@@ -239,32 +242,20 @@ export default function DealerTable({
           if (d.toDate) return d.toDate().getTime();
           return 0;
         };
-        return parseDate(b.createdAt) - parseDate(a.createdAt);
+        return parseDate(b.createdAt) - parseDate(a.createdAt); // newest first
       });
       return dealersData;
     };
 
     try {
-      // 1. Instantly pull from global generic 'allUsers' cache
-      const cachedUsers = sessionStorage.getItem("allUsers");
-      if (cachedUsers) {
-        setDealers(applyFiltersAndSort(JSON.parse(cachedUsers)));
-        setLoading(false); // Make it feel instant
-      } else {
-        setLoading(true); // Only visual loader if no cache exists
-      }
+      setLoading(true);
 
-      // 2. Background fetch latest
-      let payload: any = {};
-
-      const res = await getUsers(payload);
-      if (res?.data) {
-        // 3. Keep global cache up-to-date
-        sessionStorage.setItem("allUsers", JSON.stringify(res.data));
-        setDealers(applyFiltersAndSort(res.data));
+      const res = await getDealers();
+      if (res && res.length > 0) {
+        setDealers(applyFiltersAndSort(res));
         setCurrentPage(1);
       } else {
-        if (!cachedUsers) setDealers([]);
+        setDealers([]);
       }
     } catch (error) {
       console.error("Failed to fetch dealers:", error);
@@ -293,6 +284,21 @@ export default function DealerTable({
         fetchDealers();
       } catch (error) {
         console.error("Failed to update status:", error);
+      }
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (
+      confirm(
+        "Are you sure you want to delete this dealer? This action cannot be undone.",
+      )
+    ) {
+      try {
+        await deleteDealer(id);
+        fetchDealers();
+      } catch (error) {
+        console.error("Failed to delete dealer:", error);
       }
     }
   };
@@ -341,6 +347,9 @@ export default function DealerTable({
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Status
+              </TableHead>
+              <TableHead className="px-3 py-2 font-bold text-xs">
+                Action
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -497,6 +506,34 @@ export default function DealerTable({
                             ? "Inactive"
                             : "Pending"}
                       </span>
+                    </div>
+                  </TableCell>
+
+                  <TableCell className="px-3 py-4 text-md">
+                    <div className="flex items-center gap-2">
+                      <EditDealerModal
+                        dealer={dealer}
+                        onSuccess={fetchDealers}
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            className="flex items-center gap-2 text-[#F87B1B] px-3 py-2 rounded-lg font-semibold hover:bg-[#F87B1B1A]"
+                            style={{ backgroundColor: "#F87B1B1A" }}
+                          >
+                            <Edit className="w-4 h-4" />
+                            Edit
+                          </Button>
+                        }
+                      />
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleDelete(dealer.id)}
+                        className="flex items-center gap-2 text-red-600 px-3 py-2 rounded-lg font-semibold hover:bg-red-50"
+                        style={{ backgroundColor: "#fee2e2" }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
