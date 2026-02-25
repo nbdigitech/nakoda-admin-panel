@@ -12,7 +12,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, ChevronLeft, ChevronRight, X, FileText } from "lucide-react";
+import {
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  FileText,
+  User,
+} from "lucide-react";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -251,28 +258,7 @@ export default function StaffTable({
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-sm font-bold text-gray-900">
-                    {member.name}
-                  </TableCell>
-                  <TableCell className="px-3 py-4 text-md">
-                    {member.phoneNumber}
-                  </TableCell>
-
-                  <TableCell className="px-3 py-4 text-md">
-                    {member.districtId?.substring(0, 8) || "-"}
-                  </TableCell>
-                  <TableCell className="px-3 py-4 text-md">
-                    {member.email}
-                  </TableCell>
-                  <TableCell className="px-3 py-4 text-md">
-                    {member.id?.substring(0, 8) || "-"}
-                  </TableCell>
-                  <TableCell className="px-3 py-4">
-                    {member.address || "-"}
-                  </TableCell>
-
-                  <TableCell className="px-3 py-2">
                     <div className="flex items-center gap-3">
-                      {/* Thumbnail as main trigger */}
                       <div
                         className="relative cursor-pointer"
                         onClick={() => {
@@ -310,11 +296,32 @@ export default function StaffTable({
                           )
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
-                            <Eye className="w-4 h-4" />
+                            <User className="w-4 h-4 opacity-50" />
                           </div>
                         )}
                       </div>
+                      <span className="font-bold">{member.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-3 py-4 text-md">
+                    {member.phoneNumber}
+                  </TableCell>
 
+                  <TableCell className="px-3 py-4 text-md">
+                    {member.districtId?.substring(0, 8) || "-"}
+                  </TableCell>
+                  <TableCell className="px-3 py-4 text-md">
+                    {member.email}
+                  </TableCell>
+                  <TableCell className="px-3 py-4 text-md">
+                    {member.id?.substring(0, 8) || "-"}
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
+                    {member.address || "-"}
+                  </TableCell>
+
+                  <TableCell className="px-3 py-2">
+                    <div className="flex items-center gap-3">
                       {/* Other Documents */}
                       <div className="flex flex-col gap-1">
                         <div className="flex gap-1">

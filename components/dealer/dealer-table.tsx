@@ -20,6 +20,7 @@ import {
   ChevronRight,
   X,
   FileText,
+  User,
 } from "lucide-react";
 import { getUsers, changeUserStatus } from "@/services/user";
 import { ref, getDownloadURL } from "firebase/storage";
@@ -365,7 +366,41 @@ export default function DealerTable({
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
-                    {dealer.name}
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        {dealer.logoUrl ? (
+                          dealer.logoUrl.toLowerCase().includes(".pdf") ? (
+                            <div
+                              onClick={() => handleAvatarClick(dealer)}
+                              className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-200 cursor-pointer hover:bg-orange-100"
+                              title="View PDF Logo"
+                            >
+                              <FileText className="w-5 h-5" />
+                            </div>
+                          ) : dealer.logoUrl.startsWith("http") ? (
+                            <img
+                              src={dealer.logoUrl}
+                              alt="logo"
+                              className="w-10 h-10 rounded-lg object-cover border border-gray-200 hover:border-orange-400 transition-colors shadow-sm cursor-pointer"
+                              onClick={() => handleAvatarClick(dealer)}
+                            />
+                          ) : (
+                            <div
+                              onClick={() => handleAvatarClick(dealer)}
+                              className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-200 cursor-pointer hover:bg-blue-100"
+                              title="View Avatar"
+                            >
+                              <User className="w-5 h-5" />
+                            </div>
+                          )
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
+                            <User className="w-4 h-4 opacity-50" />
+                          </div>
+                        )}
+                      </div>
+                      <span className="font-bold">{dealer.name}</span>
+                    </div>
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
                     {dealer.phoneNumber}
@@ -386,40 +421,6 @@ export default function DealerTable({
                   {/* Documents Column */}
                   <TableCell className="px-3 py-2">
                     <div className="flex items-center gap-3">
-                      {/* Thumbnail trigger */}
-                      <div className="relative">
-                        {dealer.logoUrl ? (
-                          dealer.logoUrl.toLowerCase().includes(".pdf") ? (
-                            <div
-                              onClick={() => handleAvatarClick(dealer)}
-                              className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-200 cursor-pointer hover:bg-orange-100"
-                              title="View PDF Logo"
-                            >
-                              <FileText className="w-5 h-5" />
-                            </div>
-                          ) : dealer.logoUrl.startsWith("http") ? (
-                            <img
-                              src={dealer.logoUrl}
-                              alt="avatar"
-                              className="w-10 h-10 rounded-lg object-cover border border-gray-200 hover:border-orange-400 transition-colors shadow-sm cursor-pointer"
-                              onClick={() => handleAvatarClick(dealer)}
-                            />
-                          ) : (
-                            <div
-                              onClick={() => handleAvatarClick(dealer)}
-                              className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-200 cursor-pointer hover:bg-blue-100"
-                              title="View Logo"
-                            >
-                              <Eye className="w-5 h-5" />
-                            </div>
-                          )
-                        ) : (
-                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
-                            <Eye className="w-4 h-4 opacity-30" />
-                          </div>
-                        )}
-                      </div>
-
                       <div className="flex flex-col gap-1">
                         <div className="flex gap-1 justify-center">
                           {dealer.gstUrl && (

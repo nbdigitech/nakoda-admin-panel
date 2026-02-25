@@ -180,9 +180,26 @@ export default function AsmSurveyPage() {
   }, [tours, allSurveys]);
 
   const filteredTours = useMemo(() => {
-    return activeTab === "ACTIVE TOUR"
-      ? tours.filter((t: any) => t.status === true)
-      : tours;
+    const baseTours =
+      activeTab === "ACTIVE TOUR"
+        ? tours.filter((t: any) => t.status === true)
+        : [...tours];
+
+    return baseTours.sort((a: any, b: any) => {
+      const parseDate = (d: any) => {
+        if (!d) return 0;
+        if (d._seconds) return d._seconds * 1000;
+        if (typeof d === "string" || typeof d === "number")
+          return new Date(d).getTime();
+        if (d.toDate) return d.toDate().getTime();
+        return 0;
+      };
+
+      const timeA = parseDate(a.createdAt) || parseDate(a.startDate);
+      const timeB = parseDate(b.createdAt) || parseDate(b.startDate);
+
+      return timeB - timeA; // Descending: newest to oldest
+    });
   }, [activeTab, tours]);
 
   const surveyStats = useMemo(() => {
