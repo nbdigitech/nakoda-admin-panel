@@ -17,7 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getState, getDistrict, getCity } from "@/services/masterData";
+import {
+  getState,
+  getDistrict,
+  getCity,
+  getInfluencerCategory,
+} from "@/services/masterData";
+import { getUsers } from "@/services/user";
 import { updateSubDealer } from "@/services/sub-dealer";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { Combobox } from "@/components/ui/combobox";
@@ -30,7 +36,6 @@ interface FormState {
   name: string;
   phoneNumber: string;
   email: string;
-  password: string;
   dob: string;
 
   // Step 2 - Organization
@@ -38,14 +43,21 @@ interface FormState {
   logoBase64: string;
   gstBase64: string;
   pancardBase64: string;
-  aadhaar: string;
+  aadhaarBase64: string;
 
   // Step 3 - Address
   stateId: string;
   districtId: string;
   city: string;
+  address: string;
   asmId: string;
   asmName: string;
+
+  // New fields from table
+  categoryId: string;
+  categoryName: string;
+  distributorId: string;
+  distributorName: string;
 }
 
 export default function EditSubDealerModal({
@@ -63,22 +75,41 @@ export default function EditSubDealerModal({
   const [loading, setLoading] = React.useState(false);
   const { toast } = useToast();
 
+  const parseDOB = (dobValue: any) => {
+    if (!dobValue) return "";
+    try {
+      const date = dobValue?.toDate ? dobValue.toDate() : new Date(dobValue);
+      if (isNaN(date.getTime())) return "";
+      return date.toISOString().split("T")[0];
+    } catch (e) {
+      console.error("Error parsing DOB:", e);
+      return "";
+    }
+  };
+
+  const getUrl = (val: any) =>
+    typeof val === "string" && val.startsWith("http") ? val : "";
+
   const [formData, setFormData] = React.useState<FormState>({
     name: dealer?.name || "",
     phoneNumber: dealer?.phoneNumber || "",
     email: dealer?.email || "",
-    password: dealer?.password || "",
-    dob: dealer?.dob || "",
+    dob: parseDOB(dealer?.dob),
     organizationName: dealer?.organizationName || "",
-    logoBase64: dealer?.logoUrl || "",
-    gstBase64: dealer?.gstUrl || "",
-    pancardBase64: dealer?.pancardUrl || "",
-    aadhaar: dealer?.aadhaar || dealer?.aadhaarPath || "",
+    logoBase64: getUrl(dealer?.logoUrl),
+    gstBase64: getUrl(dealer?.gstUrl),
+    pancardBase64: getUrl(dealer?.pancardUrl),
+    aadhaarBase64: getUrl(dealer?.aadhaarPath) || getUrl(dealer?.aadhaar),
     stateId: dealer?.stateId || "",
     districtId: dealer?.districtId || "",
     city: dealer?.city || "",
+    address: dealer?.address || "",
     asmId: dealer?.asmId || "",
     asmName: dealer?.asmName || "",
+    categoryId: dealer?.categoryId || "",
+    categoryName: dealer?.categoryName || "",
+    distributorId: dealer?.distributorId || "",
+    distributorName: dealer?.distributorName || "",
   });
 
   // Re-initialize when modal opens
@@ -88,18 +119,22 @@ export default function EditSubDealerModal({
         name: dealer?.name || "",
         phoneNumber: dealer?.phoneNumber || "",
         email: dealer?.email || "",
-        password: dealer?.password || "",
-        dob: dealer?.dob || "",
+        dob: parseDOB(dealer?.dob),
         organizationName: dealer?.organizationName || "",
-        logoBase64: dealer?.logoUrl || "",
-        gstBase64: dealer?.gstUrl || "",
-        pancardBase64: dealer?.pancardUrl || "",
-        aadhaar: dealer?.aadhaar || dealer?.aadhaarPath || "",
+        logoBase64: getUrl(dealer?.logoUrl),
+        gstBase64: getUrl(dealer?.gstUrl),
+        pancardBase64: getUrl(dealer?.pancardUrl),
+        aadhaarBase64: getUrl(dealer?.aadhaarPath) || getUrl(dealer?.aadhaar),
         stateId: dealer?.stateId || "",
         districtId: dealer?.districtId || "",
         city: dealer?.city || "",
+        address: dealer?.address || "",
         asmId: dealer?.asmId || "",
         asmName: dealer?.asmName || "",
+        categoryId: dealer?.categoryId || "",
+        categoryName: dealer?.categoryName || "",
+        distributorId: dealer?.distributorId || "",
+        distributorName: dealer?.distributorName || "",
       });
       setStep(1);
     }
@@ -109,24 +144,40 @@ export default function EditSubDealerModal({
   const [states, setStates] = React.useState<any[]>([]);
   const [districts, setDistricts] = React.useState<any[]>([]);
   const [cities, setCities] = React.useState<any[]>([]);
+  const [categories, setCategories] = React.useState<any[]>([]);
+  const [distributors, setDistributors] = React.useState<any[]>([]);
 
-  // Firebase auth
-  const { user, authReady } = useFirebaseAuth();
-
-  // Load states on mount
+  // Load static auxiliary data on mount
   React.useEffect(() => {
-    const fetchStates = async () => {
+    const fetchData = async () => {
       try {
-        const res: any = await getState();
-        const data = res?.data?.data || res?.data || res || [];
-        setStates(Array.isArray(data) ? data : []);
+        const [stateRes, catRes, distRes]: any = await Promise.all([
+          getState(),
+          getInfluencerCategory(),
+          getUsers(),
+        ]);
+
+        const sData = stateRes?.data?.data || stateRes?.data || stateRes || [];
+        setStates(Array.isArray(sData) ? sData : []);
+
+        const cData = catRes?.data?.data || catRes?.data || catRes || [];
+        setCategories(Array.isArray(cData) ? cData : []);
+
+        const uData = distRes?.data?.data || distRes?.data || distRes || [];
+        const distList = Array.isArray(uData)
+          ? uData.filter((u: any) => u.role === "distributor")
+          : [];
+        setDistributors(distList);
       } catch (err) {
-        console.error("Failed to load states:", err);
+        console.error("Failed to load generic data:", err);
       }
     };
 
-    fetchStates();
+    fetchData();
   }, []);
+
+  // Firebase auth
+  const { user, authReady } = useFirebaseAuth();
 
   // Set ASM id/name from logged-in user when available
   React.useEffect(() => {
@@ -184,10 +235,10 @@ export default function EditSubDealerModal({
       return !!(formData.name && cleanPhone.length === 10);
     }
     if (stepNum === 2) {
-      return true;
+      return !!formData.categoryId;
     }
     if (stepNum === 3) {
-      return true;
+      return !!(formData.stateId && formData.districtId && formData.city);
     }
     return false;
   };
@@ -201,47 +252,38 @@ export default function EditSubDealerModal({
 
     try {
       setLoading(true);
-      console.log("Submitting dealer data:", formData);
+      console.log("Submitting sub-dealer data:", formData);
 
       const payload = {
         email: formData.email || null,
         phoneNumber: formData.phoneNumber,
         name: formData.name,
-        dob: formData.dob,
+        dob: (() => {
+          if (!formData.dob) return null;
+          const date = new Date(formData.dob);
+          return isNaN(date.getTime()) ? null : date.toISOString();
+        })(),
         organizationName: formData.organizationName,
         logoBase64: formData.logoBase64,
         gstBase64: formData.gstBase64,
         pancardBase64: formData.pancardBase64,
-        aadhaar: formData.aadhaar,
+        aadhaarBase64: formData.aadhaarBase64,
         stateId: formData.stateId,
         districtId: formData.districtId,
         city: formData.city,
+        address: formData.address,
         asmId: formData.asmId,
         asmName: formData.asmName,
+        categoryId: formData.categoryId,
+        categoryName: formData.categoryName,
+        distributorId: formData.distributorId,
+        distributorName: formData.distributorName,
       };
 
       await updateSubDealer(dealer.id, payload);
       alert("Sub-Dealer updated successfully!");
 
-      // Reset form
-      setFormData({
-        name: "",
-        phoneNumber: "",
-        email: "",
-        password: "",
-        dob: "",
-        organizationName: "",
-        logoBase64: "",
-        gstBase64: "",
-        pancardBase64: "",
-        aadhaar: "",
-        stateId: "",
-        districtId: "",
-        city: "",
-        asmId: formData.asmId,
-        asmName: formData.asmName,
-      });
-      setStep(1);
+      // Reset form and close
       setOpen(false);
       if (onSuccess) onSuccess();
     } catch (error) {
@@ -358,35 +400,6 @@ export default function EditSubDealerModal({
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "password"
-                        ? "text-[#F87B1B]"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    Password
-                  </label>
-                  <Input
-                    value={formData.password}
-                    onChange={(e) =>
-                      handleInputChange("password", e.target.value)
-                    }
-                    placeholder="••••••••"
-                    type="password"
-                    className={`w-full border-2 transition ${
-                      focusedField === "password"
-                        ? "!border-[#F87B1B]"
-                        : "!border-gray-300"
-                    }`}
-                    onFocus={() => setFocusedField("password")}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label
-                    className={`text-xs font-semibold block mb-2 transition ${
                       focusedField === "dob"
                         ? "text-[#F87B1B]"
                         : "text-gray-700"
@@ -431,6 +444,43 @@ export default function EditSubDealerModal({
             </h3>
 
             <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="text-xs font-semibold block mb-2 text-gray-700">
+                    Influencer Category *
+                  </label>
+                  <Combobox
+                    options={categories.map((c: any) => ({
+                      label: c.categoryName || c.name,
+                      value: String(c.id || c._id),
+                    }))}
+                    value={formData.categoryId}
+                    onValueChange={(val) => {
+                      const selected = categories.find(
+                        (c: any) => String(c.id || c._id) === val,
+                      );
+                      setFormData((prev) => ({
+                        ...prev,
+                        categoryId: val,
+                        categoryName:
+                          selected?.categoryName || selected?.name || "",
+                      }));
+                    }}
+                    placeholder="Select category"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold block mb-2 text-gray-700">
+                    Distributor Name
+                  </label>
+                  <Input
+                    value={formData.distributorName}
+                    disabled
+                    className="w-full border-2 bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label
@@ -536,17 +586,6 @@ export default function EditSubDealerModal({
                         setFormData((prev) => ({ ...prev, gstBase64: "" }));
                         return;
                       }
-                      if (f.size > 5 * 1024 * 1024) {
-                        toastifyToast.error(
-                          "GST file size exceeds 5MB limit. Please upload a smaller file.",
-                          {
-                            position: "bottom-right",
-                          },
-                        );
-                        e.target.value = "";
-                        setFormData((prev) => ({ ...prev, gstBase64: "" }));
-                        return;
-                      }
                       handleFileChange("gstBase64", f);
                     }}
                     placeholder="Choose file"
@@ -586,9 +625,7 @@ export default function EditSubDealerModal({
                       if (f.type === "application/pdf") {
                         toastifyToast.error(
                           "PDF files are not allowed for PAN Card. Please upload an image (.jpg, .jpeg, .png).",
-                          {
-                            position: "bottom-right",
-                          },
+                          { position: "bottom-right" },
                         );
                         e.target.value = "";
                         handleFileChange("pancardBase64", undefined);
@@ -605,12 +642,9 @@ export default function EditSubDealerModal({
                     onFocus={() => setFocusedField("pancardBase64")}
                     onBlur={() => setFocusedField(null)}
                   />
-                  <p className="text-[10px] text-gray-400 mt-1">
-                    Supported: PNG, JPG (Max 5MB)
-                  </p>
                   {formData.pancardBase64 && (
                     <p className="text-xs text-green-600 mt-1">
-                      ✓ PAN Card uploaded
+                      ✓ PAN uploaded
                     </p>
                   )}
                 </div>
@@ -625,7 +659,7 @@ export default function EditSubDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    Aadhaar Number
+                    Aadhaar Image
                   </label>
                   <Input
                     type="file"
@@ -633,21 +667,19 @@ export default function EditSubDealerModal({
                     onChange={(e) => {
                       const f = e.target.files?.[0];
                       if (!f) {
-                        setFormData((prev) => ({ ...prev, aadhaar: "" }));
+                        setFormData((prev) => ({ ...prev, aadhaarBase64: "" }));
                         return;
                       }
                       if (f.type === "application/pdf") {
                         toastifyToast.error(
-                          "PDF files are not allowed for Aadhaar. Please upload an image (.jpg, .jpeg, .png).",
-                          {
-                            position: "bottom-right",
-                          },
+                          "PDF files are not allowed for Aadhaar. Please upload an image.",
+                          { position: "bottom-right" },
                         );
                         e.target.value = "";
-                        setFormData((prev) => ({ ...prev, aadhaar: "" }));
+                        setFormData((prev) => ({ ...prev, aadhaarBase64: "" }));
                         return;
                       }
-                      handleFileChange("aadhaar", f);
+                      handleFileChange("aadhaarBase64", f);
                     }}
                     placeholder="Choose file"
                     className={`w-full border-2 transition ${
@@ -658,12 +690,9 @@ export default function EditSubDealerModal({
                     onFocus={() => setFocusedField("aadhaar")}
                     onBlur={() => setFocusedField(null)}
                   />
-                  <p className="text-[10px] text-gray-400 mt-1">
-                    Supported: PNG, JPG (Max 5MB)
-                  </p>
-                  {formData.aadhaar && (
+                  {formData.aadhaarBase64 && (
                     <p className="text-xs text-green-600 mt-1">
-                      ✓ Aadhaar image uploaded
+                      ✓ Aadhaar uploaded
                     </p>
                   )}
                 </div>
@@ -700,7 +729,7 @@ export default function EditSubDealerModal({
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    State
+                    State *
                   </label>
                   <Combobox
                     options={states.map((s) => ({
@@ -710,30 +739,22 @@ export default function EditSubDealerModal({
                     value={formData.stateId}
                     onValueChange={async (val) => {
                       handleInputChange("stateId", val);
-                      // reset downstream
                       handleInputChange("districtId", "");
                       handleInputChange("city", "");
                       setDistricts([]);
                       setCities([]);
                       if (val) {
-                        try {
-                          const res: any = await getDistrict({ stateId: val });
-                          const data =
-                            res?.data?.data || res?.data || res || [];
-                          setDistricts(Array.isArray(data) ? data : []);
-                        } catch (err) {
-                          console.error("Failed to load districts:", err);
-                        }
+                        const res: any = await getDistrict({ stateId: val });
+                        const data = res?.data?.data || res?.data || res || [];
+                        setDistricts(Array.isArray(data) ? data : []);
                       }
                     }}
                     placeholder="Select state"
-                    searchPlaceholder="Search state..."
                   />
                 </div>
-
                 <div>
                   <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    District
+                    District *
                   </label>
                   <Combobox
                     options={districts.map((d) => ({
@@ -746,66 +767,40 @@ export default function EditSubDealerModal({
                       handleInputChange("city", "");
                       setCities([]);
                       if (val) {
-                        try {
-                          const res: any = await getCity({ districtId: val });
-                          const data =
-                            res?.data?.data || res?.data || res || [];
-                          setCities(Array.isArray(data) ? data : []);
-                        } catch (err) {
-                          console.error("Failed to load cities:", err);
-                        }
+                        const res: any = await getCity({ districtId: val });
+                        const data = res?.data?.data || res?.data || res || [];
+                        setCities(Array.isArray(data) ? data : []);
                       }
                     }}
                     disabled={!formData.stateId}
-                    placeholder={
-                      districts.length
-                        ? "Select district"
-                        : "Select state first"
-                    }
-                    searchPlaceholder="Search district..."
+                    placeholder="Select district"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label
-                    className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "city"
-                        ? "text-[#F87B1B]"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    City
+                  <label className="text-xs font-semibold block mb-2 text-gray-700">
+                    City *
                   </label>
                   <Input
                     value={formData.city}
                     onChange={(e) => handleInputChange("city", e.target.value)}
                     placeholder="Enter city"
-                    className={`w-full border-2 transition ${
-                      focusedField === "city"
-                        ? "border-[#F87B1B]"
-                        : "border-gray-300"
-                    }`}
-                    onFocus={() => setFocusedField("city")}
-                    onBlur={() => setFocusedField(null)}
+                    className="w-full border-2 border-gray-300"
                   />
                 </div>
                 <div>
-                  <label
-                    className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "asmId"
-                        ? "text-[#F87B1B]"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    ASM ID (Current User)
+                  <label className="text-xs font-semibold block mb-2 text-gray-700">
+                    Full Address
                   </label>
                   <Input
-                    value={formData.asmName}
-                    disabled
-                    placeholder="ASM Name"
-                    className="w-full border-2 bg-gray-50 text-gray-700"
+                    value={formData.address}
+                    onChange={(e) =>
+                      handleInputChange("address", e.target.value)
+                    }
+                    placeholder="Enter full address"
+                    className="w-full border-2 border-gray-300"
                   />
                 </div>
               </div>

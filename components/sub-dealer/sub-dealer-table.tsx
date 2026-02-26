@@ -247,9 +247,9 @@ export default function SubDealerTable({
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Status
               </TableHead>
-              {/* <TableHead className="px-3 py-2 font-bold text-xs">
+              <TableHead className="px-3 py-2 font-bold text-xs">
                 Action
-              </TableHead> */}
+              </TableHead>
             </TableRow>
           </TableHeader>
 
@@ -429,7 +429,7 @@ export default function SubDealerTable({
                     </div>
                   </TableCell>
 
-                  {/* <TableCell className="px-3 py-4 text-md">
+                  <TableCell className="px-3 py-4 text-md">
                     <div className="flex items-center gap-2">
                       <EditSubDealerModal
                         dealer={dealer}
@@ -445,17 +445,8 @@ export default function SubDealerTable({
                           </Button>
                         }
                       />
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleDelete(dealer.id)}
-                        className="flex items-center gap-2 text-red-600 px-3 py-2 rounded-lg font-semibold hover:bg-red-50"
-                        style={{ backgroundColor: "#fee2e2" }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
-                      </Button>
                     </div>
-                  </TableCell> */}
+                  </TableCell>
                 </TableRow>
               ))
             )}

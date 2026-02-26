@@ -14,6 +14,8 @@ import { getFirestoreDB, getFirebaseStorage } from "@/firebase";
 const uploadFileToStorage = async (dataUrl: string, path: string) => {
   if (!dataUrl) return null;
   if (dataUrl.startsWith("http")) return dataUrl; // Already a URL
+  if (!dataUrl.startsWith("data:")) return null; // Not a base64 data URL
+
   try {
     const storage = getFirebaseStorage();
     const storageRef = ref(storage, path);
@@ -47,32 +49,46 @@ export const updateSubDealer = async (
   const phone = subDealerData.phoneNumber || subDealerId;
   const updates: any = {};
 
-  if (subDealerData.logoBase64 && !subDealerData.logoBase64.startsWith("http"))
-    updates.logoUrl = await uploadFileToStorage(
+  if (
+    subDealerData.logoBase64 &&
+    !subDealerData.logoBase64.startsWith("http")
+  ) {
+    const url = await uploadFileToStorage(
       subDealerData.logoBase64,
       `sub-dealers/${phone}/logo-${Date.now()}`,
     );
-  if (subDealerData.gstBase64 && !subDealerData.gstBase64.startsWith("http"))
-    updates.gstUrl = await uploadFileToStorage(
+    if (url) updates.logoUrl = url;
+  }
+
+  if (subDealerData.gstBase64 && !subDealerData.gstBase64.startsWith("http")) {
+    const url = await uploadFileToStorage(
       subDealerData.gstBase64,
       `sub-dealers/${phone}/gst-${Date.now()}.pdf`,
     );
+    if (url) updates.gstUrl = url;
+  }
+
   if (
     subDealerData.pancardBase64 &&
     !subDealerData.pancardBase64.startsWith("http")
-  )
-    updates.pancardUrl = await uploadFileToStorage(
+  ) {
+    const url = await uploadFileToStorage(
       subDealerData.pancardBase64,
       `sub-dealers/${phone}/pancard-${Date.now()}`,
     );
+    if (url) updates.pancardUrl = url;
+  }
+
   if (
     subDealerData.aadhaarBase64 &&
     !subDealerData.aadhaarBase64.startsWith("http")
-  )
-    updates.aadhaarPath = await uploadFileToStorage(
+  ) {
+    const url = await uploadFileToStorage(
       subDealerData.aadhaarBase64,
       `sub-dealers/${phone}/aadhaar-${Date.now()}`,
     );
+    if (url) updates.aadhaarPath = url;
+  }
 
   const payload = {
     ...subDealerData,
@@ -83,7 +99,6 @@ export const updateSubDealer = async (
   delete payload.gstBase64;
   delete payload.pancardBase64;
   delete payload.aadhaarBase64;
-
   const subDealerRef = doc(db, "users", subDealerId);
   await updateDoc(subDealerRef, payload);
 };
