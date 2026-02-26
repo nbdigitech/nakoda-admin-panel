@@ -79,26 +79,30 @@ export default function EditOrders({
 
   const handleFulfilledChange = (val: string) => {
     let numVal = parseFloat(val) || 0;
-    const initialPending =
-      (parseFloat(order.totalQtyTons) || 0) -
-      (parseFloat(order.fulfilledQtyTons) || 0);
+    const initialFilled = parseFloat(order.fulfilledQtyTons) || 0;
+    const totalQty = parseFloat(order.totalQtyTons) || 0;
+    const currentPending = Math.max(0, totalQty - initialFilled);
 
-    if (numVal > initialPending) {
-      numVal = initialPending;
-      val = initialPending.toString();
+    // validation and capping
+    if (numVal > currentPending) {
+      numVal = currentPending;
+      val = currentPending.toString();
     }
 
-    const totalFulfilledNow =
-      (parseFloat(order.fulfilledQtyTons) || 0) + numVal;
-    const totalQty = parseFloat(order.totalQtyTons) || 0;
+    const totalFulfilledNow = initialFilled + numVal;
 
     let newStatus = formState.status;
-    if (totalFulfilledNow > 0 && totalFulfilledNow < totalQty) {
-      newStatus = "inprogress";
-    } else if (totalFulfilledNow > 0 && totalFulfilledNow >= totalQty) {
-      newStatus = "approved";
-    } else if (totalFulfilledNow === 0) {
-      newStatus = order.status === "rejected" ? "rejected" : "pending";
+
+    // "chang status to in progress when user put vlaue not eqal then total"
+    // "and when its eqal then total qty then show status was proccesing"
+    if (numVal > 0) {
+      if (Math.abs(totalFulfilledNow - totalQty) < 0.01) {
+        newStatus = "processing";
+      } else {
+        newStatus = "inprogress";
+      }
+    } else {
+      newStatus = order.status;
     }
 
     setFormState({
@@ -220,21 +224,18 @@ export default function EditOrders({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
-                  Pending Quantity
+                  Total Quantity
                 </label>
                 <input
                   type="text"
-                  value={(
-                    (parseFloat(order.totalQtyTons) || 0) -
-                    (parseFloat(order.fulfilledQtyTons) || 0)
-                  ).toFixed(2)}
+                  value={parseFloat(order.totalQtyTons || 0).toFixed(2)}
                   disabled
                   className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-lg bg-gray-50 text-gray-700 font-bold cursor-not-allowed"
                 />
               </div>
               <div>
                 <label className="block text-xs font-bold text-[#F87B1B] uppercase mb-1.5">
-                  Add Fulfill Qty
+                  Fulfillment Qty
                 </label>
                 <input
                   type="number"
@@ -242,9 +243,21 @@ export default function EditOrders({
                   value={formState.newFulfilledQtyTons ?? ""}
                   onChange={(e) => handleFulfilledChange(e.target.value)}
                   className="w-full px-4 py-2.5 border-2 border-[#F87B1B4D] rounded-lg focus:outline-none focus:border-[#F87B1B] bg-white text-gray-800 font-bold"
-                  placeholder="Enter qty"
+                  placeholder="Enter fulfillment qty"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
+                Remaining Quantity
+              </label>
+              <input
+                type="text"
+                value={remainingQty.toFixed(2)}
+                disabled
+                className="w-full px-4 py-2.5 border-2 border-gray-100 rounded-lg bg-gray-50 text-gray-700 font-bold cursor-not-allowed"
+              />
             </div>
 
             <div>
@@ -253,6 +266,7 @@ export default function EditOrders({
               </label>
               <select
                 value={formState.status}
+                disabled={formState.status !== "pending"}
                 onChange={(e) => {
                   const val = e.target.value;
                   if (val === "rejected" || val === "pending") {
@@ -265,15 +279,12 @@ export default function EditOrders({
                     setFormState({ ...formState, status: val });
                   }
                 }}
-                className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#F87B1B] cursor-pointer bg-white text-[#F87B1B] font-bold transition-colors"
+                className={`w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#F87B1B] bg-white text-[#F87B1B] font-bold transition-colors ${formState.status !== "pending" ? "cursor-not-allowed bg-gray-50 opacity-70" : "cursor-pointer"}`}
               >
                 <option value="pending">PENDING</option>
                 <option value="inprogress">IN PROGRESS</option>
-                {formState.status === "approved" && (
-                  <option value="approved" disabled>
-                    APPROVED
-                  </option>
-                )}
+                <option value="processing">PROCESSING</option>
+                <option value="approved">COMPLETED</option>
                 <option value="rejected">REJECTED</option>
               </select>
             </div>

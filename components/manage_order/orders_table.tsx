@@ -11,8 +11,11 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit } from "lucide-react";
+import { Edit, Loader2 } from "lucide-react";
 import EditOrders from "./edit-order";
+import { useRouter } from "next/navigation";
+import { updateOrder } from "@/services/orders";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Order {
   id: string;
@@ -40,6 +43,7 @@ const statusStyles: Record<string, string> = {
   approved: "bg-green-100 text-green-700",
   rejected: "bg-red-100 text-red-700",
   inprogress: "bg-blue-100 text-blue-700",
+  processing: "bg-purple-100 text-purple-700",
 };
 
 export default function OrdersTable({
@@ -49,6 +53,9 @@ export default function OrdersTable({
 }: OrdersTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const router = useRouter();
+  const { toast } = useToast();
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -69,6 +76,35 @@ export default function OrdersTable({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
+
+  const handleProcessingClick = async (order: Order) => {
+    try {
+      setUpdatingId(order.id);
+      const collectionName =
+        orderSource === "dealer" ? "distributor_orders" : "influencer_orders";
+
+      await updateOrder(collectionName, order.id, {
+        status: "approved",
+      });
+
+      toast({
+        title: "Order Completed",
+        description: "The order has been moved to history.",
+      });
+
+      if (onUpdate) onUpdate();
+      router.push("/order-history");
+    } catch (error) {
+      console.error("Error completing order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to complete the order.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -150,18 +186,33 @@ export default function OrdersTable({
 
                 {/* Status */}
                 <TableCell className="px-4 py-4">
-                  <Badge
-                    className={`text-[10px] font-bold uppercase ${statusStyles[(order.status || "").toLowerCase()] || "bg-gray-100 text-gray-700"}`}
-                  >
-                    {order.status || "Pending"}
-                  </Badge>
+                  {(order.status || "").toLowerCase() === "processing" ? (
+                    <Button
+                      size="sm"
+                      onClick={() => handleProcessingClick(order)}
+                      disabled={updatingId === order.id}
+                      className="text-[10px] font-bold uppercase bg-purple-100 text-purple-700 hover:bg-purple-200 border-none h-7 px-3"
+                    >
+                      {updatingId === order.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                      ) : null}
+                      {order.status || "Processing"}
+                    </Button>
+                  ) : (
+                    <Badge
+                      className={`text-[10px] font-bold uppercase ${statusStyles[(order.status || "").toLowerCase()] || "bg-gray-100 text-gray-700"}`}
+                    >
+                      {order.status || "Pending"}
+                    </Badge>
+                  )}
                 </TableCell>
 
                 {/* Action */}
                 <TableCell className="px-4 py-4">
-                  {["approved", "rejected"].includes(
-                    (order.status || "").toLowerCase(),
-                  ) ? (
+                  {(order.status || "").toLowerCase() ===
+                  "processing" ? null : ["approved", "rejected"].includes(
+                      (order.status || "").toLowerCase(),
+                    ) ? (
                     <Button
                       variant="ghost"
                       disabled
