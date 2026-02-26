@@ -7,12 +7,12 @@ export type CallableResponse<T> = {
 
 const callFunction = async <T>(
   name: string,
-  payload?: unknown
+  payload?: unknown,
 ): Promise<CallableResponse<T>> => {
   const auth = getFirebaseAuth();
 
   if (auth?.currentUser) {
-    await auth.currentUser.getIdToken(true);
+    await auth.currentUser.getIdToken();
   }
 
   const fn = httpsCallable(getFirebaseFunctions(), name);

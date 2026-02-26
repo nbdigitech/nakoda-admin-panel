@@ -8,7 +8,7 @@ import SubDealerTable from "@/components/sub-dealer/sub-dealer-table";
 export default function DealerPage() {
   const [activeTab, setActiveTab] = useState("Today");
   const [openModal, setOpenModal] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("active");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   return (
@@ -53,17 +53,41 @@ export default function DealerPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full lg:w-[300px] py-3 px-4 mr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F87B1B]"
             />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-[180px] py-3 px-3 mr-4 border text-[#F87B1B] rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-[#F87B1B]"
-              style={{ backgroundColor: "#F87B1B1A" }}
-            >
-              <option value="all">All</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
           </div>
+        </div>
+
+        {/* Status Filter Buttons */}
+        <div className="flex flex-wrap gap-3 mb-2">
+          <button
+            onClick={() => setStatusFilter("all")}
+            className={`px-8 py-2.5 rounded-full font-bold transition-all duration-200 border-2 ${
+              statusFilter === "all"
+                ? "bg-[#F87B1B] text-white border-[#F87B1B] shadow-md transform scale-105"
+                : "bg-white text-gray-500 border-gray-200 hover:border-[#F87B1B] hover:text-[#F87B1B]"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setStatusFilter("active")}
+            className={`px-8 py-2.5 rounded-full font-bold transition-all duration-200 border-2 ${
+              statusFilter === "active"
+                ? "bg-[#F87B1B] text-white border-[#F87B1B] shadow-md transform scale-105"
+                : "bg-white text-gray-500 border-gray-200 hover:border-[#F87B1B] hover:text-[#F87B1B]"
+            }`}
+          >
+            Active
+          </button>
+          <button
+            onClick={() => setStatusFilter("inactive")}
+            className={`px-8 py-2.5 rounded-full font-bold transition-all duration-200 border-2 ${
+              statusFilter === "inactive"
+                ? "bg-[#F87B1B] text-white border-[#F87B1B] shadow-md transform scale-105"
+                : "bg-white text-gray-500 border-gray-200 hover:border-[#F87B1B] hover:text-[#F87B1B]"
+            }`}
+          >
+            Inactive
+          </button>
         </div>
 
         {/* Table */}

@@ -148,8 +148,10 @@ export default function EditSubDealerModal({
   const [distributors, setDistributors] = React.useState<any[]>([]);
   const [asms, setAsms] = React.useState<any[]>([]);
 
-  // Load static auxiliary data on mount
+  // Load static auxiliary data when modal opens
   React.useEffect(() => {
+    if (!open) return;
+
     const fetchData = async () => {
       try {
         const [stateRes, catRes, distRes]: any = await Promise.all([
@@ -179,7 +181,7 @@ export default function EditSubDealerModal({
     };
 
     fetchData();
-  }, []);
+  }, [open]);
 
   // Fetch districts when stateId changes (e.g. on modal open or manual selection)
   React.useEffect(() => {

@@ -125,8 +125,10 @@ export default function EditDealerModal({
   // Firebase auth
   const { user, userData, authReady } = useFirebaseAuth();
 
-  // Load states on mount
+  // Load states and ASMs when modal opens
   React.useEffect(() => {
+    if (!open) return;
+
     const fetchStates = async () => {
       try {
         const res: any = await getState();
@@ -151,7 +153,7 @@ export default function EditDealerModal({
 
     fetchStates();
     fetchAsms();
-  }, []);
+  }, [open]);
 
   // Set ASM id/name from logged-in user when available (if not already set)
   React.useEffect(() => {

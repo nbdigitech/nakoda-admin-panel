@@ -225,7 +225,7 @@ export default function EditStaffModal({
   };
 
   React.useEffect(() => {
-    if (!authReady || !user) return;
+    if (!open || !authReady || !user) return;
     const loadData = async () => {
       try {
         const [stateRes, districtRes, designationRes] = await Promise.all([
@@ -241,7 +241,7 @@ export default function EditStaffModal({
       }
     };
     loadData();
-  }, [authReady, user]);
+  }, [open, authReady, user]);
 
   const filteredDistricts = districts.filter(
     (d) => String(d.stateId) === String(stateId),

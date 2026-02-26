@@ -263,7 +263,7 @@ export default function AddStaffModal({
   };
 
   React.useEffect(() => {
-    if (!authReady || !user) return;
+    if (!open || !authReady || !user) return;
 
     let mounted = true;
     const loadData = async () => {
@@ -289,7 +289,7 @@ export default function AddStaffModal({
     return () => {
       mounted = false;
     };
-  }, [authReady, user]);
+  }, [open, authReady, user]);
 
   const filteredDistricts = districts.filter(
     (d) => String(d.stateId) === String(stateId),
