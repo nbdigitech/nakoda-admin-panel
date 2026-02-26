@@ -106,8 +106,8 @@ export default function EditOrders({
       setLoadingFulfillments(true);
       const data: any =
         orderSource === "sub-dealer"
-          ? await getInfluencerOrderFulfillments(order.id)
-          : await getDistributorOrderFulfillments(order.id);
+          ? await getInfluencerOrderFulfillments()
+          : await getDistributorOrderFulfillments();
       setFulfillments(data);
     } catch (error) {
       console.error("Error loading fulfillments:", error);
@@ -172,8 +172,8 @@ export default function EditOrders({
       if (newFulfillment > 0) {
         const fulfillmentCollection =
           orderSource === "dealer"
-            ? "distributor_order_fulfillments"
-            : "influencer_order_fulfillments";
+            ? "distributor_orders_fulfillments"
+            : "influencer_orders_fulfillments";
 
         const orderIdKey =
           orderSource === "dealer" ? "distributorOrderId" : "influencerOrderId";

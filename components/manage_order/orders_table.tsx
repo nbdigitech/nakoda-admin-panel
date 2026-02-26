@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Loader2 } from "lucide-react";
+import { Edit, Loader2, Eye } from "lucide-react";
 import EditOrders from "./edit-order";
+import ViewFulfillment from "./view-fulfillment";
 import { useRouter } from "next/navigation";
 import { updateOrder } from "@/services/orders";
 import { useToast } from "@/hooks/use-toast";
@@ -209,36 +210,45 @@ export default function OrdersTable({
 
                 {/* Action */}
                 <TableCell className="px-4 py-4">
-                  {(order.status || "").toLowerCase() ===
-                  "processing" ? null : ["approved", "rejected"].includes(
-                      (order.status || "").toLowerCase(),
-                    ) ? (
-                    <Button
-                      variant="ghost"
-                      disabled
-                      className="flex items-center gap-2 text-gray-400 px-3 py-2 rounded-lg font-semibold cursor-not-allowed"
-                      style={{ backgroundColor: "#F3F4F6" }}
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit Order
-                    </Button>
-                  ) : (
-                    <EditOrders
-                      order={order}
+                  <div className="flex items-center gap-2">
+                    <ViewFulfillment
+                      orderId={order.id}
+                      displayId={order.orderId}
+                      distributorId={order.distributorId}
                       orderSource={orderSource}
-                      onUpdate={onUpdate}
-                      trigger={
-                        <Button
-                          variant="ghost"
-                          className="flex items-center gap-2 text-[#F87B1B] px-3 py-2 rounded-lg font-semibold hover:bg-[#F87B1B1A]"
-                          style={{ backgroundColor: "#F87B1B1A" }}
-                        >
-                          <Edit className="w-4 h-4" />
-                          Edit Order
-                        </Button>
-                      }
                     />
-                  )}
+
+                    {(order.status || "").toLowerCase() ===
+                    "processing" ? null : ["approved", "rejected"].includes(
+                        (order.status || "").toLowerCase(),
+                      ) ? (
+                      <Button
+                        variant="ghost"
+                        disabled
+                        className="flex items-center gap-2 text-gray-400 px-3 py-2 rounded-lg font-semibold cursor-not-allowed"
+                        style={{ backgroundColor: "#F3F4F6" }}
+                      >
+                        <Edit className="w-4 h-4" />
+                        Edit Order
+                      </Button>
+                    ) : (
+                      <EditOrders
+                        order={order}
+                        orderSource={orderSource}
+                        onUpdate={onUpdate}
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            className="flex items-center gap-2 text-[#F87B1B] px-3 py-2 rounded-lg font-semibold hover:bg-[#F87B1B1A]"
+                            style={{ backgroundColor: "#F87B1B1A" }}
+                          >
+                            <Edit className="w-4 h-4" />
+                            Edit Order
+                          </Button>
+                        }
+                      />
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

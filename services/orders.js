@@ -19,16 +19,11 @@ export const getInfluencerOrders = async () => {
     }
 };
 
-export const getInfluencerOrderFulfillments = async (influencerOrderId) => {
+export const getInfluencerOrderFulfillments = async () => {
     try {
         const db = getFirestoreDB();
-        const fulfillmentsRef = collection(db, "influencer_order_fulfillments");
-        const q = query(
-            fulfillmentsRef, 
-            where("influencerOrderId", "==", influencerOrderId),
-            orderBy("createdAt", "desc")
-        );
-        const querySnapshot = await getDocs(q);
+        const fulfillmentsRef = collection(db, "influencer_orders_fulfillments");
+        const querySnapshot = await getDocs(fulfillmentsRef);
         
         return querySnapshot.docs.map(doc => ({
             id: doc.id,
@@ -43,13 +38,9 @@ export const getInfluencerOrderFulfillments = async (influencerOrderId) => {
 export const getDistributorOrderFulfillments = async (distributorOrderId) => {
     try {
         const db = getFirestoreDB();
-        const fulfillmentsRef = collection(db, "distributor_order_fulfillments");
-        const q = query(
-            fulfillmentsRef, 
-            where("distributorOrderId", "==", distributorOrderId),
-            orderBy("createdAt", "desc")
-        );
-        const querySnapshot = await getDocs(q);
+        const fulfillmentsRef = collection(db, "distributor_orders_fulfillments");
+        // Fetch all and filter client-side to handle the complex OR condition requested
+        const querySnapshot = await getDocs(fulfillmentsRef);
         
         return querySnapshot.docs.map(doc => ({
             id: doc.id,
