@@ -304,20 +304,20 @@ export default function DealerTable({
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (
-      confirm(
-        "Are you sure you want to delete this dealer? This action cannot be undone.",
-      )
-    ) {
-      try {
-        await deleteDealer(id);
-        fetchDealers();
-      } catch (error) {
-        console.error("Failed to delete dealer:", error);
-      }
-    }
-  };
+  // const handleDelete = async (id: string) => {
+  //   if (
+  //     confirm(
+  //       "Are you sure you want to delete this dealer? This action cannot be undone.",
+  //     )
+  //   ) {
+  //     try {
+  //       await deleteDealer(id);
+  //       fetchDealers();
+  //     } catch (error) {
+  //       console.error("Failed to delete dealer:", error);
+  //     }
+  //   }
+  // };
 
   const filteredDealers = dealers.filter((dealer) =>
     dealer.name.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -552,7 +552,7 @@ export default function DealerTable({
                           </Button>
                         }
                       />
-                      <Button
+                      {/* <Button
                         variant="ghost"
                         onClick={() => handleDelete(dealer.id)}
                         className="flex items-center gap-2 text-red-600 px-3 py-2 rounded-lg font-semibold hover:bg-red-50"
@@ -560,7 +560,7 @@ export default function DealerTable({
                       >
                         <Trash2 className="w-4 h-4" />
                         Delete
-                      </Button>
+                      </Button> */}
                     </div>
                   </TableCell>
                 </TableRow>

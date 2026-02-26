@@ -23,8 +23,9 @@ import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Combobox } from "@/components/ui/combobox";
 import { Loader2 } from "lucide-react";
-import { doc, updateDoc } from "firebase/firestore";
-import { getFirestoreDB } from "@/firebase";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestoreDB, getFirebaseStorage } from "@/firebase";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 
 export default function EditStaffModal({
   trigger,
@@ -51,9 +52,18 @@ export default function EditStaffModal({
   const [staffName, setStaffName] = React.useState<string>(staff?.name || "");
   const [phone, setPhone] = React.useState<string>(staff?.phoneNumber || "");
   const [email, setEmail] = React.useState<string>(staff?.email || "");
-  const [dob, setDob] = React.useState<string>(
-    staff?.dob ? new Date(staff.dob).toISOString().split("T")[0] : "",
-  );
+  const [dob, setDob] = React.useState<string>(() => {
+    if (!staff?.dob) return "";
+    try {
+      // Handle Firebase Timestamp or string
+      const date = staff.dob?.toDate ? staff.dob.toDate() : new Date(staff.dob);
+      if (isNaN(date.getTime())) return "";
+      return date.toISOString().split("T")[0];
+    } catch (e) {
+      console.error("Error parsing DOB:", e);
+      return "";
+    }
+  });
   const [imageBase64, setImageBase64] = React.useState<string>(
     staff?.imagePath || "",
   );
@@ -110,7 +120,7 @@ export default function EditStaffModal({
     if (!f) return;
     try {
       const b = await fileToBase64(f);
-      setImageBase64(b.split(",")[1] ?? b);
+      setImageBase64(b); // Store full data URL
     } catch (err) {
       console.error(err);
     }
@@ -123,9 +133,23 @@ export default function EditStaffModal({
     if (!f) return;
     try {
       const b = await fileToBase64(f);
-      setAadhaarBase64(b.split(",")[1] ?? b);
+      setAadhaarBase64(b); // Store full data URL
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const uploadFileToStorage = async (dataUrl: string, path: string) => {
+    if (!dataUrl) return null;
+    if (dataUrl.startsWith("http")) return dataUrl; // Already a URL
+    try {
+      const storage = getFirebaseStorage();
+      const storageRef = ref(storage, path);
+      await uploadString(storageRef, dataUrl, "data_url");
+      return await getDownloadURL(storageRef);
+    } catch (error) {
+      console.error("Error uploading to storage:", error);
+      return null;
     }
   };
 
@@ -137,19 +161,36 @@ export default function EditStaffModal({
       if (masterDataManagement) permissions.push("master_data_management");
     }
 
+    const updates: any = {};
+    if (imageBase64 && imageBase64.startsWith("data:")) {
+      updates.imagePath = await uploadFileToStorage(
+        imageBase64,
+        `staff/${phone}/profile-${Date.now()}`,
+      );
+    }
+    if (aadhaarBase64 && aadhaarBase64.startsWith("data:")) {
+      updates.aadhaarPath = await uploadFileToStorage(
+        aadhaarBase64,
+        `staff/${phone}/aadhaar-${Date.now()}`,
+      );
+    }
+
     const payload = {
       name: staffName,
       email: email || null,
-      dob: dob ? new Date(dob).toISOString() : null,
+      dob: (() => {
+        if (!dob) return null;
+        const date = new Date(dob);
+        return isNaN(date.getTime()) ? null : date.toISOString();
+      })(),
       stateId: stateId,
       districtId: districtId,
       city: city,
       staffCategoryId: designationId,
       role: currentRoleValue,
       permissions: permissions,
-      // Note: In a real app, you'd upload imageBase64/aadhaarBase64 to storage first
-      // and update the document with the new URL.
-      // For this simplified logic, we update the firestore doc.
+      ...updates,
+      updatedAt: serverTimestamp(),
     };
 
     try {

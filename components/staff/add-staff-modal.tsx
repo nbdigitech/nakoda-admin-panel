@@ -211,7 +211,11 @@ export default function AddStaffModal({
       name: staffName,
       permissions: permissions,
       // allotment_area: districtId,
-      dob: dob ? new Date(dob).toISOString() : null,
+      dob: (() => {
+        if (!dob) return null;
+        const date = new Date(dob);
+        return isNaN(date.getTime()) ? null : date.toISOString();
+      })(),
       aadhaarBase64: aadhaarBase64 || "",
       imageBase64: imageBase64 || "",
       stateId: stateId,
