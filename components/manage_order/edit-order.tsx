@@ -26,6 +26,7 @@ interface Fulfillment {
   distributorId: string;
   influencerOrderId: string;
   status: string;
+  rate?: number;
 }
 
 interface EditOrderDrawerProps {
@@ -159,12 +160,26 @@ export default function EditOrders({
       const totalQty = parseFloat(order.totalQtyTons) || 0;
       const finalFulfilled = initialFulfilled + newFulfillment;
 
-      const payload = {
+      const payload: any = {
         fulfilledQtyTons: finalFulfilled,
         pendingQtyTons: Math.max(0, totalQty - finalFulfilled),
         status: formState.status,
         rate: formState.rate,
       };
+
+      // Calculate weighted average rate
+      const currentFulfillmentsCost = fulfillments.reduce(
+        (acc, f) => acc + (f.acceptedQtyTons || 0) * (f.rate || 0),
+        0,
+      );
+      const newFulfillmentCost =
+        newFulfillment * (parseFloat(formState.rate) || 0);
+      const totalCost = currentFulfillmentsCost + newFulfillmentCost;
+      const averageRate = finalFulfilled > 0 ? totalCost / finalFulfilled : 0;
+
+      if (averageRate > 0) {
+        payload.averageRate = averageRate;
+      }
 
       await updateOrder(collectionName, order.id, payload);
 
@@ -348,7 +363,7 @@ export default function EditOrders({
             </div>
           </div>
 
-          {/* Fulfillment History (If any) */}
+          {/* Fulfillment History (If any)
           {fulfillments.length > 0 && (
             <div className="border-t pt-6">
               <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-4">
@@ -378,14 +393,44 @@ export default function EditOrders({
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Summary Section */}
           <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 space-y-4">
             <div className="flex justify-between items-center">
-              <p className="text-xs font-bold text-gray-500 uppercase">Rate</p>
+              <p className="text-xs font-bold text-gray-500 uppercase">
+                {["processing", "approved"].includes(
+                  (formState.status || "").toLowerCase(),
+                )
+                  ? "Average Rate"
+                  : "Rate"}
+              </p>
               <p className="text-lg font-black text-[#009846]">
-                ₹ {formState.rate}
+                ₹{" "}
+                {["processing", "approved"].includes(
+                  (formState.status || "").toLowerCase(),
+                )
+                  ? (() => {
+                      const initialFulfilled =
+                        parseFloat(order.fulfilledQtyTons) || 0;
+                      const newFulfillment =
+                        parseFloat(formState.newFulfilledQtyTons) || 0;
+                      const finalFulfilled = initialFulfilled + newFulfillment;
+
+                      const currentFulfillmentsCost = fulfillments.reduce(
+                        (acc, f) =>
+                          acc + (f.acceptedQtyTons || 0) * (f.rate || 0),
+                        0,
+                      );
+                      const newFulfillmentCost =
+                        newFulfillment * (parseFloat(formState.rate) || 0);
+                      const totalCost =
+                        currentFulfillmentsCost + newFulfillmentCost;
+                      return finalFulfilled > 0
+                        ? (totalCost / finalFulfilled).toFixed(2)
+                        : formState.rate;
+                    })()
+                  : formState.rate}
               </p>
             </div>
             <div className="flex justify-between items-center pt-2 border-t">

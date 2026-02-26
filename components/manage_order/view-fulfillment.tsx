@@ -68,7 +68,14 @@ export default function ViewFulfillment({
           ? await getInfluencerOrderFulfillments()
           : await getDistributorOrderFulfillments();
 
-      setFulfillments(data);
+      // Filter: Strictly by Order ID
+      const filteredData = data.filter((f: any) => {
+        return (
+          f.distributorOrderId === orderId || f.influencerOrderId === orderId
+        );
+      });
+
+      setFulfillments(filteredData);
     } catch (error) {
       console.error("Error loading fulfillments:", error);
     } finally {
@@ -151,7 +158,6 @@ export default function ViewFulfillment({
                     </TableCell>
                     <TableCell className="py-3 text-[12px] font-bold text-gray-800">
                       {f.acceptedQtyTons}{" "}
-                      <span className="text-[10px] text-gray-400">t</span>
                     </TableCell>
                     <TableCell className="py-3 text-[12px] font-bold text-green-700 text-right">
                       ₹{f.rate?.toLocaleString()}
@@ -170,6 +176,50 @@ export default function ViewFulfillment({
                     </TableCell>
                   </TableRow>
                 ))}
+
+                {/* Average Rate Row */}
+                {/* {fulfillments.length > 0 && (
+                  <TableRow className="bg-orange-50/30 border-t-2 border-orange-100">
+                    <TableCell className="py-4 text-[11px] font-black text-orange-600 uppercase">
+                      Average Rate
+                    </TableCell>
+                    <TableCell className="py-4 text-[12px] font-black text-gray-800">
+                      {fulfillments
+                        .reduce(
+                          (acc, current) =>
+                            acc + (current.acceptedQtyTons || 0),
+                          0,
+                        )
+                        .toFixed(2)}
+                      <span className="text-[10px] text-gray-400 ml-1">t</span>
+                    </TableCell>
+                    <TableCell className="py-4 text-[14px] font-black text-[#009846] text-right">
+                      ₹
+                      {(
+                        fulfillments.reduce(
+                          (acc, current) =>
+                            acc +
+                            (current.acceptedQtyTons || 0) *
+                              (current.rate || 0),
+                          0,
+                        ) /
+                        fulfillments.reduce(
+                          (acc, current) =>
+                            acc + (current.acceptedQtyTons || 0),
+                          1,
+                        )
+                      ).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </TableCell>
+                    <TableCell className="py-4 text-center">
+                      <Badge className="bg-orange-500 text-white text-[9px] font-black border-none">
+                        CALCULATED
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                )} */}
               </TableBody>
             </Table>
           </div>

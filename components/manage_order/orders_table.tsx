@@ -15,7 +15,11 @@ import { Edit, Loader2, Eye } from "lucide-react";
 import EditOrders from "./edit-order";
 import ViewFulfillment from "./view-fulfillment";
 import { useRouter } from "next/navigation";
-import { updateOrder } from "@/services/orders";
+import {
+  getInfluencerOrderFulfillments,
+  getDistributorOrderFulfillments,
+  updateOrder,
+} from "@/services/orders";
 import { useToast } from "@/hooks/use-toast";
 
 export interface Order {
@@ -30,6 +34,7 @@ export interface Order {
   mobileNumber: string;
   rate: string;
   status: string;
+  averageRate?: number;
 }
 
 interface OrdersTableProps {
@@ -57,6 +62,44 @@ export default function OrdersTable({
   const router = useRouter();
   const { toast } = useToast();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [allFulfillments, setAllFulfillments] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadAllFulfillments();
+  }, [orderSource]);
+
+  const loadAllFulfillments = async () => {
+    try {
+      const data: any =
+        orderSource === "sub-dealer"
+          ? await getInfluencerOrderFulfillments()
+          : await getDistributorOrderFulfillments();
+      setAllFulfillments(data);
+    } catch (error) {
+      console.error("Error loading fulfillments for table:", error);
+    }
+  };
+
+  const getExactAverageRate = (orderId: string) => {
+    // Strictly filter by order ID to match the View modal
+    const relevant = allFulfillments.filter(
+      (f: any) =>
+        f.distributorOrderId === orderId || f.influencerOrderId === orderId,
+    );
+
+    if (relevant.length === 0) return null;
+
+    const totalCost = relevant.reduce(
+      (acc, f) => acc + (f.acceptedQtyTons || 0) * (f.rate || 0),
+      0,
+    );
+    const totalQty = relevant.reduce(
+      (acc, f) => acc + (f.acceptedQtyTons || 0),
+      0,
+    );
+
+    return totalQty > 0 ? totalCost / totalQty : null;
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -94,6 +137,7 @@ export default function OrdersTable({
       });
 
       if (onUpdate) onUpdate();
+      loadAllFulfillments();
       router.push("/order-history");
     } catch (error) {
       console.error("Error completing order:", error);
@@ -182,7 +226,18 @@ export default function OrdersTable({
                   {order.pendingQtyTons || 0}t
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm font-semibold text-green-600">
-                  ₹ {order.rate || "0"}
+                  {(order.status || "").toLowerCase() === "processing" ? (
+                    (() => {
+                      const avg = getExactAverageRate(order.id);
+                      return avg !== null ? (
+                        <>{`₹ ${avg.toFixed(2)}`}</>
+                      ) : (
+                        <>₹ {order.rate || "0"}</>
+                      );
+                    })()
+                  ) : (
+                    <>₹ {order.rate || "0"}</>
+                  )}
                 </TableCell>
 
                 {/* Status */}
@@ -235,7 +290,10 @@ export default function OrdersTable({
                       <EditOrders
                         order={order}
                         orderSource={orderSource}
-                        onUpdate={onUpdate}
+                        onUpdate={() => {
+                          if (onUpdate) onUpdate();
+                          loadAllFulfillments();
+                        }}
                         trigger={
                           <Button
                             variant="ghost"
