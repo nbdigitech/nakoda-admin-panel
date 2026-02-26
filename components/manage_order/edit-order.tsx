@@ -1,8 +1,22 @@
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { getInfluencerOrderFulfillments, updateOrder } from "@/services/orders";
+import {
+  getInfluencerOrderFulfillments,
+  getDistributorOrderFulfillments,
+  updateOrder,
+  createFulfillment,
+} from "@/services/orders";
 import { Loader2, PackageCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getFirestoreDB } from "@/firebase";
+import {
+  collection,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+  serverTimestamp,
+} from "firebase/firestore";
 
 interface Fulfillment {
   id: string;
@@ -48,28 +62,53 @@ export default function EditOrders({
   // Sync with prop changes and reset when opened
   useEffect(() => {
     if (open) {
-      setFormState({
+      setFormState((prev) => ({
+        ...prev,
         distributorId: order.distributorId,
         mobileNumber: order.mobileNumber,
         newFulfilledQtyTons: "",
         status: order.status,
         rate: order.rate,
-      });
+      }));
+      fetchLatestRate();
       if (order.id) {
         loadFulfillments();
       }
     }
   }, [open, order]);
 
+  const fetchLatestRate = async () => {
+    try {
+      const db = getFirestoreDB();
+      if (!db) return;
+
+      const q = query(
+        collection(db, "daily_price"),
+        orderBy("createdAt", "desc"),
+        limit(1),
+      );
+
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const latestRate = querySnapshot.docs[0].data().newPrice;
+        setFormState((prev) => ({
+          ...prev,
+          rate: latestRate.toString(),
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching latest rate:", error);
+    }
+  };
+
   const loadFulfillments = async () => {
     try {
       setLoadingFulfillments(true);
-      // Only applicable for sub-dealers currently? Or is it generic?
-      // For now keeping it for sub-dealers if that's where fulfillments are tracked.
-      if (orderSource === "sub-dealer") {
-        const data: any = await getInfluencerOrderFulfillments(order.id);
-        setFulfillments(data);
-      }
+      const data: any =
+        orderSource === "sub-dealer"
+          ? await getInfluencerOrderFulfillments(order.id)
+          : await getDistributorOrderFulfillments(order.id);
+      setFulfillments(data);
     } catch (error) {
       console.error("Error loading fulfillments:", error);
     } finally {
@@ -93,16 +132,12 @@ export default function EditOrders({
 
     let newStatus = formState.status;
 
-    // "chang status to in progress when user put vlaue not eqal then total"
-    // "and when its eqal then total qty then show status was proccesing"
-    if (numVal > 0) {
-      if (Math.abs(totalFulfilledNow - totalQty) < 0.01) {
-        newStatus = "processing";
-      } else {
-        newStatus = "inprogress";
-      }
+    if (totalFulfilledNow === 0) {
+      newStatus = "pending";
+    } else if (Math.abs(totalFulfilledNow - totalQty) < 0.01) {
+      newStatus = "processing";
     } else {
-      newStatus = order.status;
+      newStatus = "inprogress";
     }
 
     setFormState({
@@ -128,13 +163,36 @@ export default function EditOrders({
         fulfilledQtyTons: finalFulfilled,
         pendingQtyTons: Math.max(0, totalQty - finalFulfilled),
         status: formState.status,
+        rate: formState.rate,
       };
 
       await updateOrder(collectionName, order.id, payload);
 
+      // Create fulfillment record if new quantity added
+      if (newFulfillment > 0) {
+        const fulfillmentCollection =
+          orderSource === "dealer"
+            ? "distributor_order_fulfillments"
+            : "influencer_order_fulfillments";
+
+        const orderIdKey =
+          orderSource === "dealer" ? "distributorOrderId" : "influencerOrderId";
+
+        const fulfillmentData = {
+          acceptedQtyTons: newFulfillment,
+          createdAt: serverTimestamp(),
+          [orderIdKey]: order.id,
+          rate: parseFloat(formState.rate) || 0,
+          status: "accepted",
+        };
+
+        await createFulfillment(fulfillmentCollection, fulfillmentData);
+      }
+
       toast({
         title: "Order Updated",
-        description: "The order has been successfully updated.",
+        description:
+          "The order and fulfillment records have been successfully updated.",
       });
       setOpen(false);
 
@@ -291,7 +349,7 @@ export default function EditOrders({
           </div>
 
           {/* Fulfillment History (If any) */}
-          {orderSource === "sub-dealer" && fulfillments.length > 0 && (
+          {fulfillments.length > 0 && (
             <div className="border-t pt-6">
               <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 mb-4">
                 <PackageCheck className="w-4 h-4 text-[#F87B1B]" />

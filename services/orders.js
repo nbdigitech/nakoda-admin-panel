@@ -1,5 +1,5 @@
 import { getFirestoreDB } from "@/firebase";
-import { collection, getDocs, query, where, doc, getDoc, orderBy, updateDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc, orderBy, updateDoc, addDoc } from "firebase/firestore";
 
 export const getInfluencerOrders = async () => {
     try {
@@ -40,6 +40,27 @@ export const getInfluencerOrderFulfillments = async (influencerOrderId) => {
     }
 };
 
+export const getDistributorOrderFulfillments = async (distributorOrderId) => {
+    try {
+        const db = getFirestoreDB();
+        const fulfillmentsRef = collection(db, "distributor_order_fulfillments");
+        const q = query(
+            fulfillmentsRef, 
+            where("distributorOrderId", "==", distributorOrderId),
+            orderBy("createdAt", "desc")
+        );
+        const querySnapshot = await getDocs(q);
+        
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        console.error("Error fetching fulfillments:", error);
+        throw error;
+    }
+};
+
 export const getDistributorOrders = async () => {
     try {
         const db = getFirestoreDB();
@@ -64,6 +85,18 @@ export const updateOrder = async (collectionName, orderId, data) => {
         return true;
     } catch (error) {
         console.error("Error updating order:", error);
+        throw error;
+    }
+};
+
+export const createFulfillment = async (collectionName, data) => {
+    try {
+        const db = getFirestoreDB();
+        const fulfillmentsRef = collection(db, collectionName);
+        await addDoc(fulfillmentsRef, data);
+        return true;
+    } catch (error) {
+        console.error("Error creating fulfillment:", error);
         throw error;
     }
 };
