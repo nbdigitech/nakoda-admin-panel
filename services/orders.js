@@ -91,3 +91,21 @@ export const createFulfillment = async (collectionName, data) => {
         throw error;
     }
 };
+
+export const fetchUsers = async () => {
+    try {
+        const db = getFirestoreDB();
+        const usersRef = collection(db, "users");
+        const querySnapshot = await getDocs(usersRef);
+        
+        const usersMap = {};
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            usersMap[doc.id] = data.name || data.fullName || data.distributorName || "No Name";
+        });
+        return usersMap;
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        throw error;
+    }
+};

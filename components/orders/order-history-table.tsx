@@ -17,6 +17,7 @@ import { useEffect } from "react";
 import {
   getInfluencerOrderFulfillments,
   getDistributorOrderFulfillments,
+  fetchUsers,
 } from "@/services/orders";
 
 interface OrderHistoryTableProps {
@@ -42,10 +43,21 @@ export default function OrderHistoryTable({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [allFulfillments, setAllFulfillments] = useState<any[]>([]);
+  const [usersMap, setUsersMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadAllFulfillments();
+    loadUsers();
   }, [type]);
+
+  const loadUsers = async () => {
+    try {
+      const map = await fetchUsers();
+      setUsersMap(map as Record<string, string>);
+    } catch (error) {
+      console.error("Error loading users for history table:", error);
+    }
+  };
 
   const loadAllFulfillments = async () => {
     try {
@@ -158,7 +170,9 @@ export default function OrderHistoryTable({
 
                   {/* Dealer/Sub Dealer Name */}
                   <TableCell className="px-4 py-4 text-sm font-semibold text-gray-800">
-                    {order.distributorId || "Unknown"}
+                    {usersMap[order.distributorId] ||
+                      order.distributorId ||
+                      "Unknown"}
                   </TableCell>
 
                   {/* Qty */}

@@ -19,6 +19,7 @@ import {
   getInfluencerOrderFulfillments,
   getDistributorOrderFulfillments,
   updateOrder,
+  fetchUsers,
 } from "@/services/orders";
 import { serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
@@ -65,10 +66,21 @@ export default function OrdersTable({
   const { toast } = useToast();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [allFulfillments, setAllFulfillments] = useState<any[]>([]);
+  const [usersMap, setUsersMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadAllFulfillments();
+    loadUsers();
   }, [orderSource]);
+
+  const loadUsers = async () => {
+    try {
+      const map = await fetchUsers();
+      setUsersMap(map as Record<string, string>);
+    } catch (error) {
+      console.error("Error loading users for table:", error);
+    }
+  };
 
   const loadAllFulfillments = async () => {
     try {
@@ -228,21 +240,23 @@ export default function OrdersTable({
                 <TableCell className="px-4 py-4 text-sm">
                   {formatDate(order.createdAt)}
                 </TableCell>
-                <TableCell className="px-4 py-4 text-sm">
-                  {order.distributorId?.slice(0, 6) + "..." || "N/A"}
+                <TableCell className="px-4 py-4 text-sm font-semibold">
+                  {usersMap[order.distributorId] ||
+                    order.distributorId ||
+                    "N/A"}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm">
                   {order.mobileNumber || "-"}
                 </TableCell>
 
                 <TableCell className="px-4 py-4 text-sm">
-                  {order.totalQtyTons || 0}t
+                  {order.totalQtyTons || 0}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm">
-                  {order.fulfilledQtyTons || 0}t
+                  {order.fulfilledQtyTons || 0}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm">
-                  {order.pendingQtyTons || 0}t
+                  {order.pendingQtyTons || 0}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm font-semibold text-green-600">
                   {(order.status || "").toLowerCase() === "processing" ? (
