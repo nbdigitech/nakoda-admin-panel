@@ -176,6 +176,24 @@ export default function EditSubDealerModal({
     fetchData();
   }, []);
 
+  // Fetch districts when stateId changes (e.g. on modal open or manual selection)
+  React.useEffect(() => {
+    const fetchDistricts = async () => {
+      if (formData.stateId) {
+        try {
+          const res: any = await getDistrict({ stateId: formData.stateId });
+          const data = res?.data?.data || res?.data || res || [];
+          setDistricts(Array.isArray(data) ? data : []);
+        } catch (err) {
+          console.error("Failed to load districts:", err);
+        }
+      } else {
+        setDistricts([]);
+      }
+    };
+    fetchDistricts();
+  }, [formData.stateId]);
+
   // Firebase auth
   const { user, authReady } = useFirebaseAuth();
 
@@ -743,11 +761,6 @@ export default function EditSubDealerModal({
                       handleInputChange("city", "");
                       setDistricts([]);
                       setCities([]);
-                      if (val) {
-                        const res: any = await getDistrict({ stateId: val });
-                        const data = res?.data?.data || res?.data || res || [];
-                        setDistricts(Array.isArray(data) ? data : []);
-                      }
                     }}
                     placeholder="Select state"
                   />
@@ -766,11 +779,6 @@ export default function EditSubDealerModal({
                       handleInputChange("districtId", val);
                       handleInputChange("city", "");
                       setCities([]);
-                      if (val) {
-                        const res: any = await getCity({ districtId: val });
-                        const data = res?.data?.data || res?.data || res || [];
-                        setCities(Array.isArray(data) ? data : []);
-                      }
                     }}
                     disabled={!formData.stateId}
                     placeholder="Select district"

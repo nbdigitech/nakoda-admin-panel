@@ -33,7 +33,8 @@ import { ref, getDownloadURL } from "firebase/storage";
 import { getFirebaseStorage } from "@/firebase";
 import { getDistrict } from "@/services/masterData";
 import EditStaffModal from "./edit-staff-modal";
-import { Edit } from "lucide-react";
+import { Edit, User as UserIcon } from "lucide-react";
+import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 
 interface Staff {
   id: string;
@@ -67,6 +68,7 @@ export default function StaffTable({
   searchTerm?: string;
   refreshTrigger?: number;
 }) {
+  const { userData } = useFirebaseAuth();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -142,7 +144,19 @@ export default function StaffTable({
         };
         return parseDate(b.createdAt) - parseDate(a.createdAt);
       });
-      return staffData;
+
+      return staffData.map((s: any) => {
+        if (!s.asmName && s.asmId) {
+          const creator = rawData.find((u: any) => (u.id || u.uid) === s.asmId);
+          if (creator) {
+            return {
+              ...s,
+              asmName: creator.name || creator.displayName || creator.email,
+            };
+          }
+        }
+        return s;
+      });
     };
 
     try {
@@ -244,9 +258,7 @@ export default function StaffTable({
               <TableHead className="px-3 py-2 font-bold text-xs">
                 E-Mail
               </TableHead>
-              <TableHead className="px-3 py-2 font-bold text-xs">
-                ASM ID
-              </TableHead>
+
               <TableHead className="px-3 py-2 font-bold text-xs">
                 address
               </TableHead>
@@ -347,9 +359,9 @@ export default function StaffTable({
                   <TableCell className="px-3 py-4 text-md">
                     {member.email}
                   </TableCell>
-                  <TableCell className="px-3 py-4 text-md">
+                  {/* <TableCell className="px-3 py-4 text-md">
                     {member.id?.substring(0, 8) || "-"}
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell className="px-3 py-4">
                     {member.address || "-"}
                   </TableCell>
@@ -441,7 +453,7 @@ export default function StaffTable({
                   </TableCell>
 
                   <TableCell className="px-3 py-4 text-md">
-                    {member.asmName || "-"}
+                    {member.asmName || (userData as any)?.name || "-"}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
                     <div className="flex flex-col items-center gap-1">

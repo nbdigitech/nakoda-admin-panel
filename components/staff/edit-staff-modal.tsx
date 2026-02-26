@@ -189,6 +189,13 @@ export default function EditStaffModal({
       staffCategoryId: designationId,
       role: currentRoleValue,
       permissions: permissions,
+      asmId:
+        (userData as any)?.id || (userData as any)?.uid || staff?.asmId || "",
+      asmName:
+        (userData as any)?.name ||
+        (userData as any)?.displayName ||
+        staff?.asmName ||
+        "",
       ...updates,
       updatedAt: serverTimestamp(),
     };

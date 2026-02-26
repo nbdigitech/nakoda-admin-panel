@@ -36,7 +36,14 @@ export default function AddStaffModal({
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
   const [open, setOpen] = React.useState(false);
 
-  const { user, authReady } = useFirebaseAuth();
+  const { user, userData, authReady } = useFirebaseAuth();
+
+  React.useEffect(() => {
+    if (userData) {
+      setAsmId((userData as any).id || (userData as any).uid || "");
+      setAsmName((userData as any).name || (userData as any).displayName || "");
+    }
+  }, [userData]);
   const { toast } = useToast();
 
   // dropdown data
@@ -73,6 +80,8 @@ export default function AddStaffModal({
     React.useState<boolean>(false);
   const [checkingPhone, setCheckingPhone] = React.useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
+  const [asmId, setAsmId] = React.useState<string>("");
+  const [asmName, setAsmName] = React.useState<string>("");
 
   const currentRoleValue = React.useMemo(() => {
     const selectedDesignation = designations.find(
@@ -223,6 +232,8 @@ export default function AddStaffModal({
       city: city,
       staffCategoryId: designationId,
       role: currentRoleValue,
+      asmId: asmId,
+      asmName: asmName,
     };
 
     console.log("CREATE USER PAYLOAD", payload);
@@ -746,6 +757,16 @@ export default function AddStaffModal({
                       disabled={!districtId}
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold block mb-2 text-gray-700">
+                    ASM Name (Current User)
+                  </label>
+                  <Input
+                    value={asmName || "N/A"}
+                    disabled
+                    className="w-full border-2 bg-gray-50"
+                  />
                 </div>
               </div>
 
