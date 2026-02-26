@@ -165,6 +165,7 @@ export default function EditOrders({
         pendingQtyTons: Math.max(0, totalQty - finalFulfilled),
         status: formState.status,
         rate: formState.rate,
+        updatedAt: serverTimestamp(),
       };
 
       // Calculate weighted average rate

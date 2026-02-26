@@ -20,12 +20,14 @@ import {
   getDistributorOrderFulfillments,
   updateOrder,
 } from "@/services/orders";
+import { serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 export interface Order {
   id: string;
   orderId: string;
   createdAt: any;
+  updatedAt?: any;
   distributorId: string;
   totalQtyTons: number;
   fulfilledQtyTons: number;
@@ -116,7 +118,23 @@ export default function OrdersTable({
   };
 
   const totalPages = Math.ceil(orders.length / itemsPerPage);
-  const paginatedOrders = orders.slice(
+
+  // Sort by latest update/creation date
+  const sortedOrders = [...orders].sort((a, b) => {
+    const dateA = a.updatedAt?.toDate
+      ? a.updatedAt.toDate()
+      : a.createdAt?.toDate
+        ? a.createdAt.toDate()
+        : new Date(0);
+    const dateB = b.updatedAt?.toDate
+      ? b.updatedAt.toDate()
+      : b.createdAt?.toDate
+        ? b.createdAt.toDate()
+        : new Date(0);
+    return dateB.getTime() - dateA.getTime();
+  });
+
+  const paginatedOrders = sortedOrders.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
@@ -129,6 +147,7 @@ export default function OrdersTable({
 
       await updateOrder(collectionName, order.id, {
         status: "approved",
+        updatedAt: serverTimestamp(),
       });
 
       toast({

@@ -68,6 +68,21 @@ export default function OrderHistoryPage() {
       );
     }
 
+    // Sort by latest update (or created if updated doesn't exist)
+    result.sort((a, b) => {
+      const dateA = a.updatedAt?.toDate
+        ? a.updatedAt.toDate()
+        : a.createdAt?.toDate
+          ? a.createdAt.toDate()
+          : new Date(0);
+      const dateB = b.updatedAt?.toDate
+        ? b.updatedAt.toDate()
+        : b.createdAt?.toDate
+          ? b.createdAt.toDate()
+          : new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+
     return result;
   }, [orders, statusFilter, searchTerm]);
 

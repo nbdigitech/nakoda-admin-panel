@@ -13,6 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Edit } from "lucide-react";
 import EditOrders from "@/components/manage_order/edit-order";
+import { useEffect } from "react";
+import {
+  getInfluencerOrderFulfillments,
+  getDistributorOrderFulfillments,
+} from "@/services/orders";
 
 interface OrderHistoryTableProps {
   orders: any[];
@@ -36,6 +41,44 @@ export default function OrderHistoryTable({
 }: OrderHistoryTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [allFulfillments, setAllFulfillments] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadAllFulfillments();
+  }, [type]);
+
+  const loadAllFulfillments = async () => {
+    try {
+      const data: any =
+        type === "sub-dealer"
+          ? await getInfluencerOrderFulfillments()
+          : await getDistributorOrderFulfillments();
+      setAllFulfillments(data);
+    } catch (error) {
+      console.error("Error loading fulfillments for history table:", error);
+    }
+  };
+
+  const getExactAverageRate = (orderId: string) => {
+    // Strictly filter by order ID to match the View modal
+    const relevant = allFulfillments.filter(
+      (f: any) =>
+        f.distributorOrderId === orderId || f.influencerOrderId === orderId,
+    );
+
+    if (relevant.length === 0) return null;
+
+    const totalCost = relevant.reduce(
+      (acc, f) => acc + (f.acceptedQtyTons || 0) * (f.rate || 0),
+      0,
+    );
+    const totalQty = relevant.reduce(
+      (acc, f) => acc + (f.acceptedQtyTons || 0),
+      0,
+    );
+
+    return totalQty > 0 ? totalCost / totalQty : null;
+  };
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return "-";
@@ -120,12 +163,23 @@ export default function OrderHistoryTable({
 
                   {/* Qty */}
                   <TableCell className="px-4 py-4 text-sm font-bold">
-                    {order.totalQtyTons || 0}t
+                    {order.totalQtyTons || 0}
                   </TableCell>
 
                   {/* Rate */}
                   <TableCell className="px-4 py-4 text-sm font-bold text-green-600">
-                    ₹ {order.rate || "0"}
+                    {(order.status || "").toLowerCase() === "approved" ? (
+                      (() => {
+                        const avg = getExactAverageRate(order.id);
+                        return avg !== null ? (
+                          <>{`₹ ${avg.toFixed(2)}`}</>
+                        ) : (
+                          <>₹ {order.rate || "0"}</>
+                        );
+                      })()
+                    ) : (
+                      <>₹ {order.rate || "0"}</>
+                    )}
                   </TableCell>
 
                   {/* Status */}
