@@ -25,6 +25,7 @@ import {
 } from "@/services/masterData";
 import { createDealer } from "@/services/dealer";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
+import { getUsers } from "@/services/user";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -93,6 +94,7 @@ export default function AddDealerModal({
   const [states, setStates] = React.useState<any[]>([]);
   const [districts, setDistricts] = React.useState<any[]>([]);
   const [cities, setCities] = React.useState<any[]>([]);
+  const [asms, setAsms] = React.useState<any[]>([]);
 
   // Firebase auth
   const { user, userData, authReady } = useFirebaseAuth();
@@ -110,11 +112,24 @@ export default function AddDealerModal({
     };
 
     fetchStates();
+
+    const fetchAsms = async () => {
+      try {
+        const res: any = await getUsers();
+        const data = res?.data?.data || res?.data || res || [];
+        setAsms(
+          Array.isArray(data) ? data.filter((u: any) => u.role === "asm") : [],
+        );
+      } catch (err) {
+        console.error("Failed to load ASMs:", err);
+      }
+    };
+    fetchAsms();
   }, []);
 
-  // Set ASM id/name from logged-in user when available
+  // Set ASM id/name from logged-in user when available (if not already set)
   React.useEffect(() => {
-    if (authReady && user && typeof user === "object") {
+    if (authReady && user && typeof user === "object" && !formData.asmId) {
       const asmName =
         (userData as any)?.name ||
         (userData as any)?.organizationName ||
@@ -859,11 +874,24 @@ export default function AddDealerModal({
                   >
                     ASM Name
                   </label>
-                  <Input
-                    value={formData.asmName}
-                    disabled
-                    placeholder="ASM Name"
-                    className="w-full border-2 bg-gray-50 text-gray-700"
+                  <Combobox
+                    options={asms.map((a) => ({
+                      label: a.name || a.displayName || a.email || "N/A",
+                      value: String(a.id || a.uid || a._id),
+                    }))}
+                    value={formData.asmId}
+                    onValueChange={(val) => {
+                      const selected = asms.find(
+                        (a) => String(a.id || a.uid || a._id) === val,
+                      );
+                      setFormData((prev) => ({
+                        ...prev,
+                        asmId: val,
+                        asmName: selected?.name || selected?.displayName || "",
+                      }));
+                    }}
+                    placeholder="Select ASM"
+                    searchPlaceholder="Search ASM..."
                   />
                 </div>
               </div>

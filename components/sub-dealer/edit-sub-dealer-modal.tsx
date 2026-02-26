@@ -146,6 +146,7 @@ export default function EditSubDealerModal({
   const [cities, setCities] = React.useState<any[]>([]);
   const [categories, setCategories] = React.useState<any[]>([]);
   const [distributors, setDistributors] = React.useState<any[]>([]);
+  const [asms, setAsms] = React.useState<any[]>([]);
 
   // Load static auxiliary data on mount
   React.useEffect(() => {
@@ -168,6 +169,10 @@ export default function EditSubDealerModal({
           ? uData.filter((u: any) => u.role === "distributor")
           : [];
         setDistributors(distList);
+        const asmList = Array.isArray(uData)
+          ? uData.filter((u: any) => u.role === "asm")
+          : [];
+        setAsms(asmList);
       } catch (err) {
         console.error("Failed to load generic data:", err);
       }
@@ -197,9 +202,9 @@ export default function EditSubDealerModal({
   // Firebase auth
   const { user, authReady } = useFirebaseAuth();
 
-  // Set ASM id/name from logged-in user when available
+  // Set ASM id/name from logged-in user when available (if not already set)
   React.useEffect(() => {
-    if (authReady && user && typeof user === "object") {
+    if (authReady && user && typeof user === "object" && !formData.asmId) {
       const asmName =
         (user as any).displayName ||
         (user as any).name ||
@@ -809,6 +814,33 @@ export default function EditSubDealerModal({
                     }
                     placeholder="Enter full address"
                     className="w-full border-2 border-gray-300"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="text-xs font-semibold block mb-2 text-gray-700">
+                    ASM Name
+                  </label>
+                  <Combobox
+                    options={asms.map((a) => ({
+                      label: a.name || a.displayName || a.email || "N/A",
+                      value: String(a.id || a.uid || a._id),
+                    }))}
+                    value={formData.asmId}
+                    onValueChange={(val) => {
+                      const selected = asms.find(
+                        (a) => String(a.id || a.uid || a._id) === val,
+                      );
+                      setFormData((prev) => ({
+                        ...prev,
+                        asmId: val,
+                        asmName: selected?.name || selected?.displayName || "",
+                      }));
+                    }}
+                    placeholder="Select ASM"
+                    searchPlaceholder="Search ASM..."
                   />
                 </div>
               </div>
