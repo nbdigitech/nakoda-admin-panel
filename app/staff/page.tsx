@@ -5,7 +5,10 @@ import StaffTable from "@/components/staff/staff";
 import AddStaffModal from "@/components/staff/add-staff-modal";
 import { Plus } from "lucide-react";
 
+import { useRouter } from "next/navigation";
+
 export default function StaffPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("Today");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,6 +56,14 @@ export default function StaffPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full lg:w-[300px] py-3 px-4 mr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F87B1B]"
             />
+
+            <button
+              onClick={() => router.push("/asm-survey")}
+              className="bg-[#F87B1B1A] text-sm text-[#F87B1B] font-bold py-3 px-8 rounded-lg flex items-center mr-4 transition-colors"
+            >
+              <Plus className="w-5 h-5 mr-1" />
+              ASM Survey
+            </button>
 
             <AddStaffModal
               onSuccess={() => setRefreshKey((prev) => prev + 1)}

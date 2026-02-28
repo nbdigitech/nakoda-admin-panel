@@ -269,9 +269,10 @@ function ExpensesContent() {
                           <TableCell>
                             <Button
                               onClick={() => openRemarkDrawer(exp)}
+                              disabled={exp.status === "approved"}
                               variant="ghost"
                               size="sm"
-                              className="text-[#F87B1B] hover:text-[#E86A0A] hover:bg-[#F87B1B1A]"
+                              className={`text-[#F87B1B] hover:text-[#E86A0A] hover:bg-[#F87B1B1A] ${exp.status === "approved" ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                               <Edit className="w-4 h-4 mr-1" />
                               Edit

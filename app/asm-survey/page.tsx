@@ -424,15 +424,6 @@ export default function AsmSurveyPage() {
               </button>
             ))}
           </div>
-
-          <AddStaffModal
-            trigger={
-              <button className="bg-[#7FFF7C5C] text-sm text-[#009846] font-bold py-3 px-12 rounded-lg flex items-center">
-                <Plus className="w-5 h-5 mr-1" />
-                Add ASM
-              </button>
-            }
-          />
         </div>
 
         {/* Table */}
