@@ -259,7 +259,9 @@ export default function OrdersTable({
                   {order.pendingQtyTons || 0}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm font-semibold text-green-600">
-                  {(order.status || "").toLowerCase() === "processing" ? (
+                  {["processing", "inprogress"].includes(
+                    (order.status || "").toLowerCase(),
+                  ) ? (
                     (() => {
                       const avg = getExactAverageRate(order.id);
                       return avg !== null ? (

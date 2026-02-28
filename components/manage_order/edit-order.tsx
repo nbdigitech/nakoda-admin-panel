@@ -400,38 +400,10 @@ export default function EditOrders({
           <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 space-y-4">
             <div className="flex justify-between items-center">
               <p className="text-xs font-bold text-gray-500 uppercase">
-                {["processing", "approved"].includes(
-                  (formState.status || "").toLowerCase(),
-                )
-                  ? "Average Rate"
-                  : "Rate"}
+                New Rate
               </p>
               <p className="text-lg font-black text-[#009846]">
-                ₹{" "}
-                {["processing", "approved"].includes(
-                  (formState.status || "").toLowerCase(),
-                )
-                  ? (() => {
-                      const initialFulfilled =
-                        parseFloat(order.fulfilledQtyTons) || 0;
-                      const newFulfillment =
-                        parseFloat(formState.newFulfilledQtyTons) || 0;
-                      const finalFulfilled = initialFulfilled + newFulfillment;
-
-                      const currentFulfillmentsCost = fulfillments.reduce(
-                        (acc, f) =>
-                          acc + (f.acceptedQtyTons || 0) * (f.rate || 0),
-                        0,
-                      );
-                      const newFulfillmentCost =
-                        newFulfillment * (parseFloat(formState.rate) || 0);
-                      const totalCost =
-                        currentFulfillmentsCost + newFulfillmentCost;
-                      return finalFulfilled > 0
-                        ? (totalCost / finalFulfilled).toFixed(2)
-                        : formState.rate;
-                    })()
-                  : formState.rate}
+                ₹ {formState.rate}
               </p>
             </div>
             <div className="flex justify-between items-center pt-2 border-t">
