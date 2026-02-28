@@ -128,7 +128,7 @@ export default function OrderHistoryTable({
                 {type === "dealer" ? "Distributor" : "Sub Dealer"}
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
-                Qty
+                Qty (ton)
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
                 Rate

@@ -56,7 +56,6 @@ export default function DealerPage() {
           </div>
         </div>
 
-        {/* Status Filter Buttons */}
         <div className="flex flex-wrap gap-3 mb-2">
           <button
             onClick={() => setStatusFilter("all")}

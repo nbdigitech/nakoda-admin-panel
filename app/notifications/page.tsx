@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import DashboardLayout from "@/components/layout/dashboard-layout"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Bell, Trash2, Eye, EyeOff } from "lucide-react"
+import { useState } from "react";
+import DashboardLayout from "@/components/layout/dashboard-layout";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Bell, Trash2, Eye, EyeOff } from "lucide-react";
 
 interface Notification {
-  id: number
-  title: string
-  message: string
-  timestamp: string
-  read: boolean
-  type: "order" | "dealer" | "system" | "alert"
+  id: number;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  type: "order" | "dealer" | "system" | "alert";
 }
 
 const notificationsList: Notification[] = [
@@ -27,7 +27,8 @@ const notificationsList: Notification[] = [
   {
     id: 2,
     title: "Dealer Registration",
-    message: "New dealer registration completed. Bharat Sahu has been approved.",
+    message:
+      "New dealer registration completed. Bharat Sahu has been approved.",
     timestamp: "2 hours ago",
     read: false,
     type: "dealer",
@@ -64,59 +65,62 @@ const notificationsList: Notification[] = [
     read: true,
     type: "order",
   },
-]
+];
 
 const getTypeColor = (type: string) => {
   switch (type) {
     case "order":
-      return "bg-blue-100 text-blue-700"
+      return "bg-blue-100 text-blue-700";
     case "dealer":
-      return "bg-green-100 text-green-700"
+      return "bg-green-100 text-green-700";
     case "system":
-      return "bg-purple-100 text-purple-700"
+      return "bg-purple-100 text-purple-700";
     case "alert":
-      return "bg-red-100 text-red-700"
+      return "bg-red-100 text-red-700";
     default:
-      return "bg-gray-100 text-gray-700"
+      return "bg-gray-100 text-gray-700";
   }
-}
+};
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(notificationsList)
-  const [filter, setFilter] = useState<"all" | "unread" | "read">("all")
+  const [notifications, setNotifications] = useState(notificationsList);
+  const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
 
   const filteredNotifications = notifications.filter((notif) => {
-    if (filter === "unread") return !notif.read
-    if (filter === "read") return notif.read
-    return true
-  })
+    if (filter === "unread") return !notif.read;
+    if (filter === "read") return notif.read;
+    return true;
+  });
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const toggleRead = (id: number) => {
     setNotifications(
       notifications.map((notif) =>
-        notif.id === id ? { ...notif, read: !notif.read } : notif
-      )
-    )
-  }
+        notif.id === id ? { ...notif, read: !notif.read } : notif,
+      ),
+    );
+  };
 
   const deleteNotification = (id: number) => {
-    setNotifications(notifications.filter((notif) => notif.id !== id))
-  }
+    setNotifications(notifications.filter((notif) => notif.id !== id));
+  };
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map((notif) => ({ ...notif, read: true })))
-  }
+    setNotifications(notifications.map((notif) => ({ ...notif, read: true })));
+  };
 
   return (
     <DashboardLayout>
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Notifications
+          </h1>
           <p className="text-gray-500">
-            You have {unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}
+            You have {unreadCount} unread notification
+            {unreadCount !== 1 ? "s" : ""}
           </p>
         </div>
         {unreadCount > 0 && (
@@ -129,7 +133,6 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      {/* Filter Buttons */}
       <div className="flex gap-3 mb-8">
         {["all", "unread", "read"].map((f) => (
           <button
@@ -151,30 +154,40 @@ export default function NotificationsPage() {
         {filteredNotifications.length > 0 ? (
           filteredNotifications.map((notification) => (
             <Card key={notification.id} className="rounded-xl overflow-hidden">
-              <CardContent className={`p-5 ${!notification.read ? "bg-orange-50" : ""}`}>
+              <CardContent
+                className={`p-5 ${!notification.read ? "bg-orange-50" : ""}`}
+              >
                 <div className="flex items-start justify-between gap-4">
                   {/* Left Section */}
                   <div className="flex-1">
                     <div className="flex items-start gap-3">
-                      <div className={`px-3 py-1 rounded-lg text-xs font-semibold ${getTypeColor(notification.type)}`}>
-                        {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
+                      <div
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold ${getTypeColor(notification.type)}`}
+                      >
+                        {notification.type.charAt(0).toUpperCase() +
+                          notification.type.slice(1)}
                       </div>
                       <div className="flex-1">
                         <h3 className="text-lg font-bold text-gray-900 mb-1">
                           {notification.title}
                         </h3>
-                        <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-                        <p className="text-xs text-gray-400">{notification.timestamp}</p>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {notification.timestamp}
+                        </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex gap-2">
                     <button
                       onClick={() => toggleRead(notification.id)}
                       className="p-2 rounded-lg hover:bg-gray-200 transition text-gray-500 hover:text-[#F87B1B]"
-                      title={notification.read ? "Mark as unread" : "Mark as read"}
+                      title={
+                        notification.read ? "Mark as unread" : "Mark as read"
+                      }
                     >
                       {notification.read ? (
                         <EyeOff className="w-5 h-5" />
@@ -198,9 +211,12 @@ export default function NotificationsPage() {
           <Card className="rounded-xl">
             <CardContent className="p-12 text-center">
               <Bell className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">No Notifications</h3>
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                No Notifications
+              </h3>
               <p className="text-gray-500">
-                {filter === "unread" && "You're all caught up! No unread notifications."}
+                {filter === "unread" &&
+                  "You're all caught up! No unread notifications."}
                 {filter === "read" && "No read notifications yet."}
                 {filter === "all" && "You don't have any notifications yet."}
               </p>
@@ -209,5 +225,5 @@ export default function NotificationsPage() {
         )}
       </div>
     </DashboardLayout>
-  )
+  );
 }

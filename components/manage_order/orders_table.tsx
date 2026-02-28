@@ -206,7 +206,7 @@ export default function OrdersTable({
               </TableHead>
 
               <TableHead className="px-4 py-4 font-bold text-xs">
-                Qty (Tons)
+                Qty (Ton)
               </TableHead>
               <TableHead className="px-4 py-4 font-bold text-xs">
                 Fulfilled
