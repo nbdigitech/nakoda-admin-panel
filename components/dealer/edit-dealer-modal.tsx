@@ -167,7 +167,7 @@ export default function EditDealerModal({
         (user as any).phoneNumber ||
         "";
       const asmId =
-        (user as any).uid || (user as any).id || (user as any)._id || "";
+        (user as any).id || (user as any).uid || (user as any)._id || "";
       setFormData((prev) => ({ ...prev, asmId, asmName }));
     }
   }, [authReady, user, userData]);
