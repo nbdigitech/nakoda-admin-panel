@@ -116,6 +116,16 @@ export default function OrderHistoryTable({
     });
   };
 
+  const formatOnlyDate = (timestamp: any) => {
+    if (!timestamp) return "-";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   const totalPages = Math.ceil(orders.length / itemsPerPage);
   const paginatedOrders = orders.slice(
     (currentPage - 1) * itemsPerPage,
@@ -137,6 +147,9 @@ export default function OrderHistoryTable({
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
                 Order Date
+              </TableHead>
+              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                Dispatch Date
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
                 {type === "dealer" ? "Distributor" : "Sub Dealer"}
@@ -193,8 +206,13 @@ export default function OrderHistoryTable({
                       </TableCell>
 
                       {/* Order Date */}
-                      <TableCell className="px-4 py-4 text-sm whitespace-nowrap">
-                        {formatDate(order.createdAt)}
+                      <TableCell className="px-4 py-4 text-sm whitespace-nowrap text-gray-500 font-medium">
+                        {formatOnlyDate(order.createdAt)}
+                      </TableCell>
+
+                      {/* Dispatch Date */}
+                      <TableCell className="px-4 py-4 text-sm whitespace-nowrap font-bold text-gray-700">
+                        {formatOnlyDate(order.updatedAt || order.createdAt)}
                       </TableCell>
 
                       {/* Dealer/Sub Dealer Name */}
@@ -260,72 +278,59 @@ export default function OrderHistoryTable({
 
                     {/* Expanded History Row */}
                     {isExpanded && orderFulfillments.length > 1 && (
-                      <TableRow className="bg-gray-50/50">
-                        <TableCell colSpan={7} className="px-8 py-4">
-                          <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                            <div className="bg-gray-50 px-4 py-2 border-b flex items-center gap-2">
-                              <PackageCheck className="w-4 h-4 text-[#F87B1B]" />
-                              <span className="text-xs font-bold uppercase text-gray-700">
-                                Fulfillment History
-                              </span>
-                            </div>
-                            <Table>
-                              <TableHeader>
-                                <TableRow className="bg-gray-50/30">
-                                  <TableHead className="text-[10px] font-black uppercase h-8">
+                      <TableRow className="bg-orange-50/10 border-none hover:bg-orange-50/10 transition-all">
+                        <TableCell colSpan={9} className="p-0 border-none">
+                          <div className="mx-4 mb-4 mt-0 bg-white rounded-lg border border-orange-100/50 shadow-sm overflow-hidden">
+                            {/* Simple Table for Fulfillments */}
+                            <Table className="w-full">
+                              <TableHeader className="bg-orange-50/30">
+                                <TableRow className="hover:bg-transparent border-b border-orange-50">
+                                  <TableHead className="text-[10px] font-black uppercase text-gray-500 h-9 pl-6">
                                     Date
                                   </TableHead>
-                                  <TableHead className="text-[10px] font-black uppercase h-8">
+                                  <TableHead className="text-[10px] font-black uppercase text-gray-500 h-9">
                                     Qty (ton)
                                   </TableHead>
-                                  <TableHead className="text-[10px] font-black uppercase h-8">
+                                  <TableHead className="text-[10px] font-black uppercase text-gray-500 h-9">
                                     Rate
                                   </TableHead>
-                                  <TableHead className="text-[10px] font-black uppercase h-8">
+                                  <TableHead className="text-[10px] font-black uppercase text-gray-500 h-9 pr-6 text-right">
                                     Status
                                   </TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {orderFulfillments.length === 0 ? (
-                                  <TableRow>
-                                    <TableCell
-                                      colSpan={4}
-                                      className="text-center py-4 text-xs text-gray-500 italic"
-                                    >
-                                      No fulfillments recorded.
+                                {orderFulfillments.map((f: any, idx) => (
+                                  <TableRow
+                                    key={f.id}
+                                    className={`${idx === orderFulfillments.length - 1 ? "" : "border-b border-gray-50"} hover:bg-orange-50/30 transition-colors`}
+                                  >
+                                    <TableCell className="py-2.5 pl-6 text-[12px] font-medium text-gray-600">
+                                      {formatOnlyDate(f.createdAt || f.date)}
+                                    </TableCell>
+                                    <TableCell className="py-2.5 text-[12px] font-bold text-gray-800">
+                                      {f.acceptedQtyTons}
+                                    </TableCell>
+                                    <TableCell className="py-2.5 text-[12px] font-bold text-green-700">
+                                      ₹ {f.rate?.toLocaleString()}
+                                    </TableCell>
+                                    <TableCell className="py-2.5 pr-6 text-right">
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-[9px] font-black uppercase h-5 px-2 border-none ${
+                                          f.status === "dispatched" ||
+                                          f.status === "completed"
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-orange-50 text-[#F87B1B]"
+                                        }`}
+                                      >
+                                        {f.status === "dispatched"
+                                          ? "Completed"
+                                          : f.status}
+                                      </Badge>
                                     </TableCell>
                                   </TableRow>
-                                ) : (
-                                  orderFulfillments.map((f: any) => (
-                                    <TableRow key={f.id}>
-                                      <TableCell className="py-2 text-[11px] font-medium text-gray-600">
-                                        {formatDate(f.createdAt || f.date)}
-                                      </TableCell>
-                                      <TableCell className="py-2 text-[12px] font-bold text-gray-800">
-                                        {f.acceptedQtyTons}
-                                      </TableCell>
-                                      <TableCell className="py-2 text-[12px] font-bold text-green-700">
-                                        ₹{f.rate?.toLocaleString()}
-                                      </TableCell>
-                                      <TableCell className="py-2">
-                                        <Badge
-                                          variant="outline"
-                                          className={`text-[9px] font-black uppercase h-5 px-2 ${
-                                            f.status === "dispatched" ||
-                                            f.status === "completed"
-                                              ? "bg-green-100 text-green-700"
-                                              : "bg-gray-100 text-gray-700"
-                                          }`}
-                                        >
-                                          {f.status === "dispatched"
-                                            ? "completed"
-                                            : f.status}
-                                        </Badge>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))
-                                )}
+                                ))}
                               </TableBody>
                             </Table>
                           </div>
