@@ -53,7 +53,14 @@ export default function OrderHistoryPage() {
     } else {
       result = result.filter((o) => {
         const s = (o.status || "").toLowerCase();
-        return s === "approved" || s === "rejected";
+        return (
+          s === "approved" ||
+          s === "rejected" ||
+          s === "dispatched" ||
+          s === "processing" ||
+          s === "completed" ||
+          s === "inprogress"
+        );
       });
     }
 
@@ -129,6 +136,7 @@ export default function OrderHistoryPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="dispatched">Dispatched</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>

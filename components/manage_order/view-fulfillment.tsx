@@ -13,7 +13,7 @@ import {
   getInfluencerOrderFulfillments,
   getDistributorOrderFulfillments,
 } from "@/services/orders";
-import { Loader2, PackageCheck, Eye } from "lucide-react";
+import { Loader2, PackageCheck, Eye, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -24,6 +24,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { updateOrder } from "@/services/orders";
+import { serverTimestamp } from "firebase/firestore";
 
 interface Fulfillment {
   id: string;
@@ -42,6 +46,7 @@ interface ViewFulfillmentProps {
   displayId?: string;
   distributorId?: string;
   orderSource: "dealer" | "sub-dealer";
+  onUpdate?: () => void;
 }
 
 export default function ViewFulfillment({
@@ -49,10 +54,14 @@ export default function ViewFulfillment({
   displayId,
   distributorId,
   orderSource,
+  onUpdate,
 }: ViewFulfillmentProps) {
   const [open, setOpen] = useState(false);
   const [fulfillments, setFulfillments] = useState<Fulfillment[]>([]);
   const [loading, setLoading] = useState(false);
+  const [dispatchingId, setDispatchingId] = useState<string | null>(null);
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
@@ -80,6 +89,51 @@ export default function ViewFulfillment({
       console.error("Error loading fulfillments:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDispatch = async (fulfillment: Fulfillment) => {
+    try {
+      setDispatchingId(fulfillment.id);
+
+      const fulfillmentCollection =
+        orderSource === "dealer"
+          ? "distributor_orders_fulfillments"
+          : "influencer_orders_fulfillments";
+
+      const orderCollection =
+        orderSource === "dealer" ? "distributor_orders" : "influencer_orders";
+
+      // 1. Update ALL fulfillments for this order that are currently "accepted" to "completed"
+      const batchUpdates = fulfillments
+        .filter((f) => f.status === "accepted")
+        .map((f) =>
+          updateOrder(fulfillmentCollection, f.id, {
+            status: "completed",
+            updatedAt: serverTimestamp(),
+          }),
+        );
+
+      await Promise.all(batchUpdates);
+
+      toast({
+        title: "All Fulfillments Completed",
+        description: "All pending fulfillment records have been updated.",
+      });
+
+      setOpen(false);
+      if (onUpdate) {
+        onUpdate();
+      }
+    } catch (error) {
+      console.error("Error dispatching fulfillment:", error);
+      toast({
+        title: "Dispatch Failed",
+        description: "Failed to dispatch the order.",
+        variant: "destructive",
+      });
+    } finally {
+      setDispatchingId(null);
     }
   };
 
@@ -146,7 +200,7 @@ export default function ViewFulfillment({
                     Rate
                   </TableHead>
                   <TableHead className="text-[10px] font-black uppercase tracking-wider h-10 text-center">
-                    Status
+                    Status/Action
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -154,7 +208,7 @@ export default function ViewFulfillment({
                 {fulfillments.map((f) => (
                   <TableRow key={f.id} className="hover:bg-gray-50/50">
                     <TableCell className="py-3 text-[11px] font-medium text-gray-600">
-                      {formatDate(f.createdAt)}
+                      {formatDate(f.createdAt || f.date)}
                     </TableCell>
                     <TableCell className="py-3 text-[12px] font-bold text-gray-800">
                       {f.acceptedQtyTons}{" "}
@@ -163,63 +217,36 @@ export default function ViewFulfillment({
                       ₹{f.rate?.toLocaleString()}
                     </TableCell>
                     <TableCell className="py-3 text-center">
-                      <Badge
-                        variant="outline"
-                        className={`text-[9px] font-black uppercase h-5 px-2 ${
-                          f.status === "accepted"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {f.status}
-                      </Badge>
+                      {f.status === "accepted" ? (
+                        <Button
+                          size="sm"
+                          onClick={() => handleDispatch(f)}
+                          disabled={dispatchingId === f.id}
+                          className="bg-[#0098460D] text-[#009846] hover:bg-[#0098461A] border border-[#00984633] text-[9px] font-black uppercase h-7 px-3 flex items-center gap-1"
+                        >
+                          {dispatchingId === f.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-3 h-3" />
+                          )}
+                          Proceeding
+                        </Button>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] font-black uppercase h-5 px-2 ${
+                            f.status === "completed" ||
+                            f.status === "dispatched"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {f.status === "dispatched" ? "completed" : f.status}
+                        </Badge>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
-
-                {/* Average Rate Row */}
-                {/* {fulfillments.length > 0 && (
-                  <TableRow className="bg-orange-50/30 border-t-2 border-orange-100">
-                    <TableCell className="py-4 text-[11px] font-black text-orange-600 uppercase">
-                      Average Rate
-                    </TableCell>
-                    <TableCell className="py-4 text-[12px] font-black text-gray-800">
-                      {fulfillments
-                        .reduce(
-                          (acc, current) =>
-                            acc + (current.acceptedQtyTons || 0),
-                          0,
-                        )
-                        .toFixed(2)}
-                      <span className="text-[10px] text-gray-400 ml-1">t</span>
-                    </TableCell>
-                    <TableCell className="py-4 text-[14px] font-black text-[#009846] text-right">
-                      ₹
-                      {(
-                        fulfillments.reduce(
-                          (acc, current) =>
-                            acc +
-                            (current.acceptedQtyTons || 0) *
-                              (current.rate || 0),
-                          0,
-                        ) /
-                        fulfillments.reduce(
-                          (acc, current) =>
-                            acc + (current.acceptedQtyTons || 0),
-                          1,
-                        )
-                      ).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </TableCell>
-                    <TableCell className="py-4 text-center">
-                      <Badge className="bg-orange-500 text-white text-[9px] font-black border-none">
-                        CALCULATED
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                )} */}
               </TableBody>
             </Table>
           </div>

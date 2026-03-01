@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Fragment } from "react";
 import {
   Table,
   TableBody,
@@ -11,9 +11,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Edit } from "lucide-react";
+import { MessageSquare, Edit, Plus, Minus, PackageCheck } from "lucide-react";
 import EditOrders from "@/components/manage_order/edit-order";
-import { useEffect } from "react";
 import {
   getInfluencerOrderFulfillments,
   getDistributorOrderFulfillments,
@@ -33,6 +32,8 @@ const statusStyles: Record<string, string> = {
   rejected: "bg-red-100 text-red-700",
   inprogress: "bg-blue-100 text-blue-700",
   completed: "bg-green-100 text-green-700",
+  dispatched: "bg-blue-100 text-blue-700",
+  processing: "bg-purple-100 text-purple-700",
 };
 
 export default function OrderHistoryTable({
@@ -44,6 +45,7 @@ export default function OrderHistoryTable({
   const itemsPerPage = 5;
   const [allFulfillments, setAllFulfillments] = useState<any[]>([]);
   const [usersMap, setUsersMap] = useState<Record<string, string>>({});
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadAllFulfillments();
@@ -69,6 +71,16 @@ export default function OrderHistoryTable({
     } catch (error) {
       console.error("Error loading fulfillments for history table:", error);
     }
+  };
+
+  const toggleRow = (orderId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(orderId)) {
+      newExpanded.delete(orderId);
+    } else {
+      newExpanded.add(orderId);
+    }
+    setExpandedRows(newExpanded);
   };
 
   const getExactAverageRate = (orderId: string) => {
@@ -99,6 +111,8 @@ export default function OrderHistoryTable({
       day: "2-digit",
       month: "short",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -128,7 +142,10 @@ export default function OrderHistoryTable({
                 {type === "dealer" ? "Distributor" : "Sub Dealer"}
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
-                Qty (ton)
+                Qty (Total)
+              </TableHead>
+              <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                Qty (Accpt)
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
                 Rate
@@ -144,68 +161,176 @@ export default function OrderHistoryTable({
             {paginatedOrders.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="text-center py-20 text-gray-500 italic"
                 >
                   No orders found for this category.
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedOrders.map((order, index) => (
-                <TableRow key={order.id} className="hover:bg-gray-50 border-b">
-                  {/* S No. */}
-                  <TableCell className="px-4 py-4 text-sm font-medium">
-                    {(currentPage - 1) * itemsPerPage + index + 1}
-                  </TableCell>
+              paginatedOrders.map((order, index) => {
+                const isExpanded = expandedRows.has(order.id);
+                const orderFulfillments = allFulfillments.filter(
+                  (f: any) =>
+                    f.distributorOrderId === order.id ||
+                    f.influencerOrderId === order.id,
+                );
 
-                  {/* Order ID */}
-                  <TableCell className="px-4 py-4 text-sm font-bold text-[#F87B1B]">
-                    #{order.orderId || "N/A"}
-                  </TableCell>
+                return (
+                  <Fragment key={order.id}>
+                    <TableRow
+                      key={order.id}
+                      className="hover:bg-gray-50 border-b"
+                    >
+                      {/* S No. */}
+                      <TableCell className="px-4 py-4 text-sm font-medium">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </TableCell>
 
-                  {/* Order Date */}
-                  <TableCell className="px-4 py-4 text-sm whitespace-nowrap">
-                    {formatDate(order.createdAt)}
-                  </TableCell>
+                      {/* Order ID */}
+                      <TableCell className="px-4 py-4 text-sm font-bold text-[#F87B1B]">
+                        #{order.orderId || "N/A"}
+                      </TableCell>
 
-                  {/* Dealer/Sub Dealer Name */}
-                  <TableCell className="px-4 py-4 text-sm font-semibold text-gray-800">
-                    {usersMap[order.distributorId] ||
-                      order.distributorId ||
-                      "Unknown"}
-                  </TableCell>
+                      {/* Order Date */}
+                      <TableCell className="px-4 py-4 text-sm whitespace-nowrap">
+                        {formatDate(order.createdAt)}
+                      </TableCell>
 
-                  {/* Qty */}
-                  <TableCell className="px-4 py-4 text-sm font-bold">
-                    {order.totalQtyTons || 0}
-                  </TableCell>
+                      {/* Dealer/Sub Dealer Name */}
+                      <TableCell className="px-4 py-4 text-sm font-semibold text-gray-800">
+                        {usersMap[order.distributorId] ||
+                          order.distributorId ||
+                          "Unknown"}
+                      </TableCell>
 
-                  {/* Rate */}
-                  <TableCell className="px-4 py-4 text-sm font-bold text-green-600">
-                    {(order.status || "").toLowerCase() === "approved" ? (
-                      (() => {
-                        const avg = getExactAverageRate(order.id);
-                        return avg !== null ? (
-                          <>{`₹ ${avg.toFixed(2)}`}</>
+                      {/* Total Qty */}
+                      <TableCell className="px-4 py-4 text-sm font-bold">
+                        {order.totalQtyTons || 0}
+                      </TableCell>
+
+                      {/* Accepted Qty */}
+                      <TableCell className="px-4 py-4 text-sm font-bold text-blue-600">
+                        {order.fulfilledQtyTons || 0}
+                      </TableCell>
+
+                      {/* Rate */}
+                      <TableCell className="px-4 py-4 text-sm font-bold text-green-600">
+                        {(order.status || "").toLowerCase() === "approved" ? (
+                          (() => {
+                            const avg = getExactAverageRate(order.id);
+                            return avg !== null ? (
+                              <>{`₹ ${avg.toFixed(2)}`}</>
+                            ) : (
+                              <>₹ {order.rate || "0"}</>
+                            );
+                          })()
                         ) : (
                           <>₹ {order.rate || "0"}</>
-                        );
-                      })()
-                    ) : (
-                      <>₹ {order.rate || "0"}</>
-                    )}
-                  </TableCell>
+                        )}
+                      </TableCell>
 
-                  {/* Status */}
-                  <TableCell className="px-4 py-4 text-sm">
-                    <Badge
-                      className={`text-[10px] font-bold uppercase ${statusStyles[(order.status || "").toLowerCase()] || "bg-gray-100 text-gray-700"}`}
-                    >
-                      {order.status || "Pending"}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))
+                      {/* Status */}
+                      <TableCell className="px-4 py-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            className={`text-[10px] font-bold uppercase ${statusStyles[(order.status || "").toLowerCase()] || "bg-gray-100 text-gray-700"}`}
+                          >
+                            {order.status || "Pending"}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-full hover:bg-orange-50 text-orange-600"
+                            onClick={() => toggleRow(order.id)}
+                          >
+                            {isExpanded ? (
+                              <Minus className="h-4 w-4" />
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Expanded History Row */}
+                    {isExpanded && (
+                      <TableRow className="bg-gray-50/50">
+                        <TableCell colSpan={7} className="px-8 py-4">
+                          <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                            <div className="bg-gray-50 px-4 py-2 border-b flex items-center gap-2">
+                              <PackageCheck className="w-4 h-4 text-[#F87B1B]" />
+                              <span className="text-xs font-bold uppercase text-gray-700">
+                                Fulfillment History
+                              </span>
+                            </div>
+                            <Table>
+                              <TableHeader>
+                                <TableRow className="bg-gray-50/30">
+                                  <TableHead className="text-[10px] font-black uppercase h-8">
+                                    Date
+                                  </TableHead>
+                                  <TableHead className="text-[10px] font-black uppercase h-8">
+                                    Qty (ton)
+                                  </TableHead>
+                                  <TableHead className="text-[10px] font-black uppercase h-8">
+                                    Rate
+                                  </TableHead>
+                                  <TableHead className="text-[10px] font-black uppercase h-8">
+                                    Status
+                                  </TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {orderFulfillments.length === 0 ? (
+                                  <TableRow>
+                                    <TableCell
+                                      colSpan={4}
+                                      className="text-center py-4 text-xs text-gray-500 italic"
+                                    >
+                                      No fulfillments recorded.
+                                    </TableCell>
+                                  </TableRow>
+                                ) : (
+                                  orderFulfillments.map((f: any) => (
+                                    <TableRow key={f.id}>
+                                      <TableCell className="py-2 text-[11px] font-medium text-gray-600">
+                                        {formatDate(f.createdAt || f.date)}
+                                      </TableCell>
+                                      <TableCell className="py-2 text-[12px] font-bold text-gray-800">
+                                        {f.acceptedQtyTons}
+                                      </TableCell>
+                                      <TableCell className="py-2 text-[12px] font-bold text-green-700">
+                                        ₹{f.rate?.toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className="py-2">
+                                        <Badge
+                                          variant="outline"
+                                          className={`text-[9px] font-black uppercase h-5 px-2 ${
+                                            f.status === "dispatched" ||
+                                            f.status === "completed"
+                                              ? "bg-green-100 text-green-700"
+                                              : "bg-gray-100 text-gray-700"
+                                          }`}
+                                        >
+                                          {f.status === "dispatched"
+                                            ? "completed"
+                                            : f.status}
+                                        </Badge>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                );
+              })
             )}
           </TableBody>
         </Table>

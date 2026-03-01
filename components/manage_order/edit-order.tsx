@@ -17,6 +17,7 @@ import {
   getDocs,
   serverTimestamp,
 } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 
 interface Fulfillment {
   id: string;
@@ -51,6 +52,7 @@ export default function EditOrders({
   const [loadingFulfillments, setLoadingFulfillments] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const [formState, setFormState] = useState({
     distributorId: order.distributorId,

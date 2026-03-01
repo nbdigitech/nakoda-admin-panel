@@ -82,6 +82,36 @@ export default function OrdersTable({
     }
   };
 
+  const handleCompleteOrder = async (orderId: string) => {
+    try {
+      setUpdatingId(orderId);
+      const orderCollection =
+        orderSource === "dealer" ? "distributor_orders" : "influencer_orders";
+
+      await updateOrder(orderCollection, orderId, {
+        status: "completed",
+        updatedAt: serverTimestamp(),
+      });
+
+      toast({
+        title: "Order Completed",
+        description: "The order has been moved to history.",
+      });
+
+      if (onUpdate) onUpdate();
+      router.push("/order-history");
+    } catch (error) {
+      console.error("Error completing order:", error);
+      toast({
+        title: "Action Failed",
+        description: "Failed to complete the order.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const loadAllFulfillments = async () => {
     try {
       const data: any =
@@ -277,25 +307,11 @@ export default function OrdersTable({
 
                 {/* Status */}
                 <TableCell className="px-4 py-4">
-                  {(order.status || "").toLowerCase() === "processing" ? (
-                    <Button
-                      size="sm"
-                      onClick={() => handleProcessingClick(order)}
-                      disabled={updatingId === order.id}
-                      className="text-[10px] font-bold uppercase bg-purple-100 text-purple-700 hover:bg-purple-200 border-none h-7 px-3"
-                    >
-                      {updatingId === order.id ? (
-                        <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                      ) : null}
-                      {order.status || "Processing"}
-                    </Button>
-                  ) : (
-                    <Badge
-                      className={`text-[10px] font-bold uppercase ${statusStyles[(order.status || "").toLowerCase()] || "bg-gray-100 text-gray-700"}`}
-                    >
-                      {order.status || "Pending"}
-                    </Badge>
-                  )}
+                  <Badge
+                    className={`text-[10px] font-bold uppercase ${statusStyles[(order.status || "").toLowerCase()] || "bg-gray-100 text-gray-700"}`}
+                  >
+                    {order.status || "Pending"}
+                  </Badge>
                 </TableCell>
 
                 {/* Action */}
@@ -306,10 +322,26 @@ export default function OrdersTable({
                       displayId={order.orderId}
                       distributorId={order.distributorId}
                       orderSource={orderSource}
+                      onUpdate={() => {
+                        if (onUpdate) onUpdate();
+                        loadAllFulfillments();
+                      }}
                     />
 
-                    {(order.status || "").toLowerCase() ===
-                    "processing" ? null : ["approved", "rejected"].includes(
+                    {(order.status || "").toLowerCase() === "processing" ? (
+                      <Button
+                        onClick={() => handleCompleteOrder(order.id)}
+                        disabled={updatingId === order.id}
+                        className="flex items-center gap-2 bg-[#F87B1B] text-white px-3 py-2 rounded-lg font-semibold hover:bg-[#E06A15]"
+                      >
+                        {updatingId === order.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Edit className="w-4 h-4" />
+                        )}
+                        Processing
+                      </Button>
+                    ) : ["approved", "rejected"].includes(
                         (order.status || "").toLowerCase(),
                       ) ? (
                       <Button
