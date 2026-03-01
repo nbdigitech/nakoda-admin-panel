@@ -338,13 +338,24 @@ export default function OrderHistoryTable({
                                       <Badge
                                         variant="outline"
                                         className={`text-[9px] font-black uppercase h-5 px-2 border-none ${
-                                          f.status === "dispatched" ||
-                                          f.status === "completed"
+                                          [
+                                            "dispatched",
+                                            "accepted",
+                                            "completed",
+                                          ].includes(
+                                            (f.status || "").toLowerCase(),
+                                          )
                                             ? "bg-green-100 text-green-700"
                                             : "bg-orange-50 text-[#F87B1B]"
                                         }`}
                                       >
-                                        {f.status === "dispatched"
+                                        {[
+                                          "dispatched",
+                                          "accepted",
+                                          "completed",
+                                        ].includes(
+                                          (f.status || "").toLowerCase(),
+                                        )
                                           ? "Completed"
                                           : f.status}
                                       </Badge>

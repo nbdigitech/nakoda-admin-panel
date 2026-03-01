@@ -66,7 +66,7 @@ export default function OrdersTable({
   const { toast } = useToast();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [allFulfillments, setAllFulfillments] = useState<any[]>([]);
-  const [usersMap, setUsersMap] = useState<Record<string, string>>({});
+  const [usersMap, setUsersMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
     loadAllFulfillments();
@@ -76,7 +76,7 @@ export default function OrdersTable({
   const loadUsers = async () => {
     try {
       const map = await fetchUsers();
-      setUsersMap(map as Record<string, string>);
+      setUsersMap(map as Record<string, any>);
     } catch (error) {
       console.error("Error loading users for table:", error);
     }
@@ -285,7 +285,7 @@ export default function OrdersTable({
                   {formatDate(order.createdAt)}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm font-semibold">
-                  {usersMap[order.distributorId] ||
+                  {usersMap[order.distributorId]?.name ||
                     order.distributorId ||
                     "N/A"}
                 </TableCell>
