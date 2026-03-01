@@ -300,8 +300,17 @@ function SurveyDetailsContent() {
               Previous
             </Button>
             <div className="flex gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
+              {(() => {
+                const pages = [];
+                const groupSize = 3;
+                const groupIndex = Math.floor((currentPage - 1) / groupSize);
+                const startPage = groupIndex * groupSize + 1;
+                const endPage = Math.min(totalPages, startPage + groupSize - 1);
+
+                for (let i = startPage; i <= endPage; i++) {
+                  pages.push(i);
+                }
+                return pages.map((page) => (
                   <Button
                     key={page}
                     variant={currentPage === page ? "default" : "outline"}
@@ -315,8 +324,8 @@ function SurveyDetailsContent() {
                   >
                     {page}
                   </Button>
-                ),
-              )}
+                ));
+              })()}
             </div>
             <Button
               variant="outline"

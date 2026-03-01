@@ -44,7 +44,9 @@ export default function OrderHistoryTable({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [allFulfillments, setAllFulfillments] = useState<any[]>([]);
-  const [usersMap, setUsersMap] = useState<Record<string, string>>({});
+  const [usersMap, setUsersMap] = useState<
+    Record<string, { name: string; distributorName: string }>
+  >({});
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -55,7 +57,9 @@ export default function OrderHistoryTable({
   const loadUsers = async () => {
     try {
       const map = await fetchUsers();
-      setUsersMap(map as Record<string, string>);
+      setUsersMap(
+        map as Record<string, { name: string; distributorName: string }>,
+      );
     } catch (error) {
       console.error("Error loading users for history table:", error);
     }
@@ -152,8 +156,13 @@ export default function OrderHistoryTable({
                 Dispatch Date
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
-                {type === "dealer" ? "Distributor" : "Sub Dealer"}
+                {type === "dealer" ? "Sub Dealer" : "dealer"}
               </TableHead>
+              {type === "sub-dealer" && (
+                <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                  Sub dealer
+                </TableHead>
+              )}
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
                 Qty (Total)
               </TableHead>
@@ -174,7 +183,7 @@ export default function OrderHistoryTable({
             {paginatedOrders.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={type === "sub-dealer" ? 10 : 9}
                   className="text-center py-20 text-gray-500 italic"
                 >
                   No orders found for this category.
@@ -217,10 +226,18 @@ export default function OrderHistoryTable({
 
                       {/* Dealer/Sub Dealer Name */}
                       <TableCell className="px-4 py-4 text-sm font-semibold text-gray-800">
-                        {usersMap[order.distributorId] ||
+                        {usersMap[order.distributorId]?.name ||
                           order.distributorId ||
                           "Unknown"}
                       </TableCell>
+
+                      {/* Parent Distributor Name - Only for Sub Dealers */}
+                      {type === "sub-dealer" && (
+                        <TableCell className="px-4 py-4 text-sm font-semibold text-gray-600">
+                          {usersMap[order.distributorId]?.distributorName ||
+                            "-"}
+                        </TableCell>
+                      )}
 
                       {/* Total Qty */}
                       <TableCell className="px-4 py-4 text-sm font-bold">
@@ -279,7 +296,10 @@ export default function OrderHistoryTable({
                     {/* Expanded History Row */}
                     {isExpanded && orderFulfillments.length > 1 && (
                       <TableRow className="bg-orange-50/10 border-none hover:bg-orange-50/10 transition-all">
-                        <TableCell colSpan={9} className="p-0 border-none">
+                        <TableCell
+                          colSpan={type === "sub-dealer" ? 10 : 9}
+                          className="p-0 border-none"
+                        >
                           <div className="mx-4 mb-4 mt-0 bg-white rounded-lg border border-orange-100/50 shadow-sm overflow-hidden">
                             {/* Simple Table for Fulfillments */}
                             <Table className="w-full">
@@ -363,21 +383,32 @@ export default function OrderHistoryTable({
             Previous
           </Button>
           <div className="flex gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentPage(page)}
-                className={
-                  currentPage === page
-                    ? "bg-[#F87B1B] text-white"
-                    : "text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
-                }
-              >
-                {page}
-              </Button>
-            ))}
+            {(() => {
+              const pages = [];
+              const groupSize = 3;
+              const groupIndex = Math.floor((currentPage - 1) / groupSize);
+              const startPage = groupIndex * groupSize + 1;
+              const endPage = Math.min(totalPages, startPage + groupSize - 1);
+
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(i);
+              }
+              return pages.map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className={
+                    currentPage === page
+                      ? "bg-[#F87B1B] text-white"
+                      : "text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
+                  }
+                >
+                  {page}
+                </Button>
+              ));
+            })()}
           </div>
           <Button
             variant="outline"

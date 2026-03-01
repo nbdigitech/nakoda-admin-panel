@@ -101,7 +101,10 @@ export const fetchUsers = async () => {
         const usersMap = {};
         querySnapshot.forEach(doc => {
             const data = doc.data();
-            usersMap[doc.id] = data.name || data.fullName || data.distributorName || "No Name";
+            usersMap[doc.id] = {
+                name: data.name || data.fullName || "No Name",
+                distributorName: data.distributorName || ""
+            };
         });
         return usersMap;
     } catch (error) {

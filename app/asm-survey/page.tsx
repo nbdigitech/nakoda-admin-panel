@@ -223,8 +223,14 @@ export default function AsmSurveyPage() {
         return 0;
       };
 
-      const timeA = parseDate(a.createdAt) || parseDate(a.startDate);
-      const timeB = parseDate(b.createdAt) || parseDate(b.startDate);
+      const timeA =
+        parseDate(a.updatedAt) ||
+        parseDate(a.createdAt) ||
+        parseDate(a.startDate);
+      const timeB =
+        parseDate(b.updatedAt) ||
+        parseDate(b.createdAt) ||
+        parseDate(b.startDate);
 
       return timeB - timeA; // Descending: newest to oldest
     });
@@ -297,22 +303,46 @@ export default function AsmSurveyPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterDate, setFilterDate] = useState("");
 
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, searchTerm]);
 
   const searchedTours = useMemo(() => {
-    if (!searchTerm.trim()) return filteredTours;
-    const term = searchTerm.toLowerCase();
-    return filteredTours.filter(
-      (t: any) =>
-        (t.tourName || "").toLowerCase().includes(term) ||
-        (t.staffId || "").toLowerCase().includes(term) ||
-        (t.staffName || "").toLowerCase().includes(term) ||
-        (t.staffPhone || "").toLowerCase().includes(term),
-    );
-  }, [filteredTours, searchTerm]);
+    let result = filteredTours;
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(
+        (t: any) =>
+          (t.tourName || "").toLowerCase().includes(term) ||
+          (t.staffId || "").toLowerCase().includes(term) ||
+          (t.staffName || "").toLowerCase().includes(term) ||
+          (t.staffPhone || "").toLowerCase().includes(term),
+      );
+    }
+
+    if (filterDate) {
+      result = result.filter((t: any) => {
+        const uDate = t.updatedAt || t.createdAt || t.startDate;
+        if (!uDate) return false;
+
+        let d: Date;
+        if (uDate.toDate) d = uDate.toDate();
+        else if (uDate.seconds) d = new Date(uDate.seconds * 1000);
+        else if (uDate._seconds) d = new Date(uDate._seconds * 1000);
+        else d = new Date(uDate);
+
+        const [y, m, day] = filterDate.split("-").map(Number);
+        return (
+          d.getFullYear() === y && d.getMonth() + 1 === m && d.getDate() === day
+        );
+      });
+    }
+
+    return result;
+  }, [filteredTours, searchTerm, filterDate]);
 
   const totalPages = Math.ceil(searchedTours.length / itemsPerPage);
   const paginatedTours = searchedTours.slice(
@@ -394,15 +424,24 @@ export default function AsmSurveyPage() {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
           <h2 className="text-xl font-bold text-gray-900">Recent Survey</h2>
 
-          <div className="relative w-full lg:w-[400px]">
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+            <div className="relative w-full lg:w-[350px]">
+              <input
+                type="text"
+                placeholder="Search by Title, ASM ID, Name or Mobile..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F87B1B] transition-all text-sm"
+              />
+              <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            </div>
+
             <input
-              type="text"
-              placeholder="Search by Title, ASM ID, Name or Mobile..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F87B1B] transition-all text-sm"
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F87B1B] transition-all text-sm bg-white text-gray-700 hover:border-gray-300"
             />
-            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           </div>
         </div>
 
@@ -433,8 +472,8 @@ export default function AsmSurveyPage() {
               <TableRow>
                 <TableHead>S No.</TableHead>
                 <TableHead>Title</TableHead>
-                <TableHead>ASM ID</TableHead>
                 <TableHead>Survey Date</TableHead>
+                <TableHead>Update Date</TableHead>
                 <TableHead>ASM Name</TableHead>
                 <TableHead>Mobile</TableHead>
                 <TableHead>Expenses</TableHead>
@@ -447,7 +486,7 @@ export default function AsmSurveyPage() {
               {loading && tours.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={9}
+                    colSpan={10}
                     className="text-center py-6 text-gray-500"
                   >
                     Loading tours...
@@ -467,17 +506,18 @@ export default function AsmSurveyPage() {
                       {item.tourName || "—"}
                     </TableCell>
 
-                    <TableCell>
-                      {item.staffId?.substring(0, 12) || "—"}
-                    </TableCell>
-
                     {/* START DATE */}
                     <TableCell>{formatDate(item.startDate)}</TableCell>
 
-                    {/* USER NAME */}
-                    <TableCell>{item?.staffName || "name"}</TableCell>
+                    {/* UPDATE DATE */}
+                    <TableCell className="font-semibold text-gray-700">
+                      {formatDate(item.updatedAt || item.createdAt)}
+                    </TableCell>
 
-                    <TableCell>{item.staffPhone || "number"}</TableCell>
+                    {/* USER NAME */}
+                    <TableCell>{item?.staffName || "—"}</TableCell>
+
+                    <TableCell>{item.staffPhone || "—"}</TableCell>
 
                     <TableCell>
                       <Button
@@ -520,7 +560,7 @@ export default function AsmSurveyPage() {
               {!loading && paginatedTours.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={9}
+                    colSpan={10}
                     className="text-center py-6 text-gray-500"
                   >
                     No surveys found
@@ -543,21 +583,32 @@ export default function AsmSurveyPage() {
             Previous
           </Button>
           <div className="flex gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentPage(page)}
-                className={
-                  currentPage === page
-                    ? "bg-[#F87B1B] text-white hover:bg-[#e66a15]"
-                    : "text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
-                }
-              >
-                {page}
-              </Button>
-            ))}
+            {(() => {
+              const pages = [];
+              const groupSize = 3;
+              const groupIndex = Math.floor((currentPage - 1) / groupSize);
+              const startPage = groupIndex * groupSize + 1;
+              const endPage = Math.min(totalPages, startPage + groupSize - 1);
+
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(i);
+              }
+              return pages.map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className={
+                    currentPage === page
+                      ? "bg-[#F87B1B] text-white hover:bg-[#e66a15]"
+                      : "text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
+                  }
+                >
+                  {page}
+                </Button>
+              ));
+            })()}
           </div>
           <Button
             variant="outline"

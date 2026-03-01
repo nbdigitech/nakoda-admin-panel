@@ -225,8 +225,10 @@ export default function StaffTable({
     }
   };
 
-  const filteredStaff = staff.filter((member) =>
-    member.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredStaff = staff.filter(
+    (member) =>
+      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (member.asmName || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
@@ -518,21 +520,32 @@ export default function StaffTable({
           Previous
         </Button>
         <div className="flex gap-1">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <Button
-              key={page}
-              variant={currentPage === page ? "default" : "outline"}
-              size="sm"
-              onClick={() => setCurrentPage(page)}
-              className={
-                currentPage === page
-                  ? "bg-[#F87B1B] text-white hover:bg-[#e66a15]"
-                  : "text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
-              }
-            >
-              {page}
-            </Button>
-          ))}
+          {(() => {
+            const pages = [];
+            const groupSize = 3;
+            const groupIndex = Math.floor((currentPage - 1) / groupSize);
+            const startPage = groupIndex * groupSize + 1;
+            const endPage = Math.min(totalPages, startPage + groupSize - 1);
+
+            for (let i = startPage; i <= endPage; i++) {
+              pages.push(i);
+            }
+            return pages.map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className={
+                  currentPage === page
+                    ? "bg-[#F87B1B] text-white hover:bg-[#e66a15]"
+                    : "text-[#F87B1B] border-[#F87B1B] hover:bg-[#F87B1B1A]"
+                }
+              >
+                {page}
+              </Button>
+            ));
+          })()}
         </div>
         <Button
           variant="outline"
