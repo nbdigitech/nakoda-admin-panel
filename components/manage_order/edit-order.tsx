@@ -182,6 +182,14 @@ export default function EditOrders({
 
       if (averageRate > 0) {
         payload.averageRate = averageRate;
+        // Also save as main rate if completing
+        if (
+          ["approved", "completed"].includes(
+            (formState.status || "").toLowerCase(),
+          )
+        ) {
+          payload.rate = averageRate.toFixed(2);
+        }
       }
 
       await updateOrder(collectionName, order.id, payload);

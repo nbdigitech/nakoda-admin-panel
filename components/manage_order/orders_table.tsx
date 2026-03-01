@@ -88,10 +88,17 @@ export default function OrdersTable({
       const orderCollection =
         orderSource === "dealer" ? "distributor_orders" : "influencer_orders";
 
-      await updateOrder(orderCollection, orderId, {
+      const avgRate = getExactAverageRate(orderId);
+      const updateData: any = {
         status: "completed",
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      if (avgRate !== null) {
+        updateData.rate = avgRate.toFixed(2);
+      }
+
+      await updateOrder(orderCollection, orderId, updateData);
 
       toast({
         title: "Order Completed",
@@ -187,10 +194,17 @@ export default function OrdersTable({
       const collectionName =
         orderSource === "dealer" ? "distributor_orders" : "influencer_orders";
 
-      await updateOrder(collectionName, order.id, {
+      const avgRate = getExactAverageRate(order.id);
+      const updateData: any = {
         status: "approved",
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      if (avgRate !== null) {
+        updateData.rate = avgRate.toFixed(2);
+      }
+
+      await updateOrder(collectionName, order.id, updateData);
 
       toast({
         title: "Order Completed",
