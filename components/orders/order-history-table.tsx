@@ -216,7 +216,9 @@ export default function OrderHistoryTable({
 
                       {/* Rate */}
                       <TableCell className="px-4 py-4 text-sm font-bold text-green-600">
-                        {(order.status || "").toLowerCase() === "approved" ? (
+                        {["approved", "completed"].includes(
+                          (order.status || "").toLowerCase(),
+                        ) ? (
                           (() => {
                             const avg = getExactAverageRate(order.id);
                             return avg !== null ? (
