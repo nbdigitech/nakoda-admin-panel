@@ -238,24 +238,26 @@ export default function OrderHistoryTable({
                           >
                             {order.status || "Pending"}
                           </Badge>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 rounded-full hover:bg-orange-50 text-orange-600"
-                            onClick={() => toggleRow(order.id)}
-                          >
-                            {isExpanded ? (
-                              <Minus className="h-4 w-4" />
-                            ) : (
-                              <Plus className="h-4 w-4" />
-                            )}
-                          </Button>
+                          {orderFulfillments.length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 rounded-full hover:bg-orange-50 text-orange-600"
+                              onClick={() => toggleRow(order.id)}
+                            >
+                              {isExpanded ? (
+                                <Minus className="h-4 w-4" />
+                              ) : (
+                                <Plus className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
 
                     {/* Expanded History Row */}
-                    {isExpanded && (
+                    {isExpanded && orderFulfillments.length > 1 && (
                       <TableRow className="bg-gray-50/50">
                         <TableCell colSpan={7} className="px-8 py-4">
                           <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
