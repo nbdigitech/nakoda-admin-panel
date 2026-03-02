@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFunctions } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
@@ -12,10 +12,9 @@ let db;
 let storage;
 
 const initializeFirebase = () => {
-
-  if (typeof window === "undefined") return;
-
-  if (!app) {
+  if (getApps().length > 0) {
+    app = getApp();
+  } else {
     const firebaseConfig = {
       apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
       authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -24,30 +23,40 @@ const initializeFirebase = () => {
       messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
       appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     };
-
     app = initializeApp(firebaseConfig);
+  }
 
-    // 🔐 Auth
+  // 🔐 Auth
+  if (!auth) {
     auth = getAuth(app);
-    setPersistence(auth, browserLocalPersistence);
+    if (typeof window !== "undefined") {
+      setPersistence(auth, browserLocalPersistence);
+    }
+  }
 
-    // ☁️ Cloud Functions
-    functions = getFunctions(app);
+  // ☁️ Cloud Functions
+  if (!functions) functions = getFunctions(app);
 
-    // 🔥 Firestore
-    db = getFirestore(app);
+  // 🔥 Firestore
+  if (!db) db = getFirestore(app);
 
-    // 📦 Storage
-    storage = getStorage(app);
+  // 📦 Storage
+  if (!storage) storage = getStorage(app);
 
-    // 🛡️ App Check (NO debug token in production)
+  // 🛡️ App Check
+  if (typeof window !== "undefined" && !window.appCheckInitialized) {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-    initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(
-        process.env.NEXT_PUBLIC_RECAPTCHA_V3_SITE_KEY
-      ),
-      isTokenAutoRefreshEnabled: true,
-    });
+    try {
+        initializeAppCheck(app, {
+            provider: new ReCaptchaV3Provider(
+                process.env.NEXT_PUBLIC_RECAPTCHA_V3_SITE_KEY
+            ),
+            isTokenAutoRefreshEnabled: true,
+        });
+        window.appCheckInitialized = true;
+    } catch (err) {
+        console.warn("AppCheck failed to initialize:", err);
+    }
   }
 };
 
