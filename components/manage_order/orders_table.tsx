@@ -30,6 +30,7 @@ export interface Order {
   createdAt: any;
   updatedAt?: any;
   distributorId: string;
+  influencerId?: string;
   totalQtyTons: number;
   fulfilledQtyTons: number;
   pendingQtyTons: number;
@@ -246,6 +247,9 @@ export default function OrdersTable({
                 Dealer
               </TableHead>
               <TableHead className="px-4 py-4 font-bold text-xs">
+                Sub Dealer
+              </TableHead>
+              <TableHead className="px-4 py-4 font-bold text-xs">
                 Mobile
               </TableHead>
 
@@ -288,6 +292,13 @@ export default function OrdersTable({
                   {usersMap[order.distributorId]?.name ||
                     order.distributorId ||
                     "N/A"}
+                </TableCell>
+                <TableCell className="px-4 py-4 text-sm font-semibold text-[#F87B1B]">
+                  {orderSource === "sub-dealer"
+                    ? usersMap[order.influencerId || ""]?.name ||
+                      order.influencerId ||
+                      "-"
+                    : "-"}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm">
                   {order.mobileNumber || "-"}

@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import OrdersTable, { Order } from "@/components/manage_order/orders_table";
 import { Plus, Loader2, Search } from "lucide-react";
-import { getInfluencerOrders, getDistributorOrders } from "@/services/orders";
+import {
+  getInfluencerOrders,
+  getDistributorOrders,
+  fetchUsers,
+} from "@/services/orders";
 
 interface OrderViewProps {
   type: "dealer" | "sub-dealer";
@@ -19,16 +23,20 @@ export default function OrderView({ type }: OrderViewProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usersMap, setUsersMap] = useState<Record<string, any>>({});
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const data: any =
-        type === "sub-dealer"
-          ? await getInfluencerOrders()
-          : await getDistributorOrders();
+      const [data, uMap] = await Promise.all([
+        (type === "sub-dealer"
+          ? getInfluencerOrders()
+          : getDistributorOrders()) as Promise<Order[]>,
+        fetchUsers(),
+      ]);
       setOrders(data);
-      applyFilters(data, activeTab, statusFilter, searchTerm);
+      setUsersMap(uMap);
+      applyFilters(data, activeTab, statusFilter, searchTerm, uMap);
     } catch (error) {
       console.error(`Failed to fetch ${type} orders:`, error);
     } finally {
@@ -41,6 +49,7 @@ export default function OrderView({ type }: OrderViewProps) {
     tab: string,
     status: string,
     search: string,
+    uMap: Record<string, any> = usersMap,
   ) => {
     let result = [...allOrders];
 
@@ -68,13 +77,23 @@ export default function OrderView({ type }: OrderViewProps) {
     // Search Filter
     if (search.trim()) {
       const query = search.toLowerCase();
-      result = result.filter(
-        (order) =>
+      result = result.filter((order) => {
+        const subDealerName = (
+          uMap[order.influencerId || ""]?.name || ""
+        ).toLowerCase();
+        const dealerName = (
+          uMap[order.distributorId || ""]?.name || ""
+        ).toLowerCase();
+        return (
           (order.distributorId || "").toLowerCase().includes(query) ||
+          dealerName.includes(query) ||
           (order.orderId || "").toLowerCase().includes(query) ||
           (order.mobileNumber || "").toLowerCase().includes(query) ||
-          (order.location || "").toLowerCase().includes(query),
-      );
+          (order.location || "").toLowerCase().includes(query) ||
+          (order.influencerId || "").toLowerCase().includes(query) ||
+          subDealerName.includes(query)
+        );
+      });
     }
 
     setFilteredOrders(result);

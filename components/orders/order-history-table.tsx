@@ -156,7 +156,7 @@ export default function OrderHistoryTable({
                 Dispatch Date
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
-                {type === "dealer" ? "Sub Dealer" : "dealer"}
+                {type === "dealer" ? " Dealer" : "dealer"}
               </TableHead>
               {type === "sub-dealer" && (
                 <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
@@ -231,10 +231,11 @@ export default function OrderHistoryTable({
                           "Unknown"}
                       </TableCell>
 
-                      {/* Parent Distributor Name - Only for Sub Dealers */}
+                      {/* Sub Dealer Name - Fetched by influencerId */}
                       {type === "sub-dealer" && (
-                        <TableCell className="px-4 py-4 text-sm font-semibold text-gray-600">
-                          {usersMap[order.distributorId]?.distributorName ||
+                        <TableCell className="px-4 py-4 text-sm font-semibold text-[#F87B1B]">
+                          {usersMap[order.influencerId]?.name ||
+                            order.influencerId ||
                             "-"}
                         </TableCell>
                       )}
