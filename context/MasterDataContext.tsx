@@ -14,6 +14,7 @@ import {
   getInfluencerCategory,
   getUnit,
   getDesignation,
+  getValidityPeriod,
 } from "@/services/masterData";
 
 interface MasterDataContextType {
@@ -23,6 +24,7 @@ interface MasterDataContextType {
   influencerCategories: any[];
   units: any[];
   designations: any[];
+  validityPeriods: any[];
   loading: boolean;
   refreshStates: () => Promise<void>;
   refreshDistricts: () => Promise<void>;
@@ -30,6 +32,7 @@ interface MasterDataContextType {
   refreshInfluencerCategories: () => Promise<void>;
   refreshUnits: () => Promise<void>;
   refreshDesignations: () => Promise<void>;
+  refreshValidityPeriods: () => Promise<void>;
   refreshAll: () => Promise<void>;
 }
 
@@ -46,6 +49,7 @@ export const MasterDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const [influencerCategories, setInfluencerCategories] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [designations, setDesignations] = useState<any[]>([]);
+  const [validityPeriods, setValidityPeriods] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialFetched, setInitialFetched] = useState(false);
 
@@ -103,16 +107,26 @@ export const MasterDataProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const refreshValidityPeriods = useCallback(async () => {
+    try {
+      const res = await getValidityPeriod();
+      setValidityPeriods(res.data || []);
+    } catch (error) {
+      console.error("Error fetching validity periods:", error);
+    }
+  }, []);
+
   const refreshAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [sRes, dRes, cRes, iRes, uRes, deRes] = await Promise.all([
+      const [sRes, dRes, cRes, iRes, uRes, deRes, vRes] = await Promise.all([
         getState(),
         getDistrict(),
         getCity(),
         getInfluencerCategory(),
         getUnit(),
         getDesignation(),
+        getValidityPeriod(),
       ]);
       setStates(sRes.data || []);
       setDistricts(dRes.data || []);
@@ -120,6 +134,7 @@ export const MasterDataProvider: React.FC<{ children: React.ReactNode }> = ({
       setInfluencerCategories(iRes.data || []);
       setUnits(uRes.data || []);
       setDesignations(deRes.data || []);
+      setValidityPeriods(vRes.data || []);
     } catch (error) {
       console.error("Error fetching master data:", error);
     } finally {
@@ -143,6 +158,7 @@ export const MasterDataProvider: React.FC<{ children: React.ReactNode }> = ({
         influencerCategories,
         units,
         designations,
+        validityPeriods,
         loading,
         refreshStates,
         refreshDistricts,
@@ -150,6 +166,7 @@ export const MasterDataProvider: React.FC<{ children: React.ReactNode }> = ({
         refreshInfluencerCategories,
         refreshUnits,
         refreshDesignations,
+        refreshValidityPeriods,
         refreshAll,
       }}
     >
