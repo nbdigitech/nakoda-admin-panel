@@ -15,6 +15,7 @@ import {
   getUnit,
   getDesignation,
   getValidityPeriod,
+  getBannerImage,
 } from "@/services/masterData";
 
 interface MasterDataContextType {
@@ -25,6 +26,7 @@ interface MasterDataContextType {
   units: any[];
   designations: any[];
   validityPeriods: any[];
+  banners: any[];
   loading: boolean;
   refreshStates: () => Promise<void>;
   refreshDistricts: () => Promise<void>;
@@ -33,6 +35,7 @@ interface MasterDataContextType {
   refreshUnits: () => Promise<void>;
   refreshDesignations: () => Promise<void>;
   refreshValidityPeriods: () => Promise<void>;
+  refreshBanners: () => Promise<void>;
   refreshAll: () => Promise<void>;
 }
 
@@ -50,6 +53,7 @@ export const MasterDataProvider: React.FC<{ children: React.ReactNode }> = ({
   const [units, setUnits] = useState<any[]>([]);
   const [designations, setDesignations] = useState<any[]>([]);
   const [validityPeriods, setValidityPeriods] = useState<any[]>([]);
+  const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialFetched, setInitialFetched] = useState(false);
 
@@ -116,18 +120,29 @@ export const MasterDataProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const refreshBanners = useCallback(async () => {
+    try {
+      const res = await getBannerImage();
+      setBanners(res.data || []);
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+    }
+  }, []);
+
   const refreshAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [sRes, dRes, cRes, iRes, uRes, deRes, vRes] = await Promise.all([
-        getState(),
-        getDistrict(),
-        getCity(),
-        getInfluencerCategory(),
-        getUnit(),
-        getDesignation(),
-        getValidityPeriod(),
-      ]);
+      const [sRes, dRes, cRes, iRes, uRes, deRes, vRes, bRes] =
+        await Promise.all([
+          getState(),
+          getDistrict(),
+          getCity(),
+          getInfluencerCategory(),
+          getUnit(),
+          getDesignation(),
+          getValidityPeriod(),
+          getBannerImage(),
+        ]);
       setStates(sRes.data || []);
       setDistricts(dRes.data || []);
       setCities(cRes.data || []);
@@ -135,6 +150,7 @@ export const MasterDataProvider: React.FC<{ children: React.ReactNode }> = ({
       setUnits(uRes.data || []);
       setDesignations(deRes.data || []);
       setValidityPeriods(vRes.data || []);
+      setBanners(bRes.data || []);
     } catch (error) {
       console.error("Error fetching master data:", error);
     } finally {
@@ -159,6 +175,7 @@ export const MasterDataProvider: React.FC<{ children: React.ReactNode }> = ({
         units,
         designations,
         validityPeriods,
+        banners,
         loading,
         refreshStates,
         refreshDistricts,
@@ -167,6 +184,7 @@ export const MasterDataProvider: React.FC<{ children: React.ReactNode }> = ({
         refreshUnits,
         refreshDesignations,
         refreshValidityPeriods,
+        refreshBanners,
         refreshAll,
       }}
     >

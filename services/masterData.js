@@ -68,3 +68,35 @@ export const deleteValidityPeriod = async (payload) => {
     await deleteDoc(doc(db, "validity_period", payload.docId));
     return { success: true };
 };
+
+// Banner Image Functions
+export const getBannerImage = async () => {
+    const q = query(collection(db, "banner_image"), orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+    return { data: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) };
+};
+
+export const addBannerImage = async (payload) => {
+    if (payload.id) {
+        const docRef = doc(db, "banner_image", payload.id);
+        await updateDoc(docRef, { 
+            imagePath: payload.imagePath,
+            status: payload.status || "active",
+            updatedAt: serverTimestamp()
+        });
+        return { id: payload.id };
+    } else {
+        const docRef = await addDoc(collection(db, "banner_image"), {
+            imagePath: payload.imagePath,
+            status: payload.status || "active",
+            createdAt: serverTimestamp()
+        });
+        return { id: docRef.id };
+    }
+};
+
+export const deleteBannerImage = async (payload) => {
+    await deleteDoc(doc(db, "banner_image", payload.docId));
+    return { success: true };
+};
+

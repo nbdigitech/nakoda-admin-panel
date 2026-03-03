@@ -8,6 +8,7 @@ import InfluencerCategoryCard from "@/components/master/influencer-category-card
 import UnitCard from "@/components/master/unit-card";
 import StaffCard from "@/components/master/staff-card";
 import ValidityPeriodCard from "@/components/master/validity-period-card";
+import BannerImageCard from "@/components/master/banner-image-card";
 
 export default function MasterPage() {
   return (
@@ -20,6 +21,7 @@ export default function MasterPage() {
         <UnitCard />
         <StaffCard />
         <ValidityPeriodCard />
+        <BannerImageCard />
       </div>
     </DashboardLayout>
   );
