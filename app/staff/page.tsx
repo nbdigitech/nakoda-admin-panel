@@ -51,7 +51,7 @@ export default function StaffPage() {
           <div className="flex items-center flex-1 justify-end w-full lg:w-auto">
             <input
               type="text"
-              placeholder="Search staff by name..."
+              placeholder="Search by name, mobile, email, date or ASM..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full lg:w-[300px] py-3 px-4 mr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F87B1B]"

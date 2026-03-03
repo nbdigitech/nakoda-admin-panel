@@ -3,7 +3,11 @@
 import { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import OrderHistoryTable from "@/components/orders/order-history-table";
-import { getInfluencerOrders, getDistributorOrders } from "@/services/orders";
+import {
+  getInfluencerOrders,
+  getDistributorOrders,
+  fetchUsers,
+} from "@/services/orders";
 import { Loader2, Search } from "lucide-react";
 import {
   Select,
@@ -19,17 +23,21 @@ export default function OrderHistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usersMap, setUsersMap] = useState<Record<string, any>>({});
 
   const tabs = ["Dealer", "Sub Dealer"];
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const data: any =
+      const [data, uMap] = await Promise.all([
         activeTab === "Sub Dealer"
-          ? await getInfluencerOrders()
-          : await getDistributorOrders();
+          ? getInfluencerOrders()
+          : getDistributorOrders(),
+        fetchUsers(),
+      ]);
       setOrders(data);
+      setUsersMap(uMap);
     } catch (error) {
       console.error(`Failed to fetch ${activeTab} orders:`, error);
     } finally {
@@ -67,12 +75,45 @@ export default function OrderHistoryPage() {
     // Apply search filter
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (o) =>
+
+      const formatDate = (date: any) => {
+        if (!date) return "";
+        try {
+          const d = date.toDate ? date.toDate() : new Date(date);
+          if (isNaN(d.getTime())) return "";
+          return d
+            .toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+            .toLowerCase();
+        } catch (e) {
+          return "";
+        }
+      };
+
+      result = result.filter((o) => {
+        const dealerName = (
+          usersMap[o.distributorId || ""]?.name || ""
+        ).toLowerCase();
+        const subDealerName = (
+          usersMap[o.influencerId || ""]?.name || ""
+        ).toLowerCase();
+        const formattedDate = formatDate(o.createdAt);
+        const qty = (o.totalQtyTons || 0).toString();
+
+        return (
           (o.orderId || "").toLowerCase().includes(term) ||
           (o.distributorId || "").toLowerCase().includes(term) ||
-          (o.mobileNumber || "").toLowerCase().includes(term),
-      );
+          dealerName.includes(term) ||
+          (o.influencerId || "").toLowerCase().includes(term) ||
+          subDealerName.includes(term) ||
+          (o.mobileNumber || "").toLowerCase().includes(term) ||
+          formattedDate.includes(term) ||
+          qty.includes(term)
+        );
+      });
     }
 
     // Sort by latest update (or created if updated doesn't exist)
@@ -104,7 +145,7 @@ export default function OrderHistoryPage() {
             <div className="relative w-full lg:w-[400px]">
               <input
                 type="text"
-                placeholder="Search by Order ID, Name or Mobile..."
+                placeholder="Search by ID, name, mobile, date or qty..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F87B1B] transition-all text-sm"

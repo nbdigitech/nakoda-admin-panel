@@ -54,6 +54,7 @@ interface Dealer {
   role: string;
   logoUrl?: string;
   permissions?: string[];
+  createdAt?: any;
 }
 
 export default function DealerTable({
@@ -319,11 +320,31 @@ export default function DealerTable({
   //   }
   // };
 
-  const filteredDealers = dealers.filter(
-    (dealer) =>
-      dealer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (dealer.asmName || "").toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredDealers = dealers.filter((dealer) => {
+    const term = searchTerm.toLowerCase();
+    const formatDate = (date: any) => {
+      if (!date) return "";
+      try {
+        const d = date.toDate ? date.toDate() : new Date(date);
+        return d
+          .toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+          .toLowerCase();
+      } catch (e) {
+        return "";
+      }
+    };
+    return (
+      dealer.name.toLowerCase().includes(term) ||
+      (dealer.organizationName || "").toLowerCase().includes(term) ||
+      (dealer.phoneNumber || "").toLowerCase().includes(term) ||
+      (dealer.asmName || "").toLowerCase().includes(term) ||
+      formatDate(dealer.createdAt).includes(term)
+    );
+  });
 
   const totalPages = Math.ceil(filteredDealers.length / itemsPerPage);
   const paginatedDealers = filteredDealers.slice(

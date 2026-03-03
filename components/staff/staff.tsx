@@ -55,6 +55,7 @@ interface Staff {
   staffCategoryId?: string;
   dob?: string;
   permissions?: string[];
+  createdAt?: any;
 }
 
 export default function StaffTable({
@@ -225,11 +226,31 @@ export default function StaffTable({
     }
   };
 
-  const filteredStaff = staff.filter(
-    (member) =>
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (member.asmName || "").toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredStaff = staff.filter((member) => {
+    const term = searchTerm.toLowerCase();
+    const formatDate = (date: any) => {
+      if (!date) return "";
+      try {
+        const d = date.toDate ? date.toDate() : new Date(date);
+        return d
+          .toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+          .toLowerCase();
+      } catch (e) {
+        return "";
+      }
+    };
+    return (
+      member.name.toLowerCase().includes(term) ||
+      (member.asmName || "").toLowerCase().includes(term) ||
+      (member.phoneNumber || "").toLowerCase().includes(term) ||
+      (member.email || "").toLowerCase().includes(term) ||
+      formatDate(member.createdAt).includes(term)
+    );
+  });
 
   const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
   const paginatedStaff = filteredStaff.slice(

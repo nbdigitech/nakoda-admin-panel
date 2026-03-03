@@ -77,6 +77,24 @@ export default function OrderView({ type }: OrderViewProps) {
     // Search Filter
     if (search.trim()) {
       const query = search.toLowerCase();
+
+      const formatDate = (date: any) => {
+        if (!date) return "";
+        try {
+          const d = date.toDate ? date.toDate() : new Date(date);
+          if (isNaN(d.getTime())) return "";
+          return d
+            .toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+            .toLowerCase();
+        } catch (e) {
+          return "";
+        }
+      };
+
       result = result.filter((order) => {
         const subDealerName = (
           uMap[order.influencerId || ""]?.name || ""
@@ -84,6 +102,9 @@ export default function OrderView({ type }: OrderViewProps) {
         const dealerName = (
           uMap[order.distributorId || ""]?.name || ""
         ).toLowerCase();
+        const formattedDate = formatDate(order.createdAt);
+        const qty = (order.totalQtyTons || 0).toString();
+
         return (
           (order.distributorId || "").toLowerCase().includes(query) ||
           dealerName.includes(query) ||
@@ -91,7 +112,9 @@ export default function OrderView({ type }: OrderViewProps) {
           (order.mobileNumber || "").toLowerCase().includes(query) ||
           (order.location || "").toLowerCase().includes(query) ||
           (order.influencerId || "").toLowerCase().includes(query) ||
-          subDealerName.includes(query)
+          subDealerName.includes(query) ||
+          formattedDate.includes(query) ||
+          qty.includes(query)
         );
       });
     }
@@ -142,7 +165,7 @@ export default function OrderView({ type }: OrderViewProps) {
           <div className="relative w-full sm:w-[320px]">
             <input
               type="text"
-              placeholder="Search by name, ID, mobile..."
+              placeholder="Search by ID, name, mobile, date or qty..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full py-2.5 pl-10 pr-4 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F87B1B] bg-white text-gray-700"
