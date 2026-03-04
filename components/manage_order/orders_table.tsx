@@ -263,7 +263,7 @@ export default function OrdersTable({
                 Order Date
               </TableHead>
               <TableHead className="px-4 py-4 font-bold text-xs">
-                validity_period
+                Validity Period
               </TableHead>
               <TableHead className="px-4 py-4 font-bold text-xs">
                 Dealer
