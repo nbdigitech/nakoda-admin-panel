@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export interface Order {
   id: string;
+  validity_period: any;
   orderId: string;
   createdAt: any;
   updatedAt?: any;
@@ -167,6 +168,24 @@ export default function OrdersTable({
     });
   };
 
+  const formatValidityPeriod = (dateString: any) => {
+    if (!dateString) return "-";
+    if (typeof dateString !== "string") return String(dateString);
+    const parts = dateString.split("-");
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const monthIndex = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      const date = new Date(year, monthIndex, day);
+      return date.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    }
+    return dateString;
+  };
+
   const totalPages = Math.ceil(orders.length / itemsPerPage);
 
   // Sort by latest update/creation date
@@ -189,43 +208,43 @@ export default function OrdersTable({
     currentPage * itemsPerPage,
   );
 
-  const handleProcessingClick = async (order: Order) => {
-    try {
-      setUpdatingId(order.id);
-      const collectionName =
-        orderSource === "dealer" ? "distributor_orders" : "influencer_orders";
+  // const handleProcessingClick = async (order: Order) => {
+  //   try {
+  //     setUpdatingId(order.id);
+  //     const collectionName =
+  //       orderSource === "dealer" ? "distributor_orders" : "influencer_orders";
 
-      const avgRate = getExactAverageRate(order.id);
-      const updateData: any = {
-        status: "approved",
-        updatedAt: serverTimestamp(),
-      };
+  //     const avgRate = getExactAverageRate(order.id);
+  //     const updateData: any = {
+  //       status: "approved",
+  //       updatedAt: serverTimestamp(),
+  //     };
 
-      if (avgRate !== null) {
-        updateData.rate = avgRate.toFixed(2);
-      }
+  //     if (avgRate !== null) {
+  //       updateData.rate = avgRate.toFixed(2);
+  //     }
 
-      await updateOrder(collectionName, order.id, updateData);
+  //     await updateOrder(collectionName, order.id, updateData);
 
-      toast({
-        title: "Order Completed",
-        description: "The order has been moved to history.",
-      });
+  //     toast({
+  //       title: "Order Completed",
+  //       description: "The order has been moved to history.",
+  //     });
 
-      if (onUpdate) onUpdate();
-      loadAllFulfillments();
-      router.push("/order-history");
-    } catch (error) {
-      console.error("Error completing order:", error);
-      toast({
-        title: "Error",
-        description: "Failed to complete the order.",
-        variant: "destructive",
-      });
-    } finally {
-      setUpdatingId(null);
-    }
-  };
+  //     if (onUpdate) onUpdate();
+  //     loadAllFulfillments();
+  //     router.push("/order-history");
+  //   } catch (error) {
+  //     console.error("Error completing order:", error);
+  //     toast({
+  //       title: "Error",
+  //       description: "Failed to complete the order.",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setUpdatingId(null);
+  //   }
+  // };
 
   return (
     <div className="w-full">
@@ -242,6 +261,9 @@ export default function OrdersTable({
               </TableHead>
               <TableHead className="px-4 py-4 font-bold text-xs">
                 Order Date
+              </TableHead>
+              <TableHead className="px-4 py-4 font-bold text-xs">
+                validity_period
               </TableHead>
               <TableHead className="px-4 py-4 font-bold text-xs">
                 Dealer
@@ -289,6 +311,9 @@ export default function OrdersTable({
 
                 <TableCell className="px-4 py-4 text-sm">
                   {formatDate(order.createdAt)}
+                </TableCell>
+                <TableCell className="px-4 py-4 text-sm">
+                  {formatValidityPeriod(order.validity_period)}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm font-semibold">
                   {usersMap[order.distributorId]?.name ||
