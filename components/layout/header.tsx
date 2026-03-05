@@ -3,9 +3,28 @@
 import Link from "next/link";
 import { Search, Bell, Mail, User } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getFirestoreDB } from "@/firebase";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 
 export default function Header() {
   const pathname = usePathname();
+  const { user } = useFirebaseAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const db = getFirestoreDB();
+    const q = query(
+      collection(db, "notifications"),
+      where("read", "==", false),
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setUnreadCount(snapshot.docs.length);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   const getPageName = () => {
     if (pathname.startsWith("/notifications")) return "Notifications";
@@ -37,16 +56,16 @@ export default function Header() {
           <div className="flex items-center gap-5">
             <Link
               href="/notifications"
-              className="bg-[#F3F5FA] p-2 rounded-lg hover:bg-orange-100 transition"
+              className="relative bg-[#F3F5FA] p-2 rounded-lg hover:bg-orange-100 transition"
             >
               <Bell className="w-5 h-5 text-gray-300 hover:text-[#F87B1B]" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center shadow-sm">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Link>
-            <Link
-              href="/emails"
-              className="bg-[#F3F5FA] p-2 rounded-lg hover:bg-orange-100 transition"
-            >
-              <Mail className="w-5 h-5 text-gray-300 hover:text-[#F87B1B]" />
-            </Link>
+
             <div className="w-9 h-9 rounded-full bg-[#F87B1B] flex items-center justify-center text-white">
               <User className="w-4 h-4" />
             </div>

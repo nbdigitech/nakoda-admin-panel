@@ -1,78 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Bell, Trash2, Eye, EyeOff } from "lucide-react";
+import { getFirestoreDB } from "@/firebase";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  doc,
+  updateDoc,
+  deleteDoc,
+  writeBatch,
+} from "firebase/firestore";
 
 interface Notification {
-  id: number;
+  id: string;
   title: string;
   message: string;
   timestamp: string;
+  createdAt: any;
   read: boolean;
-  type: "order" | "dealer" | "system" | "alert";
+  type: string;
 }
 
-const notificationsList: Notification[] = [
-  {
-    id: 1,
-    title: "New Order Received",
-    message: "Order #151089 has been received from Kabir Nag for 550t shipment",
-    timestamp: "5 minutes ago",
-    read: false,
-    type: "order",
-  },
-  {
-    id: 2,
-    title: "Dealer Registration",
-    message:
-      "New dealer registration completed. Bharat Sahu has been approved.",
-    timestamp: "2 hours ago",
-    read: false,
-    type: "dealer",
-  },
-  {
-    id: 3,
-    title: "Payment Received",
-    message: "Payment of $12,500 received for order #151056",
-    timestamp: "4 hours ago",
-    read: true,
-    type: "order",
-  },
-  {
-    id: 4,
-    title: "System Update",
-    message: "System maintenance scheduled for tonight at 11:00 PM",
-    timestamp: "1 day ago",
-    read: true,
-    type: "system",
-  },
-  {
-    id: 5,
-    title: "Alert: Low Stock",
-    message: "Stock level for Product A is below minimum threshold",
-    timestamp: "2 days ago",
-    read: true,
-    type: "alert",
-  },
-  {
-    id: 6,
-    title: "Order Status Update",
-    message: "Order #151087 status updated to In Transit",
-    timestamp: "3 days ago",
-    read: true,
-    type: "order",
-  },
-];
-
 const getTypeColor = (type: string) => {
-  switch (type) {
+  switch (type?.toLowerCase()) {
     case "order":
       return "bg-blue-100 text-blue-700";
     case "dealer":
+    case "sub-dealer":
+    case "staff":
       return "bg-green-100 text-green-700";
+    case "rate":
+      return "bg-yellow-100 text-yellow-700";
     case "system":
       return "bg-purple-100 text-purple-700";
     case "alert":
@@ -82,32 +46,81 @@ const getTypeColor = (type: string) => {
   }
 };
 
-export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(notificationsList);
-  const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
+const formatTimeAgo = (date: Date) => {
+  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " years ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " months ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " days ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " hours ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " minutes ago";
+  return "Just now";
+};
 
-  const filteredNotifications = notifications.filter((notif) => {
-    if (filter === "unread") return !notif.read;
-    if (filter === "read") return notif.read;
-    return true;
-  });
+export default function NotificationsPage() {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const db = getFirestoreDB();
+
+  useEffect(() => {
+    const q = query(
+      collection(db, "notifications"),
+      orderBy("createdAt", "desc"),
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifs: Notification[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        let jsDate = new Date();
+        if (data.createdAt?.toDate) {
+          jsDate = data.createdAt.toDate();
+        } else if (data.createdAt) {
+          jsDate = new Date(data.createdAt);
+        }
+        notifs.push({
+          id: doc.id,
+          ...data,
+          timestamp: formatTimeAgo(jsDate),
+        } as Notification);
+      });
+      setNotifications(notifs);
+    });
+    return () => unsubscribe();
+  }, [db]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const toggleRead = (id: number) => {
-    setNotifications(
-      notifications.map((notif) =>
-        notif.id === id ? { ...notif, read: !notif.read } : notif,
-      ),
-    );
+  const toggleRead = async (id: string, currentRead: boolean) => {
+    try {
+      await updateDoc(doc(db, "notifications", id), { read: !currentRead });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const deleteNotification = (id: number) => {
-    setNotifications(notifications.filter((notif) => notif.id !== id));
+  const deleteNotification = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "notifications", id));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map((notif) => ({ ...notif, read: true })));
+  const markAllAsRead = async () => {
+    try {
+      const batch = writeBatch(db);
+      notifications.forEach((n) => {
+        if (!n.read) {
+          batch.update(doc(db, "notifications", n.id), { read: true });
+        }
+      });
+      await batch.commit();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
@@ -133,26 +146,10 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      <div className="flex gap-3 mb-8">
-        {["all", "unread", "read"].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f as "all" | "unread" | "read")}
-            className={`px-6 py-2 rounded-lg font-semibold capitalize transition ${
-              filter === f
-                ? "bg-[#F87B1B] text-white"
-                : "bg-orange-50 text-[#F87B1B] hover:bg-orange-100"
-            }`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
-
       {/* Notifications List */}
       <div className="space-y-4">
-        {filteredNotifications.length > 0 ? (
-          filteredNotifications.map((notification) => (
+        {notifications.length > 0 ? (
+          notifications.map((notification) => (
             <Card key={notification.id} className="rounded-xl overflow-hidden">
               <CardContent
                 className={`p-5 ${!notification.read ? "bg-orange-50" : ""}`}
@@ -183,7 +180,9 @@ export default function NotificationsPage() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => toggleRead(notification.id)}
+                      onClick={() =>
+                        toggleRead(notification.id, notification.read)
+                      }
                       className="p-2 rounded-lg hover:bg-gray-200 transition text-gray-500 hover:text-[#F87B1B]"
                       title={
                         notification.read ? "Mark as unread" : "Mark as read"
@@ -215,10 +214,7 @@ export default function NotificationsPage() {
                 No Notifications
               </h3>
               <p className="text-gray-500">
-                {filter === "unread" &&
-                  "You're all caught up! No unread notifications."}
-                {filter === "read" && "No read notifications yet."}
-                {filter === "all" && "You don't have any notifications yet."}
+                You don't have any notifications yet.
               </p>
             </CardContent>
           </Card>

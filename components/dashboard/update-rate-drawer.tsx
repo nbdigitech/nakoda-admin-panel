@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { getFirestoreDB } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { addNotification } from "@/services/notifications";
 
 interface UpdateRateDrawerProps {
   trigger?: React.ReactNode;
@@ -82,6 +83,12 @@ export default function UpdateRateDrawer({
       };
 
       await addDoc(collection(db, "daily_price"), payload);
+
+      await addNotification(
+        "Rate Updated",
+        `Rate has been updated to ₹${Number(updateRate)} (${isUp ? "Increased" : "Decreased"} by ₹${Math.abs(difference)}).`,
+        "rate",
+      );
 
       toast({
         title: "Success",

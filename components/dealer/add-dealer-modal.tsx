@@ -26,6 +26,7 @@ import {
 import { createDealer } from "@/services/dealer";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { getUsers } from "@/services/user";
+import { addNotification } from "@/services/notifications";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -309,6 +310,13 @@ export default function AddDealerModal({
 
       const response = await createDealer(payload);
       console.log("Dealer created successfully:", response);
+
+      await addNotification(
+        "New Dealer Created",
+        `Dealer ${formData.name} was just registered successfully.`,
+        "dealer",
+      );
+
       alert("Dealer created successfully!");
 
       // Reset form

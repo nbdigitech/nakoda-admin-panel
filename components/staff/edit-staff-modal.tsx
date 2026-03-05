@@ -26,6 +26,7 @@ import { Loader2 } from "lucide-react";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { getFirestoreDB, getFirebaseStorage } from "@/firebase";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
+import { addNotification } from "@/services/notifications";
 
 export default function EditStaffModal({
   trigger,
@@ -205,6 +206,12 @@ export default function EditStaffModal({
       const db = getFirestoreDB();
       const staffRef = doc(db, "users", staff.id);
       await updateDoc(staffRef, payload);
+
+      await addNotification(
+        "Staff Member Updated",
+        `Staff ${staffName} details were successfully updated.`,
+        "staff",
+      );
 
       setOpen(false);
       toast({

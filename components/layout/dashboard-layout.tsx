@@ -1,27 +1,31 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-import { toast } from "react-toastify"
-import Sidebar from "./sidebar"
-import Header from "./header"
-import { useFirebaseAuth } from "@/hooks/useFirebaseAuth"
+import type React from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { toast } from "react-toastify";
+import Sidebar from "./sidebar";
+import Header from "./header";
+import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
+import { useGlobalNotifications } from "@/hooks/useGlobalNotifications";
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const { user, authReady } = useFirebaseAuth()
-  const router = useRouter()
+  const { user, authReady } = useFirebaseAuth();
+  const router = useRouter();
+
+  // Start listening to global notifications when user logs in
+  useGlobalNotifications(user ? (user as any).uid || "user" : null);
 
   useEffect(() => {
     if (authReady && !user) {
-      toast.error("Please login to access this page")
-      router.push("/login")
+      toast.error("Please login to access this page");
+      router.push("/login");
     }
-  }, [authReady, user, router])
+  }, [authReady, user, router]);
 
   if (!authReady) {
     return (
@@ -31,11 +35,11 @@ export default function DashboardLayout({
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!user) {
-    return null // Will redirect
+    return null; // Will redirect
   }
 
   return (
@@ -46,10 +50,8 @@ export default function DashboardLayout({
       {/* Content */}
       <div className="flex flex-col min-h-screen md:ml-56">
         <Header />
-        <main className="flex-1 p-6 overflow-y-auto">
-          {children}
-        </main>
+        <main className="flex-1 p-6 overflow-y-auto">{children}</main>
       </div>
     </div>
-  )
+  );
 }

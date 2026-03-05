@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { updateOrder } from "@/services/orders";
 import { serverTimestamp } from "firebase/firestore";
+import { addNotification } from "@/services/notifications";
 
 interface Fulfillment {
   id: string;
@@ -109,6 +110,12 @@ export default function ViewFulfillment({
         status: "completed",
         updatedAt: serverTimestamp(),
       });
+
+      await addNotification(
+        "Order Dispatched",
+        `Order ${displayId || orderId} has been dispatched successfully.`,
+        "order",
+      );
 
       toast({
         title: "Fulfillment Completed",

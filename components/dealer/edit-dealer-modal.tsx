@@ -25,6 +25,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { toast as toastifyToast } from "react-toastify";
+import { addNotification } from "@/services/notifications";
 
 interface FormState {
   // Step 1 - Personal Info
@@ -319,6 +320,13 @@ export default function EditDealerModal({
       };
 
       await updateDealer(dealer.id, payload);
+
+      await addNotification(
+        "Dealer Updated",
+        `Dealer ${formData.name} was successfully updated.`,
+        "dealer",
+      );
+
       alert("Dealer updated successfully!");
 
       // Reset form

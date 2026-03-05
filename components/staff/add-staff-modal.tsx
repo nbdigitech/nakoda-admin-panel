@@ -24,6 +24,7 @@ import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Combobox } from "@/components/ui/combobox";
 import { Loader2 } from "lucide-react";
+import { addNotification } from "@/services/notifications";
 
 export default function AddStaffModal({
   trigger,
@@ -242,6 +243,13 @@ export default function AddStaffModal({
       setIsSubmitting(true);
       const res = await createUserByPhone(payload);
       console.log("User created:", res);
+
+      await addNotification(
+        "New Staff Member Added",
+        `Staff ${staffName} was successfully added as ${currentRoleValue || "staff"}.`,
+        "staff",
+      );
+
       resetForm();
       setOpen(false);
       toast({
