@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import OrdersTable, { Order } from "@/components/manage_order/orders_table";
-import { Plus, Loader2, Search } from "lucide-react";
+import { Plus, Loader2, Search, Download } from "lucide-react";
 import {
   getInfluencerOrders,
   getDistributorOrders,
   fetchUsers,
 } from "@/services/orders";
+import * as XLSX from "xlsx";
 
 interface OrderViewProps {
   type: "dealer" | "sub-dealer";
@@ -122,6 +123,58 @@ export default function OrderView({ type }: OrderViewProps) {
     setFilteredOrders(result);
   };
 
+  const exportToExcel = () => {
+    const formatDateObj = (timestamp: any) => {
+      if (!timestamp) return "-";
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      if (isNaN(date.getTime())) return "-";
+      return date.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    };
+
+    const dataToExport = filteredOrders.map((order, index) => {
+      const dealerName =
+        usersMap[order.distributorId || ""]?.name ||
+        order.distributorId ||
+        "N/A";
+      const subDealerName =
+        type === "sub-dealer"
+          ? usersMap[order.influencerId || ""]?.name ||
+            order.influencerId ||
+            "N/A"
+          : undefined;
+
+      const rowData: any = {
+        "S No.": index + 1,
+        "Order ID": order.orderId || "N/A",
+        "Order Date": formatDateObj(order.createdAt),
+        "Validity Period": order.validity_period || "-",
+        Dealer: dealerName,
+      };
+
+      if (type === "sub-dealer") {
+        rowData["Sub Dealer"] = subDealerName;
+      }
+
+      rowData["Mobile"] = order.mobileNumber || "-";
+      rowData["Qty (Ton)"] = order.totalQtyTons || 0;
+      rowData["Fulfilled"] = order.fulfilledQtyTons || 0;
+      rowData["Pending"] = order.pendingQtyTons || 0;
+      rowData["Rate"] = order.rate ? `₹ ${order.rate}` : "₹ 0";
+      rowData["Status"] = (order.status || "Pending").toUpperCase();
+
+      return rowData;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+    XLSX.writeFile(workbook, `${type}_orders_export.xlsx`);
+  };
+
   useEffect(() => {
     fetchOrders();
   }, [type]);
@@ -187,11 +240,22 @@ export default function OrderView({ type }: OrderViewProps) {
             <Loader2 className="w-8 h-8 animate-spin text-[#F87B1B]" />
           </div>
         ) : (
-          <OrdersTable
-            orders={filteredOrders}
-            orderSource={type}
-            onUpdate={fetchOrders}
-          />
+          <div className="flex flex-col gap-4">
+            <OrdersTable
+              orders={filteredOrders}
+              orderSource={type}
+              onUpdate={fetchOrders}
+            />
+            <div className="flex justify-end border-t pt-4">
+              <button
+                onClick={exportToExcel}
+                className="flex items-center gap-2 px-6 py-2 bg-[#F87B1B] text-white rounded-lg font-semibold hover:bg-[#e66a15] transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export to Excel
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </DashboardLayout>

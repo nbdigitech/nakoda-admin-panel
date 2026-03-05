@@ -104,21 +104,15 @@ export default function ViewFulfillment({
       const orderCollection =
         orderSource === "dealer" ? "distributor_orders" : "influencer_orders";
 
-      // 1. Update ALL fulfillments for this order that are currently "accepted" to "completed"
-      const batchUpdates = fulfillments
-        .filter((f) => f.status === "accepted")
-        .map((f) =>
-          updateOrder(fulfillmentCollection, f.id, {
-            status: "completed",
-            updatedAt: serverTimestamp(),
-          }),
-        );
-
-      await Promise.all(batchUpdates);
+      // 1. Update ONLY the specific fulfillment that was clicked to "completed"
+      await updateOrder(fulfillmentCollection, fulfillment.id, {
+        status: "completed",
+        updatedAt: serverTimestamp(),
+      });
 
       toast({
-        title: "All Fulfillments Completed",
-        description: "All pending fulfillment records have been updated.",
+        title: "Fulfillment Completed",
+        description: "The fulfillment record has been updated.",
       });
 
       setOpen(false);
@@ -229,7 +223,7 @@ export default function ViewFulfillment({
                           ) : (
                             <CheckCircle2 className="w-3 h-3" />
                           )}
-                          Proceeding
+                          Confirm Dispatch
                         </Button>
                       ) : (
                         <Badge

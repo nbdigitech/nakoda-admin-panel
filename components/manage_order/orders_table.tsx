@@ -281,13 +281,13 @@ export default function OrdersTable({
                 Qty (Ton)
               </TableHead>
               <TableHead className="px-4 py-4 font-bold text-xs">
-                Fulfilled
+                Fulfilled (Ton)
               </TableHead>
               <TableHead className="px-4 py-4 font-bold text-xs">
-                Pending
+                Pending (Ton)
               </TableHead>
               <TableHead className="px-4 py-4 font-bold text-xs">
-                Rate
+                Rate/MT
               </TableHead>
               <TableHead className="px-4 py-4 font-bold text-xs">
                 Status

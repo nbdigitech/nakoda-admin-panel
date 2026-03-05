@@ -164,13 +164,13 @@ export default function OrderHistoryTable({
                 </TableHead>
               )}
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
-                Qty (Total)
+                Qty Order (Ton)
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
-                Qty (Accpt)
+                Qty Accepted (Ton)
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
-                Rate
+                Rate/MT
               </TableHead>
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
                 Status
@@ -313,7 +313,7 @@ export default function OrderHistoryTable({
                                     Qty (ton)
                                   </TableHead>
                                   <TableHead className="text-[10px] font-black uppercase text-gray-500 h-9">
-                                    Rate
+                                    Rate/MT
                                   </TableHead>
                                   <TableHead className="text-[10px] font-black uppercase text-gray-500 h-9 pr-6 text-right">
                                     Status
