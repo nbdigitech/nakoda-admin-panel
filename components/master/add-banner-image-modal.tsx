@@ -132,6 +132,9 @@ export default function AddBannerImageModal({
                   <span className="text-sm text-gray-500">
                     Click to upload image
                   </span>
+                  <span className="text-xs text-gray-400 mt-1">
+                    Max size: 5 MB
+                  </span>
                   <input
                     type="file"
                     className="hidden"

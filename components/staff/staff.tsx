@@ -104,7 +104,9 @@ export default function StaffTable({
 
   const fetchStaff = async () => {
     const applyFiltersAndSort = (rawData: any[]) => {
-      let staffData = rawData.filter((u: any) => u.role === "asm");
+      let staffData = rawData.filter((u: any) =>
+        ["asm", "hrm", "manager"].includes((u.role || "").toLowerCase()),
+      );
 
       if (statusFilter !== "all") {
         staffData = staffData.filter(
@@ -289,7 +291,7 @@ export default function StaffTable({
                 Documents
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                ASM Name
+                Designation
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
                 Status
@@ -475,8 +477,8 @@ export default function StaffTable({
                     </div>
                   </TableCell>
 
-                  <TableCell className="px-3 py-4 text-md">
-                    {member.asmName || (userData as any)?.name || "-"}
+                  <TableCell className="px-3 py-4 text-md capitalize font-semibold">
+                    {member.role || "-"}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
                     <div className="flex flex-col items-center gap-1">

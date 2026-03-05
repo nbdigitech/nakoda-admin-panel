@@ -598,63 +598,62 @@ export default function AddStaffModal({
                   </div>
                 </div>
 
-                <div className="border-t pt-6 mt-6">
-                  <label className="text-sm font-semibold text-gray-700 block mb-4">
-                    Permissions
-                  </label>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="orderManagement"
-                        checked={orderManagement}
-                        onChange={(e) => setOrderManagement(e.target.checked)}
-                        disabled={isAsm}
-                        className={`w-4 h-4 rounded border-gray-300 text-[#F87B1B] ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                      />
-                      <label
-                        htmlFor="orderManagement"
-                        className={`ml-2 text-sm text-gray-700 ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                      >
-                        Order Management
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="staffManagement"
-                        checked={staffManagement}
-                        onChange={(e) => setStaffManagement(e.target.checked)}
-                        disabled={isAsm}
-                        className={`w-4 h-4 rounded border-gray-300 text-[#F87B1B] ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                      />
-                      <label
-                        htmlFor="staffManagement"
-                        className={`ml-2 text-sm text-gray-700 ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                      >
-                        Staff Management
-                      </label>
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="masterDataManagement"
-                        checked={masterDataManagement}
-                        onChange={(e) =>
-                          setMasterDataManagement(e.target.checked)
-                        }
-                        disabled={isAsm}
-                        className={`w-4 h-4 rounded border-gray-300 text-[#F87B1B] ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                      />
-                      <label
-                        htmlFor="masterDataManagement"
-                        className={`ml-2 text-sm text-gray-700 ${isAsm ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                      >
-                        Master Data Management
-                      </label>
+                {!isAsm && (
+                  <div className="border-t pt-6 mt-6">
+                    <label className="text-sm font-semibold text-gray-700 block mb-4">
+                      Permissions
+                    </label>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="orderManagement"
+                          checked={orderManagement}
+                          onChange={(e) => setOrderManagement(e.target.checked)}
+                          className="w-4 h-4 rounded border-gray-300 text-[#F87B1B] cursor-pointer"
+                        />
+                        <label
+                          htmlFor="orderManagement"
+                          className="ml-2 text-sm text-gray-700 cursor-pointer"
+                        >
+                          Order Management
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="staffManagement"
+                          checked={staffManagement}
+                          onChange={(e) => setStaffManagement(e.target.checked)}
+                          className="w-4 h-4 rounded border-gray-300 text-[#F87B1B] cursor-pointer"
+                        />
+                        <label
+                          htmlFor="staffManagement"
+                          className="ml-2 text-sm text-gray-700 cursor-pointer"
+                        >
+                          Staff Management
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="masterDataManagement"
+                          checked={masterDataManagement}
+                          onChange={(e) =>
+                            setMasterDataManagement(e.target.checked)
+                          }
+                          className="w-4 h-4 rounded border-gray-300 text-[#F87B1B] cursor-pointer"
+                        />
+                        <label
+                          htmlFor="masterDataManagement"
+                          className="ml-2 text-sm text-gray-700 cursor-pointer"
+                        >
+                          Master Data Management
+                        </label>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="flex justify-between ">
@@ -757,16 +756,6 @@ export default function AddStaffModal({
                       disabled={!districtId}
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    ASM Name (Current User)
-                  </label>
-                  <Input
-                    value={asmName || "N/A"}
-                    disabled
-                    className="w-full border-2 bg-gray-50"
-                  />
                 </div>
               </div>
 

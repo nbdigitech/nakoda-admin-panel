@@ -38,18 +38,6 @@ export default function ValidityPeriodCard() {
         <CardTitle className="text-base font-bold text-gray-800">
           Validity Periods
         </CardTitle>
-        <AddValidityPeriodModal
-          onSave={refreshValidityPeriods}
-          trigger={
-            <Button
-              size="sm"
-              className="bg-[#F87B1B] hover:bg-[#F87B1B]/90 text-white gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add New
-            </Button>
-          }
-        />
       </CardHeader>
       <CardContent className="p-0">
         <div className="max-h-[300px] overflow-y-auto">

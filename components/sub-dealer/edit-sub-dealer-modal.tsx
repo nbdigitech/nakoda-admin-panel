@@ -496,7 +496,7 @@ export default function EditSubDealerModal({
                 </div>
                 <div>
                   <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    Distributor Name
+                    Dealer Name{" "}
                   </label>
                   <Input
                     value={formData.distributorName}
@@ -816,33 +816,6 @@ export default function EditSubDealerModal({
                     }
                     placeholder="Enter full address"
                     className="w-full border-2 border-gray-300"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    ASM Name
-                  </label>
-                  <Combobox
-                    options={asms.map((a) => ({
-                      label: a.name || a.displayName || a.email || "N/A",
-                      value: String(a.id || a.uid || a._id),
-                    }))}
-                    value={formData.asmId}
-                    onValueChange={(val) => {
-                      const selected = asms.find(
-                        (a) => String(a.id || a.uid || a._id) === val,
-                      );
-                      setFormData((prev) => ({
-                        ...prev,
-                        asmId: val,
-                        asmName: selected?.name || selected?.displayName || "",
-                      }));
-                    }}
-                    placeholder="Select ASM"
-                    searchPlaceholder="Search ASM..."
                   />
                 </div>
               </div>

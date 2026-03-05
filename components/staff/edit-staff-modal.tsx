@@ -388,42 +388,44 @@ export default function EditStaffModal({
                   </div>
                 </div>
 
-                <div className="border-t pt-6">
-                  <label className="text-sm font-semibold text-gray-700 block mb-4">
-                    Permissions
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={orderManagement}
-                        onChange={(e) => setOrderManagement(e.target.checked)}
-                        disabled={isAsm}
-                      />
-                      <span className="text-sm">Order Management</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={staffManagement}
-                        onChange={(e) => setStaffManagement(e.target.checked)}
-                        disabled={isAsm}
-                      />
-                      <span className="text-sm">Staff Management</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={masterDataManagement}
-                        onChange={(e) =>
-                          setMasterDataManagement(e.target.checked)
-                        }
-                        disabled={isAsm}
-                      />
-                      <span className="text-sm">Master Data Management</span>
+                {!isAsm && (
+                  <div className="border-t pt-6">
+                    <label className="text-sm font-semibold text-gray-700 block mb-4">
+                      Permissions
+                    </label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={orderManagement}
+                          onChange={(e) => setOrderManagement(e.target.checked)}
+                          className="cursor-pointer"
+                        />
+                        <span className="text-sm">Order Management</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={staffManagement}
+                          onChange={(e) => setStaffManagement(e.target.checked)}
+                          className="cursor-pointer"
+                        />
+                        <span className="text-sm">Staff Management</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={masterDataManagement}
+                          onChange={(e) =>
+                            setMasterDataManagement(e.target.checked)
+                          }
+                          className="cursor-pointer"
+                        />
+                        <span className="text-sm">Master Data Management</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
               <div className="flex justify-between pt-6">
                 <Button variant="outline" onClick={() => setStep(1)}>
@@ -476,16 +478,6 @@ export default function EditStaffModal({
                       placeholder="Select District"
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    ASM Name (Current User)
-                  </label>
-                  <Input
-                    value={(userData as any)?.name || "N/A"}
-                    disabled
-                    className="w-full border-2 bg-gray-50"
-                  />
                 </div>
               </div>
               <div className="flex justify-between pt-6">

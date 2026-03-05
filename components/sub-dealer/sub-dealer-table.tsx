@@ -239,10 +239,10 @@ export default function SubDealerTable({
                 Address
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                Influencer categoryName
+                Designation
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                Distributor Name
+                Dealer Name
               </TableHead>
 
               <TableHead className="px-3 py-2 font-bold text-xs">
