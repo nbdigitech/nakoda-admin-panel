@@ -1,7 +1,8 @@
 "use client";
 
-import { Edit, Loader2 } from "lucide-react";
+import { Edit, Loader2, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import * as XLSX from "xlsx";
 
 interface RedeemData {
   id: string;
@@ -56,6 +57,42 @@ export default function RedeemHistoryTable({
   onEditClick,
   showEditButton = true,
 }: RedeemHistoryTableProps) {
+  const exportToExcel = () => {
+    const dataToExport = data.map((item, index) => {
+      const formatDateStr = (timestamp: any) => {
+        if (!timestamp) return "N/A";
+        try {
+          const date = timestamp.toDate
+            ? timestamp.toDate()
+            : new Date(timestamp);
+          if (isNaN(date.getTime())) return "Invalid Date";
+          return date.toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+        } catch (e) {
+          return "Error Date";
+        }
+      };
+
+      return {
+        "S No.": index + 1,
+        "Sub Dealer Name": item.subDealerName || "-",
+        "Redeem Pts": item.redeemPoints || 0,
+        "Redeem Date": formatDateStr(item.createdAt),
+        "Product Claim": item.productTitle || "-",
+        Category: item.category || "-",
+        Status: item.status || "Pending",
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "RedeemHistory");
+    XLSX.writeFile(workbook, "redeem_history_export.xlsx");
+  };
+
   return (
     <div className="bg-white rounded-lg p-4">
       <div className="overflow-x-auto">
@@ -154,8 +191,17 @@ export default function RedeemHistoryTable({
         </table>
       </div>
       {!loading && data.length > 0 && (
-        <div className="mt-4 text-sm text-gray-600 font-medium">
-          Total Requests: {data.length}
+        <div className="flex justify-between items-center mt-4">
+          <div className="text-sm text-gray-600 font-medium">
+            Total Requests: {data.length}
+          </div>
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 px-6 py-2 bg-[#F87B1B] text-white rounded-lg font-semibold hover:bg-[#e66a15] transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Export to Excel
+          </button>
         </div>
       )}
     </div>

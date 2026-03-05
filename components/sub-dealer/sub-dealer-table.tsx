@@ -19,7 +19,9 @@ import {
   X,
   Edit,
   Trash2,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { getUsers, changeUserStatus } from "@/services/user";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
@@ -213,6 +215,38 @@ export default function SubDealerTable({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
+
+  const exportToExcel = () => {
+    const dataToExport = filteredSubDealers.map((dealer, index) => {
+      const formatDate = (d: any) => {
+        if (!d) return "N/A";
+        if (d._seconds) return new Date(d._seconds * 1000).toLocaleDateString();
+        if (d.seconds) return new Date(d.seconds * 1000).toLocaleDateString();
+        if (d instanceof Date) return d.toLocaleDateString();
+        if (typeof d === "string" || typeof d === "number")
+          return new Date(d).toLocaleDateString();
+        if (typeof d.toDate === "function")
+          return d.toDate().toLocaleDateString();
+        return "N/A";
+      };
+
+      return {
+        "S No.": index + 1,
+        Date: formatDate(dealer.createdAt),
+        "Sub-Dealer Name": dealer.name,
+        Contact: dealer.phoneNumber,
+        Address: dealer.address || "-",
+        Designation: dealer.categoryName || "-",
+        "Dealer Name": dealer.distributorName || "-",
+        Status: dealer.status,
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "SubDealers");
+    XLSX.writeFile(workbook, "sub_dealers_export.xlsx");
+  };
 
   return (
     <div className="w-full">
@@ -506,6 +540,16 @@ export default function SubDealerTable({
         >
           Next
         </Button>
+      </div>
+
+      <div className="flex justify-end p-4 border-t">
+        <button
+          onClick={exportToExcel}
+          className="flex items-center gap-2 px-6 py-2 bg-[#F87B1B] text-white rounded-lg font-semibold hover:bg-[#e66a15] transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Export to Excel
+        </button>
       </div>
       {/* Document Viewer Modal */}
       <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>

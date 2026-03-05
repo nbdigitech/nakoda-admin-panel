@@ -22,7 +22,9 @@ import {
   FileText,
   User,
   Trash2,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { changeUserStatus } from "@/services/user";
 import { getDealers, deleteDealer } from "@/services/dealer";
 import { ref, getDownloadURL } from "firebase/storage";
@@ -352,6 +354,52 @@ export default function DealerTable({
     currentPage * itemsPerPage,
   );
 
+  const exportToExcel = () => {
+    const dataToExport = filteredDealers.map((dealer, index) => {
+      const districtName =
+        districts.find(
+          (d: any) => d.id === dealer.districtId || d._id === dealer.districtId,
+        )?.districtName ||
+        districts.find(
+          (d: any) => d.id === dealer.districtId || d._id === dealer.districtId,
+        )?.name ||
+        dealer.districtId?.substring(0, 8) ||
+        "-";
+
+      const formatDate = (date: any) => {
+        if (!date) return "-";
+        try {
+          const d = date.toDate ? date.toDate() : new Date(date);
+          if (isNaN(d.getTime())) return "-";
+          return d.toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+        } catch (e) {
+          return "-";
+        }
+      };
+
+      return {
+        "S No.": index + 1,
+        "Dealer Name": dealer.name,
+        Contact: dealer.phoneNumber,
+        Company: dealer.organizationName || "-",
+        District: districtName,
+        "E-Mail": dealer.email || "-",
+        "ASM Name": dealer.asmName || "-",
+        Status: dealer.status,
+        "Created At": formatDate(dealer.createdAt),
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Dealers");
+    XLSX.writeFile(workbook, "dealers_export.xlsx");
+  };
+
   return (
     <div className="w-full">
       <div className="overflow-x-auto">
@@ -641,6 +689,16 @@ export default function DealerTable({
         >
           Next
         </Button>
+      </div>
+
+      <div className="flex justify-end p-4 border-t">
+        <button
+          onClick={exportToExcel}
+          className="flex items-center gap-2 px-6 py-2 bg-[#F87B1B] text-white rounded-lg font-semibold hover:bg-[#e66a15] transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Export to Excel
+        </button>
       </div>
       {/* Document Viewer Modal */}
       <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>

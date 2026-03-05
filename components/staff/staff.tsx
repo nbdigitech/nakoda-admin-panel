@@ -33,7 +33,8 @@ import { ref, getDownloadURL } from "firebase/storage";
 import { getFirebaseStorage } from "@/firebase";
 import { getDistrict } from "@/services/masterData";
 import EditStaffModal from "./edit-staff-modal";
-import { Edit, User as UserIcon } from "lucide-react";
+import { Edit, User as UserIcon, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 
 interface Staff {
@@ -259,6 +260,49 @@ export default function StaffTable({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
+
+  const exportToExcel = () => {
+    const dataToExport = filteredStaff.map((member, index) => {
+      const formatDate = (date: any) => {
+        if (!date) return "-";
+        try {
+          const d = date.toDate ? date.toDate() : new Date(date);
+          if (isNaN(d.getTime())) return "-";
+          return d.toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+        } catch (e) {
+          return "-";
+        }
+      };
+
+      const districtName =
+        districts.find(
+          (d: any) => d.id === member.districtId || d._id === member.districtId,
+        )?.districtName ||
+        member.districtId?.substring(0, 8) ||
+        "-";
+
+      return {
+        "S No.": index + 1,
+        "Staff Name": member.name,
+        Contact: member.phoneNumber,
+        District: districtName,
+        "E-Mail": member.email || "-",
+        Address: member.address || "-",
+        Designation: member.role || "-",
+        Status: member.status,
+        "Created At": formatDate(member.createdAt),
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Staff");
+    XLSX.writeFile(workbook, "staff_export.xlsx");
+  };
 
   return (
     <div className="w-full">
@@ -579,6 +623,16 @@ export default function StaffTable({
         >
           Next
         </Button>
+      </div>
+
+      <div className="flex justify-end p-4 border-t">
+        <button
+          onClick={exportToExcel}
+          className="flex items-center gap-2 px-6 py-2 bg-[#F87B1B] text-white rounded-lg font-semibold hover:bg-[#e66a15] transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Export to Excel
+        </button>
       </div>
       {/* Document Viewer Modal */}
       <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>

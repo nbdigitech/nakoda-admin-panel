@@ -11,7 +11,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Edit, Plus, Minus, PackageCheck } from "lucide-react";
+import {
+  MessageSquare,
+  Edit,
+  Plus,
+  Minus,
+  PackageCheck,
+  Download,
+} from "lucide-react";
+import * as XLSX from "xlsx";
 import EditOrders from "@/components/manage_order/edit-order";
 import {
   getInfluencerOrderFulfillments,
@@ -135,6 +143,46 @@ export default function OrderHistoryTable({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
+
+  const exportToExcel = () => {
+    const dataToExport = orders.map((order, index) => {
+      let rateDisplay = order.rate || "0";
+      if (
+        ["approved", "completed"].includes((order.status || "").toLowerCase())
+      ) {
+        const avg = getExactAverageRate(order.id);
+        if (avg !== null) rateDisplay = avg.toFixed(2);
+      }
+
+      const rowData: any = {
+        "S No.": index + 1,
+        "Order ID": order.orderId || "N/A",
+        "Order Date": formatOnlyDate(order.createdAt),
+        "Dispatch Date": formatOnlyDate(order.updatedAt || order.createdAt),
+        Dealer:
+          usersMap[order.distributorId]?.name ||
+          order.distributorId ||
+          "Unknown",
+      };
+
+      if (type === "sub-dealer") {
+        rowData["Sub Dealer"] =
+          usersMap[order.influencerId]?.name || order.influencerId || "-";
+      }
+
+      rowData["Qty Order (Ton)"] = order.totalQtyTons || 0;
+      rowData["Qty Accepted (Ton)"] = order.fulfilledQtyTons || 0;
+      rowData["Rate/MT"] = `₹ ${rateDisplay}`;
+      rowData["Status"] = order.status || "Pending";
+
+      return rowData;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "OrderHistory");
+    XLSX.writeFile(workbook, `${type}_order_history.xlsx`);
+  };
 
   return (
     <div className="w-full">
@@ -432,6 +480,16 @@ export default function OrderHistoryTable({
             Next
           </Button>
         </div>
+      </div>
+
+      <div className="flex justify-end p-4 border-t">
+        <button
+          onClick={exportToExcel}
+          className="flex items-center gap-2 px-6 py-2 bg-[#F87B1B] text-white rounded-lg font-semibold hover:bg-[#e66a15] transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Export to Excel
+        </button>
       </div>
     </div>
   );

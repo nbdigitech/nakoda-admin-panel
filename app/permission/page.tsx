@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import DashboardLayout from "@/components/layout/dashboard-layout"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState } from "react";
+import DashboardLayout from "@/components/layout/dashboard-layout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -11,19 +11,20 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Edit2, Trash2, Plus } from "lucide-react"
+} from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Edit2, Trash2, Plus, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 interface Permission {
-  id: number
-  name: string
-  description: string
-  users: string
-  canView: boolean
-  canCreate: boolean
-  canEdit: boolean
-  canDelete: boolean
+  id: number;
+  name: string;
+  description: string;
+  users: string;
+  canView: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 const permissions: Permission[] = [
@@ -77,23 +78,43 @@ const permissions: Permission[] = [
     canEdit: false,
     canDelete: false,
   },
-]
+];
 
 export default function PermissionPage() {
-  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([])
+  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
 
   const togglePermission = (id: number) => {
     setSelectedPermissions((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    )
-  }
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+    );
+  };
+
+  const exportToExcel = () => {
+    const dataToExport = permissions.map((p, index) => ({
+      "S No.": index + 1,
+      "Permission Name": p.name,
+      Description: p.description,
+      Users: p.users,
+      "Can View": p.canView ? "Yes" : "No",
+      "Can Create": p.canCreate ? "Yes" : "No",
+      "Can Edit": p.canEdit ? "Yes" : "No",
+      "Can Delete": p.canDelete ? "Yes" : "No",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Permissions");
+    XLSX.writeFile(workbook, "permissions_export.xlsx");
+  };
 
   return (
     <DashboardLayout>
       {/* ================= PAGE HEADER ================= */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Permissions</h1>
-        <p className="text-gray-500">Manage user permissions and access control</p>
+        <p className="text-gray-500">
+          Manage user permissions and access control
+        </p>
       </div>
 
       {/* ================= HEADER WITH ACTION ================= */}
@@ -165,7 +186,9 @@ export default function PermissionPage() {
                       </p>
                     </TableCell>
                     <TableCell>
-                      <p className="text-gray-500 text-sm">{permission.description}</p>
+                      <p className="text-gray-500 text-sm">
+                        {permission.description}
+                      </p>
                     </TableCell>
                     <TableCell className="text-center">
                       <p className="text-sm font-semibold text-gray-900">
@@ -199,25 +222,43 @@ export default function PermissionPage() {
               </TableBody>
             </Table>
           </div>
+          <div className="flex justify-end pt-4 mt-4 border-t">
+            <button
+              onClick={exportToExcel}
+              className="flex items-center gap-2 px-6 py-2 bg-[#F87B1B] text-white rounded-lg font-semibold hover:bg-[#e66a15] transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export to Excel
+            </button>
+          </div>
         </CardContent>
       </Card>
 
       {/* ================= PERMISSION GROUPS ================= */}
       <div className="mt-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Permission Groups</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">
+          Permission Groups
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {["Admin", "Manager", "User"].map((group) => (
             <Card key={group} className="rounded-xl">
               <CardContent className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">{group}</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  {group}
+                </h3>
                 <div className="space-y-3">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <Checkbox defaultChecked />
                     <span className="text-sm text-gray-600">View Content</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <Checkbox defaultChecked={group !== "User"} disabled={group === "User"} />
-                    <span className="text-sm text-gray-600">Create Content</span>
+                    <Checkbox
+                      defaultChecked={group !== "User"}
+                      disabled={group === "User"}
+                    />
+                    <span className="text-sm text-gray-600">
+                      Create Content
+                    </span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
                     <Checkbox defaultChecked={group !== "User"} />
@@ -225,7 +266,9 @@ export default function PermissionPage() {
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
                     <Checkbox defaultChecked={group === "Admin"} />
-                    <span className="text-sm text-gray-600">Delete Content</span>
+                    <span className="text-sm text-gray-600">
+                      Delete Content
+                    </span>
                   </label>
                 </div>
                 <Button className="w-full mt-6 bg-[#F87B1B] text-white hover:bg-[#e06a0a]">
@@ -237,5 +280,5 @@ export default function PermissionPage() {
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }

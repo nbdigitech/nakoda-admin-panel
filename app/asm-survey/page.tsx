@@ -15,10 +15,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import AddStaffModal from "@/components/staff/add-staff-modal";
-import { Eye, MapPin, Plus, Search } from "lucide-react";
+import { Eye, MapPin, Plus, Search, Download } from "lucide-react";
 import { getTour, getSurvey } from "@/services/masterData";
 import { getFirestoreDB } from "@/firebase";
 import { collection, getDocs, query } from "firebase/firestore";
+import * as XLSX from "xlsx";
 
 // 🔹 DATE FORMATTER
 const formatDate = (timestamp: any) => {
@@ -350,6 +351,24 @@ export default function AsmSurveyPage() {
     currentPage * itemsPerPage,
   );
 
+  const exportToExcel = () => {
+    const dataToExport = searchedTours.map((item, index) => {
+      return {
+        "S No.": index + 1,
+        Title: item.tourName || "—",
+        "Survey Date": formatDate(item.startDate),
+        "Update Date": formatDate(item.updatedAt || item.createdAt),
+        "ASM Name": item.staffName || "—",
+        Mobile: item.staffPhone || "—",
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Surveys");
+    XLSX.writeFile(workbook, "asm_surveys_export.xlsx");
+  };
+
   return (
     <DashboardLayout>
       {/* ================= STATS ================= */}
@@ -619,6 +638,16 @@ export default function AsmSurveyPage() {
           >
             Next
           </Button>
+        </div>
+
+        <div className="flex justify-end p-4 border-t">
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 px-6 py-2 bg-[#F87B1B] text-white rounded-lg font-semibold hover:bg-[#e66a15] transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Export to Excel
+          </button>
         </div>
       </div>
     </DashboardLayout>
