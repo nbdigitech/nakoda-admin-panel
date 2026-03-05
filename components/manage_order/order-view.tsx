@@ -16,7 +16,7 @@ interface OrderViewProps {
 }
 
 export default function OrderView({ type }: OrderViewProps) {
-  const [activeTab, setActiveTab] = useState("Today");
+  const [activeTab, setActiveTab] = useState("All");
   const [statusFilter, setStatusFilter] = useState(
     "pending,inprogress,processing",
   );

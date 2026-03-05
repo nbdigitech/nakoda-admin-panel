@@ -7,7 +7,7 @@ import AddDealerModal from "@/components/dealer/add-dealer-modal";
 import { useState } from "react";
 
 export default function DealerPage() {
-  const [activeTab, setActiveTab] = useState("Today");
+  const [activeTab, setActiveTab] = useState("All");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);

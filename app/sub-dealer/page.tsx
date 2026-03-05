@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import SubDealerTable from "@/components/sub-dealer/sub-dealer-table";
 
 export default function DealerPage() {
-  const [activeTab, setActiveTab] = useState("Today");
+  const [activeTab, setActiveTab] = useState("All");
   const [openModal, setOpenModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");

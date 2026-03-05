@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 
 export default function StaffPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("Today");
+  const [activeTab, setActiveTab] = useState("All");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
