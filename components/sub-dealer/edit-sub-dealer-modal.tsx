@@ -272,7 +272,11 @@ export default function EditSubDealerModal({
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateStep(3)) {
-      alert("Please fill all required fields");
+      toast({
+        title: "Validation Error",
+        description: "Please fill all required fields",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -314,14 +318,21 @@ export default function EditSubDealerModal({
         "sub-dealer",
       );
 
-      alert("Sub-Dealer updated successfully!");
+      toast({
+        title: "Success",
+        description: "Sub-Dealer updated successfully!",
+      });
 
       // Reset form and close
       setOpen(false);
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error updating sub-dealer:", error);
-      alert("Failed to update sub-dealer. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to update sub-dealer. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

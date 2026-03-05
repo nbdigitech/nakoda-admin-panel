@@ -283,7 +283,11 @@ export default function AddDealerModal({
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateStep(3)) {
-      alert("Please fill all required fields");
+      toast({
+        title: "Validation Error",
+        description: "Please fill all required fields",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -317,7 +321,10 @@ export default function AddDealerModal({
         "dealer",
       );
 
-      alert("Dealer created successfully!");
+      toast({
+        title: "Success",
+        description: "Dealer created successfully!",
+      });
 
       // Reset form
       setFormData({
@@ -342,7 +349,11 @@ export default function AddDealerModal({
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error creating dealer:", error);
-      alert("Failed to create dealer. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to create dealer. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

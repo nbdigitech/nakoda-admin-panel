@@ -23,6 +23,7 @@ import {
 } from "@/services/orders";
 import { serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { addNotification } from "@/services/notifications";
 
 export interface Order {
   id: string;
@@ -101,6 +102,12 @@ export default function OrdersTable({
       }
 
       await updateOrder(orderCollection, orderId, updateData);
+
+      await addNotification(
+        "Order Completed",
+        `Order ${orderId} has been successfully completed.`,
+        "order",
+      );
 
       toast({
         title: "Order Completed",
