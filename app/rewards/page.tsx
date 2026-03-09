@@ -48,7 +48,7 @@ interface RedeemData {
 
 export default function RewardsPage() {
   const [activeTab, setActiveTab] = useState("Rewards");
-  const [filterType, setFilterType] = useState("Gift");
+  const [filterType, setFilterType] = useState("All");
   const [isAddRewardModalOpen, setIsAddRewardModalOpen] = useState(false);
   const [isUpdateDrawerOpen, setIsUpdateDrawerOpen] = useState(false);
   const [selectedRedeemData, setSelectedRedeemData] =
@@ -150,7 +150,10 @@ export default function RewardsPage() {
 
   const tabs = ["Rewards", "Redeem", "History"];
 
-  const filteredRewards = rewards.filter((r) => r.category === filterType);
+  const filteredRewards =
+    filterType === "All"
+      ? rewards
+      : rewards.filter((r) => r.category === filterType);
 
   // Redeem tab shows pending, History shows everything else
   const filteredHistory = history.filter((h) => {
@@ -190,6 +193,7 @@ export default function RewardsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="All">All</SelectItem>
                     <SelectItem value="Gift">Gift</SelectItem>
                     <SelectItem value="Voucher">Voucher</SelectItem>
                     <SelectItem value="Cashback">Cashback</SelectItem>

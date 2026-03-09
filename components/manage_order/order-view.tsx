@@ -155,6 +155,8 @@ export default function OrderView({ type }: OrderViewProps) {
       };
 
       if (type === "dealer") {
+        rowData["Firm Name"] =
+          usersMap[order.distributorId || ""]?.firmName || "-";
         rowData["Validity Period"] = order.validity_period || "-";
       }
 

@@ -52,7 +52,7 @@ export default function OrderHistoryTable({
   const itemsPerPage = 5;
   const [allFulfillments, setAllFulfillments] = useState<any[]>([]);
   const [usersMap, setUsersMap] = useState<
-    Record<string, { name: string; distributorName: string }>
+    Record<string, { name: string; distributorName: string; firmName: string }>
   >({});
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -65,7 +65,10 @@ export default function OrderHistoryTable({
     try {
       const map = await fetchUsers();
       setUsersMap(
-        map as Record<string, { name: string; distributorName: string }>,
+        map as Record<
+          string,
+          { name: string; distributorName: string; firmName: string }
+        >,
       );
     } catch (error) {
       console.error("Error loading users for history table:", error);
@@ -164,6 +167,10 @@ export default function OrderHistoryTable({
           "Unknown",
       };
 
+      if (type === "dealer") {
+        rowData["Firm Name"] = usersMap[order.distributorId]?.firmName || "-";
+      }
+
       if (type === "sub-dealer") {
         rowData["Sub Dealer"] =
           usersMap[order.influencerId]?.name || order.influencerId || "-";
@@ -205,6 +212,11 @@ export default function OrderHistoryTable({
               <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
                 {type === "dealer" ? " Dealer" : "dealer"}
               </TableHead>
+              {type === "dealer" && (
+                <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
+                  Firm Name
+                </TableHead>
+              )}
               {type === "sub-dealer" && (
                 <TableHead className="px-4 py-4 text-gray-700 font-bold text-xs uppercase">
                   Sub dealer
@@ -277,6 +289,11 @@ export default function OrderHistoryTable({
                           order.distributorId ||
                           "Unknown"}
                       </TableCell>
+                      {type === "dealer" && (
+                        <TableCell className="px-4 py-4 text-sm">
+                          {usersMap[order.distributorId]?.firmName || "-"}
+                        </TableCell>
+                      )}
 
                       {/* Sub Dealer Name - Fetched by influencerId */}
                       {type === "sub-dealer" && (

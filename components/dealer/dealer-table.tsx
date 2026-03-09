@@ -385,7 +385,7 @@ export default function DealerTable({
         "S No.": index + 1,
         "Dealer Name": dealer.name,
         Contact: dealer.phoneNumber,
-        Company: dealer.organizationName || "-",
+        "Firm Name": dealer.organizationName || "-",
         District: districtName,
         "E-Mail": dealer.email || "-",
         "ASM Name": dealer.asmName || "-",
@@ -417,7 +417,7 @@ export default function DealerTable({
                 Contact
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
-                Company
+                Firm Name
               </TableHead>
               <TableHead className="px-3 py-2 font-bold text-xs">
                 District

@@ -276,6 +276,11 @@ export default function OrdersTable({
               <TableHead className="px-4 py-4 font-bold text-xs">
                 Dealer
               </TableHead>
+              {orderSource === "dealer" && (
+                <TableHead className="px-4 py-4 font-bold text-xs">
+                  Firm Name
+                </TableHead>
+              )}
               {orderSource === "sub-dealer" && (
                 <TableHead className="px-4 py-4 font-bold text-xs">
                   Sub Dealer
@@ -330,6 +335,11 @@ export default function OrdersTable({
                     order.distributorId ||
                     "N/A"}
                 </TableCell>
+                {orderSource === "dealer" && (
+                  <TableCell className="px-4 py-4 text-sm">
+                    {usersMap[order.distributorId]?.firmName || "-"}
+                  </TableCell>
+                )}
                 {orderSource === "sub-dealer" && (
                   <TableCell className="px-4 py-4 text-sm font-semibold text-[#F87B1B]">
                     {usersMap[order.influencerId || ""]?.name ||

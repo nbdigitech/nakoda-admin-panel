@@ -103,7 +103,8 @@ export const fetchUsers = async () => {
             const data = doc.data();
             usersMap[doc.id] = {
                 name: data.name || data.fullName || "No Name",
-                distributorName: data.distributorName || ""
+                distributorName: data.distributorName || "",
+                firmName: data.firmName || data.organizationName || ""
             };
         });
         return usersMap;
