@@ -269,9 +269,11 @@ export default function OrdersTable({
               <TableHead className="px-4 py-4 font-bold text-xs">
                 Order Date
               </TableHead>
-              <TableHead className="px-4 py-4 font-bold text-xs">
-                Validity Period
-              </TableHead>
+              {orderSource === "dealer" && (
+                <TableHead className="px-4 py-4 font-bold text-xs">
+                  Validity Period
+                </TableHead>
+              )}
               <TableHead className="px-4 py-4 font-bold text-xs">
                 Dealer
               </TableHead>
@@ -319,9 +321,11 @@ export default function OrdersTable({
                 <TableCell className="px-4 py-4 text-sm">
                   {formatDate(order.createdAt)}
                 </TableCell>
-                <TableCell className="px-4 py-4 text-sm">
-                  {formatValidityPeriod(order.validity_period)}
-                </TableCell>
+                {orderSource === "dealer" && (
+                  <TableCell className="px-4 py-4 text-sm">
+                    {formatValidityPeriod(order.validity_period)}
+                  </TableCell>
+                )}
                 <TableCell className="px-4 py-4 text-sm font-semibold">
                   {usersMap[order.distributorId]?.name ||
                     order.distributorId ||

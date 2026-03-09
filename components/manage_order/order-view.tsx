@@ -151,9 +151,12 @@ export default function OrderView({ type }: OrderViewProps) {
         "S No.": index + 1,
         "Order ID": order.orderId || "N/A",
         "Order Date": formatDateObj(order.createdAt),
-        "Validity Period": order.validity_period || "-",
         Dealer: dealerName,
       };
+
+      if (type === "dealer") {
+        rowData["Validity Period"] = order.validity_period || "-";
+      }
 
       if (type === "sub-dealer") {
         rowData["Sub Dealer"] = subDealerName;

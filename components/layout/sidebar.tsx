@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Bell,
   Mail,
+  FileText,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,16 @@ const managementItems: SidebarItem[] = [
   { label: "Master", href: "/master", icon: <Database size={16} /> },
   { label: "Rewards", href: "/rewards", icon: <Trophy size={16} /> },
   { label: "ASM Survey", href: "/asm-survey", icon: <Users size={16} /> },
+  {
+    label: "Privacy Policy",
+    href: "/privacy-policy",
+    icon: <ShieldCheck size={16} />,
+  },
+  {
+    label: "Terms & Conditions",
+    href: "/terms-conditions",
+    icon: <FileText size={16} />,
+  },
 ];
 
 export default function Sidebar() {

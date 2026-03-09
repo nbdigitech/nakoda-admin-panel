@@ -340,7 +340,7 @@ export default function SubDealerTable({
                   <TableCell className="px-3 py-4 text-md text-[#44444A]">
                     {dealer.address}
                   </TableCell>
-                  <TableCell className="px-3 py-4 text-md text-gray-500">
+                  <TableCell className="px-3 py-4 text-md ">
                     {dealer.categoryName}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md text-[#44444A]">
@@ -430,7 +430,7 @@ export default function SubDealerTable({
                               Aadhaar (PDF)
                             </Link>
                           ) : (
-                            <span className="text-[10px] text-gray-500 font-medium">
+                            <span className="text-[10px]  font-medium">
                               + Aadhaar
                             </span>
                           ))}

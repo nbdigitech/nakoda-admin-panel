@@ -518,7 +518,7 @@ export default function DealerTable({
                       dealer.districtId?.substring(0, 8) ||
                       "-"}
                   </TableCell>
-                  <TableCell className="px-3 py-4 text-md text-gray-500">
+                  <TableCell className="px-3 py-4 text-md ">
                     {dealer.email}
                   </TableCell>
                   <TableCell className="px-3 py-4 text-md">
