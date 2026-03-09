@@ -55,7 +55,6 @@ const statusStyles: Record<string, string> = {
   approved: "bg-green-100 text-green-700",
   rejected: "bg-red-100 text-red-700",
   inprogress: "bg-blue-100 text-blue-700",
-  processing: "bg-purple-100 text-purple-700",
 };
 
 export default function OrdersTable({
@@ -352,7 +351,7 @@ export default function OrdersTable({
                   {order.pendingQtyTons || 0}
                 </TableCell>
                 <TableCell className="px-4 py-4 text-sm font-semibold text-green-600">
-                  {["processing", "inprogress"].includes(
+                  {["approved", "inprogress"].includes(
                     (order.status || "").toLowerCase(),
                   ) ? (
                     (() => {
@@ -391,7 +390,7 @@ export default function OrdersTable({
                       }}
                     />
 
-                    {(order.status || "").toLowerCase() === "processing" ? (
+                    {(order.status || "").toLowerCase() === "approved" ? (
                       <Button
                         onClick={() => handleCompleteOrder(order.id)}
                         disabled={updatingId === order.id}
@@ -402,9 +401,9 @@ export default function OrdersTable({
                         ) : (
                           <Edit className="w-4 h-4" />
                         )}
-                        Processing
+                        Approved
                       </Button>
-                    ) : ["approved", "rejected"].includes(
+                    ) : ["completed", "rejected"].includes(
                         (order.status || "").toLowerCase(),
                       ) ? (
                       <Button

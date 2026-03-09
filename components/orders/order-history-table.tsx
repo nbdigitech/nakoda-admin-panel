@@ -41,7 +41,6 @@ const statusStyles: Record<string, string> = {
   inprogress: "bg-blue-100 text-blue-700",
   completed: "bg-green-100 text-green-700",
   dispatched: "bg-blue-100 text-blue-700",
-  processing: "bg-purple-100 text-purple-700",
 };
 
 export default function OrderHistoryTable({

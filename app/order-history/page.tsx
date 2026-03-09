@@ -65,7 +65,6 @@ export default function OrderHistoryPage() {
           s === "approved" ||
           s === "rejected" ||
           s === "dispatched" ||
-          s === "processing" ||
           s === "completed" ||
           s === "inprogress"
         );

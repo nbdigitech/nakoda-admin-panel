@@ -138,7 +138,7 @@ export default function EditOrders({
     if (totalFulfilledNow === 0) {
       newStatus = "pending";
     } else if (Math.abs(totalFulfilledNow - totalQty) < 0.01) {
-      newStatus = "processing";
+      newStatus = "approved";
     } else {
       newStatus = "inprogress";
     }
@@ -367,8 +367,8 @@ export default function EditOrders({
               >
                 <option value="pending">PENDING</option>
                 <option value="inprogress">IN PROGRESS</option>
-                <option value="processing">PROCESSING</option>
-                <option value="approved">COMPLETED</option>
+                <option value="approved">APPROVED</option>
+                <option value="completed">COMPLETED</option>
                 <option value="rejected">REJECTED</option>
               </select>
             </div>
