@@ -1,8 +1,23 @@
 import callFunction from "./firebaseFunctions";
 import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
-import { getFirebaseApp } from "@/firebase";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
+import { getFirebaseApp, getFirebaseStorage } from "@/firebase";
 
 const db = getFirestore(getFirebaseApp());
+
+const uploadFileToStorage = async (dataUrl, path) => {
+    if (!dataUrl) return null;
+    if (dataUrl.startsWith("http")) return dataUrl; // Already a URL
+    try {
+        const storage = getFirebaseStorage();
+        const storageRef = ref(storage, path);
+        await uploadString(storageRef, dataUrl, "data_url");
+        return await getDownloadURL(storageRef);
+    } catch (error) {
+        console.error("Error uploading to storage:", error);
+        return null;
+    }
+};
 
 export const getDesignation = () => callFunction("getDesignation");
 export const getCity = (payload) => callFunction("getCity", payload);
@@ -77,17 +92,24 @@ export const getBannerImage = async () => {
 };
 
 export const addBannerImage = async (payload) => {
+    let finalImageUrl = payload.imagePath;
+
+    if (payload.imagePath && payload.imagePath.startsWith("data:image")) {
+        const fileName = `banner-${Date.now()}`;
+        finalImageUrl = await uploadFileToStorage(payload.imagePath, `gallery_images/${fileName}`);
+    }
+
     if (payload.id) {
         const docRef = doc(db, "banner_image", payload.id);
         await updateDoc(docRef, { 
-            imagePath: payload.imagePath,
+            imagePath: finalImageUrl,
             status: payload.status || "active",
             updatedAt: serverTimestamp()
         });
         return { id: payload.id };
     } else {
         const docRef = await addDoc(collection(db, "banner_image"), {
-            imagePath: payload.imagePath,
+            imagePath: finalImageUrl,
             status: payload.status || "active",
             createdAt: serverTimestamp()
         });
