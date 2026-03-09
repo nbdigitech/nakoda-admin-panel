@@ -163,6 +163,7 @@ export default function BannerImageCard() {
       {/* Image Viewer Dialog */}
       <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
         <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 overflow-hidden bg-transparent border-none">
+          <DialogTitle className="sr-only">Banner Image Viewer</DialogTitle>
           <div className="relative w-full h-full flex items-center justify-center p-6 bg-black/80 rounded-lg">
             <button
               onClick={() => setViewerOpen(false)}

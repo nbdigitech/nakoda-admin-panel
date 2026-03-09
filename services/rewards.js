@@ -63,10 +63,11 @@ export const addReward = async (rewardData) => {
       description: rewardData.description,
       category: rewardData.category,
       requiredPoints: Number(rewardData.requiredPoints),
-      expiryDate: rewardData.expiryDate, // Should be converted to timestamp if it's a date string
+      expiryDate: rewardData.expiryDate ? new Date(rewardData.expiryDate) : null,
       status: rewardData.status || "active",
       imagePath: imagePath,
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
 
     const docRef = await addDoc(rewardsRef, payload);
@@ -94,6 +95,12 @@ export const updateReward = async (rewardId, rewardData) => {
     if (rewardData.requiredPoints) {
         updates.requiredPoints = Number(rewardData.requiredPoints);
     }
+
+    if (rewardData.expiryDate) {
+        updates.expiryDate = new Date(rewardData.expiryDate);
+    }
+
+    updates.updatedAt = serverTimestamp();
 
     await updateDoc(rewardRef, updates);
   } catch (error) {
