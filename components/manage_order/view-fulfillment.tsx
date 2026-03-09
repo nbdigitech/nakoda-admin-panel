@@ -28,7 +28,10 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { updateOrder } from "@/services/orders";
 import { serverTimestamp } from "firebase/firestore";
-import { addNotification } from "@/services/notifications";
+import {
+  addNotification,
+  sendFcmNotificationById,
+} from "@/services/notifications";
 
 interface Fulfillment {
   id: string;
@@ -46,6 +49,7 @@ interface ViewFulfillmentProps {
   orderId: string;
   displayId?: string;
   distributorId?: string;
+  influencerId?: string;
   orderSource: "dealer" | "sub-dealer";
   onUpdate?: () => void;
 }
@@ -54,6 +58,7 @@ export default function ViewFulfillment({
   orderId,
   displayId,
   distributorId,
+  influencerId,
   orderSource,
   onUpdate,
 }: ViewFulfillmentProps) {
@@ -116,6 +121,17 @@ export default function ViewFulfillment({
         `Order ${displayId || orderId} has been dispatched successfully.`,
         "order",
       );
+
+      // Send FCM Notification
+      const targetUserId =
+        orderSource === "dealer" ? distributorId : influencerId;
+      if (targetUserId) {
+        await sendFcmNotificationById(
+          targetUserId,
+          "Order Dispatched",
+          `Order ${displayId || orderId} has been dispatched successfully.`,
+        );
+      }
 
       toast({
         title: "Fulfillment Completed",

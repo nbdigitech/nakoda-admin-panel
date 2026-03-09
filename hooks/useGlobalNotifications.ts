@@ -34,12 +34,18 @@ export function useGlobalNotifications(userId: string | null) {
         return;
       }
       snapshot.docChanges().forEach((change) => {
-        if (change.type === "added") {
+        // Show toast for new docs, or modified docs that are still unread
+        if (
+          change.type === "added" ||
+          (change.type === "modified" && !change.doc.data().read)
+        ) {
           const data = change.doc.data();
-          const createdTime =
-            data.createdAt?.toMillis?.() || new Date(data.createdAt).getTime();
+          const timeToCheck = data.updatedAt || data.createdAt;
+          const checkTime =
+            timeToCheck?.toMillis?.() ||
+            (timeToCheck ? new Date(timeToCheck).getTime() : 0);
 
-          if (createdTime && createdTime > initTime) {
+          if (checkTime && checkTime > initTime) {
             toast.success(data.message, {
               position: "top-center",
               autoClose: 5000,
@@ -61,24 +67,30 @@ export function useGlobalNotifications(userId: string | null) {
         return;
       }
       snapshot.docChanges().forEach(async (change) => {
-        if (change.type === "added") {
+        if (change.type === "added" || change.type === "modified") {
           const data = change.doc.data();
-          const createdTime =
-            data.createdAt?.toMillis?.() || new Date(data.createdAt).getTime();
+          const timeToSquare = data.updatedAt || data.createdAt;
+          const checkTime =
+            timeToSquare?.toMillis?.() ||
+            (timeToSquare ? new Date(timeToSquare).getTime() : 0);
 
-          if (createdTime && createdTime > initTime) {
+          if (checkTime && checkTime > initTime) {
             const orderId = data.orderId || change.doc.id;
             try {
-              // Write a notification for this new order using a predefined ID to prevent duplicates from multiple admins running this hook concurrently
+              // Write a notification for this order using a predefined ID to prevent duplicates
               await setDoc(
                 doc(db, "notifications", `orderD-${change.doc.id}`),
                 {
-                  title: "New Dealer Order Received",
-                  message: `Order #${orderId} received for ${data.totalQtyTons || 0} tons`,
+                  title:
+                    change.type === "added"
+                      ? "New Dealer Order Received"
+                      : "Dealer Order Updated",
+                  message: `Order #${orderId} for ${data.totalQtyTons || 0} tons (Status: ${data.status || "Pending"})`,
                   type: "order",
                   read: false,
                   timestamp: serverTimestamp(),
-                  createdAt: new Date().toISOString(),
+                  createdAt: data.createdAt || new Date().toISOString(),
+                  updatedAt: serverTimestamp(), // Always refresh updatedAt to trigger toast
                 },
                 { merge: true },
               );
@@ -102,24 +114,30 @@ export function useGlobalNotifications(userId: string | null) {
         return;
       }
       snapshot.docChanges().forEach(async (change) => {
-        if (change.type === "added") {
+        if (change.type === "added" || change.type === "modified") {
           const data = change.doc.data();
-          const createdTime =
-            data.createdAt?.toMillis?.() || new Date(data.createdAt).getTime();
+          const timeToSquare = data.updatedAt || data.createdAt;
+          const checkTime =
+            timeToSquare?.toMillis?.() ||
+            (timeToSquare ? new Date(timeToSquare).getTime() : 0);
 
-          if (createdTime && createdTime > initTime) {
+          if (checkTime && checkTime > initTime) {
             const orderId = data.orderId || change.doc.id;
             try {
-              // Write a notification for this new order
+              // Write a notification for this order using a predefined ID
               await setDoc(
                 doc(db, "notifications", `orderI-${change.doc.id}`),
                 {
-                  title: "New Sub-Dealer Order Received",
-                  message: `Order #${orderId} received for ${data.totalQtyTons || 0} tons`,
+                  title:
+                    change.type === "added"
+                      ? "New Sub-Dealer Order Received"
+                      : "Sub-Dealer Order Updated",
+                  message: `Order #${orderId} for ${data.totalQtyTons || 0} tons (Status: ${data.status || "Pending"})`,
                   type: "order",
                   read: false,
                   timestamp: serverTimestamp(),
-                  createdAt: new Date().toISOString(),
+                  createdAt: data.createdAt || new Date().toISOString(),
+                  updatedAt: serverTimestamp(),
                 },
                 { merge: true },
               );

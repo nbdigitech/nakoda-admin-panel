@@ -18,6 +18,10 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import {
+  addNotification,
+  sendFcmNotificationById,
+} from "@/services/notifications";
 
 interface Fulfillment {
   id: string;
@@ -193,6 +197,22 @@ export default function EditOrders({
       }
 
       await updateOrder(collectionName, order.id, payload);
+
+      // Add Notification and Send FCM
+      const notificationTitle = "Order Updated";
+      const notificationBody = `Order ${order.orderId} has been updated. Status: ${formState.status}`;
+
+      await addNotification(notificationTitle, notificationBody, "order");
+
+      const targetUserId =
+        orderSource === "dealer" ? order.distributorId : order.influencerId;
+      if (targetUserId) {
+        await sendFcmNotificationById(
+          targetUserId,
+          notificationTitle,
+          notificationBody,
+        );
+      }
 
       // Create fulfillment record if new quantity added
       if (newFulfillment > 0) {

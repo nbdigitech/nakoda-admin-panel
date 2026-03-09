@@ -23,7 +23,10 @@ import {
 } from "@/services/orders";
 import { serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { addNotification } from "@/services/notifications";
+import {
+  addNotification,
+  sendFcmNotificationById,
+} from "@/services/notifications";
 
 export interface Order {
   id: string;
@@ -107,6 +110,18 @@ export default function OrdersTable({
         `Order ${orderId} has been successfully completed.`,
         "order",
       );
+
+      // Send FCM Notification
+      const order = orders.find((o) => o.id === orderId);
+      const targetUserId =
+        orderSource === "dealer" ? order?.distributorId : order?.influencerId;
+      if (targetUserId) {
+        await sendFcmNotificationById(
+          targetUserId,
+          "Order Completed",
+          `Order ${orderId} has been successfully completed.`,
+        );
+      }
 
       toast({
         title: "Order Completed",
@@ -393,6 +408,7 @@ export default function OrdersTable({
                       orderId={order.id}
                       displayId={order.orderId}
                       distributorId={order.distributorId}
+                      influencerId={order.influencerId}
                       orderSource={orderSource}
                       onUpdate={() => {
                         if (onUpdate) onUpdate();
