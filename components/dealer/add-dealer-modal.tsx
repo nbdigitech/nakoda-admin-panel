@@ -51,6 +51,7 @@ interface FormState {
   stateId: string;
   districtId: string;
   city: string;
+  locality: string;
   asmId: string;
   asmName: string;
 }
@@ -87,6 +88,7 @@ export default function AddDealerModal({
     stateId: "",
     districtId: "",
     city: "",
+    locality: "",
     asmId: "",
     asmName: "",
   });
@@ -308,6 +310,7 @@ export default function AddDealerModal({
         stateId: formData.stateId,
         districtId: formData.districtId,
         city: formData.city,
+        locality: formData.locality,
         asmId: formData.asmId,
         asmName: formData.asmName,
       };
@@ -341,6 +344,7 @@ export default function AddDealerModal({
         stateId: "",
         districtId: "",
         city: "",
+        locality: "",
         asmId: formData.asmId,
         asmName: formData.asmName,
       });
@@ -863,58 +867,81 @@ export default function AddDealerModal({
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label
-                    className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "city"
-                        ? "text-[#F87B1B]"
-                        : "text-gray-700"
-                    }`}
-                  >
+                  <label className="text-xs font-semibold block mb-2 text-gray-700">
                     City
                   </label>
-                  <Input
+                  <Combobox
+                    options={cities.map((c) => ({
+                      label: c.cityName || c.name,
+                      value: c.cityName || c.name || c.id,
+                    }))}
                     value={formData.city}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                    placeholder="Enter city"
-                    className={`w-full border-2 transition ${
-                      focusedField === "city"
-                        ? "border-[#F87B1B]"
-                        : "border-gray-300"
-                    }`}
-                    onFocus={() => setFocusedField("city")}
-                    onBlur={() => setFocusedField(null)}
+                    onValueChange={(val) => handleInputChange("city", val)}
+                    disabled={!formData.districtId}
+                    placeholder={
+                      cities.length
+                        ? "Select city"
+                        : "Select district first"
+                    }
+                    searchPlaceholder="Search city..."
                   />
                 </div>
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "asmId"
+                      focusedField === "locality"
                         ? "text-[#F87B1B]"
                         : "text-gray-700"
                     }`}
                   >
-                    ASM Name
+                    Locality / Area
                   </label>
-                  <Combobox
-                    options={asms.map((a) => ({
-                      label: a.name || a.displayName || a.email || "N/A",
-                      value: String(a.id || a.uid || a._id),
-                    }))}
-                    value={formData.asmId}
-                    onValueChange={(val) => {
-                      const selected = asms.find(
-                        (a) => String(a.id || a.uid || a._id) === val,
-                      );
-                      setFormData((prev) => ({
-                        ...prev,
-                        asmId: val,
-                        asmName: selected?.name || selected?.displayName || "",
-                      }));
-                    }}
-                    placeholder="Select ASM"
-                    searchPlaceholder="Search ASM..."
+                  <Input
+                    value={formData.locality}
+                    onChange={(e) =>
+                      handleInputChange("locality", e.target.value)
+                    }
+                    placeholder="Enter locality / address"
+                    className={`w-full border-2 transition ${
+                      focusedField === "locality"
+                        ? "border-[#F87B1B]"
+                        : "border-gray-300"
+                    }`}
+                    onFocus={() => setFocusedField("locality")}
+                    onBlur={() => setFocusedField(null)}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label
+                  className={`text-xs font-semibold block mb-2 transition ${
+                    focusedField === "asmId"
+                      ? "text-[#F87B1B]"
+                      : "text-gray-700"
+                  }`}
+                >
+                  ASM Name
+                </label>
+                <Combobox
+                  options={asms.map((a) => ({
+                    label: a.name || a.displayName || a.email || "N/A",
+                    value: String(a.id || a.uid || a._id),
+                  }))}
+                  value={formData.asmId}
+                  onValueChange={(val) => {
+                    const selected = asms.find(
+                      (a) => String(a.id || a.uid || a._id) === val,
+                    );
+                    setFormData((prev) => ({
+                      ...prev,
+                      asmId: val,
+                      asmName: selected?.name || selected?.displayName || "",
+                    }));
+                  }}
+                  placeholder="Select ASM"
+                  searchPlaceholder="Search ASM..."
+                />
               </div>
             </div>
 

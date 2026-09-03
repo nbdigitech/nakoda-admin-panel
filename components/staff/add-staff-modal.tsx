@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createUserByPhone, checkUserBeforeLogin } from "@/services/user";
-import { getDesignation, getDistrict, getState } from "@/services/masterData";
+import { getDesignation, getDistrict, getState, getCity } from "@/services/masterData";
 import { Timestamp } from "firebase/firestore";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -50,12 +50,14 @@ export default function AddStaffModal({
   // dropdown data
   const [states, setStates] = React.useState<any[]>([]);
   const [districts, setDistricts] = React.useState<any[]>([]);
+  const [cities, setCities] = React.useState<any[]>([]);
   const [designations, setDesignations] = React.useState<any[]>([]);
 
   // selected values (ID stored)
   const [stateId, setStateId] = React.useState<string | null>(null);
   const [districtId, setDistrictId] = React.useState<string | null>(null);
   const [city, setCity] = React.useState<string>("");
+  const [locality, setLocality] = React.useState<string>("");
   const [designationId, setDesignationId] = React.useState<string | null>(null);
 
   // No UID states needed
@@ -108,6 +110,8 @@ export default function AddStaffModal({
     setStateId(null);
     setDistrictId(null);
     setCity("");
+    setLocality("");
+    setCities([]);
     setDesignationId(null);
     setOrderManagement(false);
     setStaffManagement(false);
@@ -231,6 +235,7 @@ export default function AddStaffModal({
       stateId: stateId,
       districtId: districtId ? String(districtId) : null,
       city: city,
+      locality: locality || null,
       staffCategoryId: designationId,
       role: currentRoleValue,
       asmId: asmId,
@@ -731,9 +736,20 @@ export default function AddStaffModal({
                         value: String(d.id),
                       }))}
                       value={districtId ?? ""}
-                      onValueChange={(value) => {
+                      onValueChange={async (value) => {
                         setDistrictId(value);
                         setCity("");
+                        setCities([]);
+                        if (value) {
+                          try {
+                            const res: any = await getCity({ districtId: value });
+                            const data =
+                              res?.data?.data || res?.data || res || [];
+                            setCities(Array.isArray(data) ? data : []);
+                          } catch (err) {
+                            console.error("Failed to load cities:", err);
+                          }
+                        }
                       }}
                       disabled={!stateId}
                       placeholder="Select District"
@@ -750,18 +766,41 @@ export default function AddStaffModal({
                     >
                       City
                     </label>
-                    <Input
-                      placeholder="Enter city name"
+                    <Combobox
+                      options={cities.map((c) => ({
+                        label: c.cityName || c.name,
+                        value: c.cityName || c.name || String(c.id),
+                      }))}
                       value={city}
-                      onChange={(e) => setCity(e.target.value)}
+                      onValueChange={(val) => setCity(val)}
+                      disabled={!districtId}
+                      placeholder={
+                        cities.length ? "Select City" : "Select district first"
+                      }
+                      searchPlaceholder="Search city..."
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className={`text-xs font-semibold block mb-2 transition ${
+                        focusedField === "locality"
+                          ? "text-[#F87B1B]"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      Locality / Area
+                    </label>
+                    <Input
+                      placeholder="Enter locality / area"
+                      value={locality}
+                      onChange={(e) => setLocality(e.target.value)}
                       className={`w-full border-2 transition ${
-                        focusedField === "city"
+                        focusedField === "locality"
                           ? "!border-[#F87B1B]"
                           : "!border-gray-300"
                       }`}
-                      onFocus={() => setFocusedField("city")}
+                      onFocus={() => setFocusedField("locality")}
                       onBlur={() => setFocusedField(null)}
-                      disabled={!districtId}
                     />
                   </div>
                 </div>

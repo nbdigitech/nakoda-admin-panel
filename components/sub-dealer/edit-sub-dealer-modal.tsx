@@ -50,6 +50,7 @@ interface FormState {
   stateId: string;
   districtId: string;
   city: string;
+  locality: string;
   address: string;
   asmId: string;
   asmName: string;
@@ -104,6 +105,7 @@ export default function EditSubDealerModal({
     stateId: dealer?.stateId || "",
     districtId: dealer?.districtId || "",
     city: dealer?.city || "",
+    locality: dealer?.locality || "",
     address: dealer?.address || "",
     asmId: dealer?.asmId || "",
     asmName: dealer?.asmName || "",
@@ -129,6 +131,7 @@ export default function EditSubDealerModal({
         stateId: dealer?.stateId || "",
         districtId: dealer?.districtId || "",
         city: dealer?.city || "",
+        locality: dealer?.locality || "",
         address: dealer?.address || "",
         asmId: dealer?.asmId || "",
         asmName: dealer?.asmName || "",
@@ -301,6 +304,7 @@ export default function EditSubDealerModal({
         stateId: formData.stateId,
         districtId: formData.districtId,
         city: formData.city,
+        locality: formData.locality,
         address: formData.address,
         asmId: formData.asmId,
         asmName: formData.asmName,
@@ -804,7 +808,18 @@ export default function EditSubDealerModal({
                     onValueChange={async (val) => {
                       handleInputChange("districtId", val);
                       handleInputChange("city", "");
+                      handleInputChange("locality", "");
                       setCities([]);
+                      if (val) {
+                        try {
+                          const res: any = await getCity({ districtId: val });
+                          const data =
+                            res?.data?.data || res?.data || res || [];
+                          setCities(Array.isArray(data) ? data : []);
+                        } catch (err) {
+                          console.error("Failed to load cities:", err);
+                        }
+                      }
                     }}
                     disabled={!formData.stateId}
                     placeholder="Select district"
@@ -817,17 +832,41 @@ export default function EditSubDealerModal({
                   <label className="text-xs font-semibold block mb-2 text-gray-700">
                     City *
                   </label>
-                  <Input
+                  <Combobox
+                    options={cities.map((c) => ({
+                      label: c.cityName || c.name,
+                      value: c.cityName || c.name || c.id,
+                    }))}
                     value={formData.city}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                    placeholder="Enter city"
-                    className="w-full border-2 border-gray-300"
+                    onValueChange={(val) => handleInputChange("city", val)}
+                    disabled={!formData.districtId}
+                    placeholder={
+                      cities.length
+                        ? "Select city"
+                        : "Select district first"
+                    }
+                    searchPlaceholder="Search city..."
                   />
                 </div>
                 <div>
                   <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    Full Address
+                    Locality / Area
                   </label>
+                  <Input
+                    value={formData.locality}
+                    onChange={(e) =>
+                      handleInputChange("locality", e.target.value)
+                    }
+                    placeholder="Enter locality"
+                    className="w-full border-2 border-gray-300"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold block text-gray-700">
+                  Full Address
+                </label>
                   <Input
                     value={formData.address}
                     onChange={(e) =>
@@ -838,7 +877,6 @@ export default function EditSubDealerModal({
                   />
                 </div>
               </div>
-            </div>
 
             <div className="flex justify-between pt-6">
               <Button

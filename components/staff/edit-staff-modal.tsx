@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getDesignation, getDistrict, getState } from "@/services/masterData";
+import { getDesignation, getDistrict, getState, getCity } from "@/services/masterData";
 import { changeUserStatus, getUsers } from "@/services/user";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +47,7 @@ export default function EditStaffModal({
   // dropdown data
   const [states, setStates] = React.useState<any[]>([]);
   const [districts, setDistricts] = React.useState<any[]>([]);
+  const [cities, setCities] = React.useState<any[]>([]);
   const [designations, setDesignations] = React.useState<any[]>([]);
 
   // form fields
@@ -79,6 +80,7 @@ export default function EditStaffModal({
     staff?.districtId || null,
   );
   const [city, setCity] = React.useState<string>(staff?.city || "");
+  const [locality, setLocality] = React.useState<string>(staff?.locality || "");
   const [designationId, setDesignationId] = React.useState<string | null>(
     staff?.staffCategoryId || null,
   );
@@ -187,6 +189,7 @@ export default function EditStaffModal({
       stateId: stateId,
       districtId: districtId,
       city: city,
+      locality: locality || null,
       staffCategoryId: designationId,
       role: currentRoleValue,
       permissions: permissions,
@@ -249,6 +252,23 @@ export default function EditStaffModal({
     };
     loadData();
   }, [open, authReady, user]);
+
+  React.useEffect(() => {
+    if (!districtId) {
+      setCities([]);
+      return;
+    }
+    const fetchCities = async () => {
+      try {
+        const res: any = await getCity({ districtId });
+        const data = res?.data?.data || res?.data || res || [];
+        setCities(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load cities:", err);
+      }
+    };
+    fetchCities();
+  }, [districtId]);
 
   const filteredDistricts = districts.filter(
     (d) => String(d.stateId) === String(stateId),
@@ -466,6 +486,8 @@ export default function EditStaffModal({
                       onValueChange={(val) => {
                         setStateId(val);
                         setDistrictId(null);
+                        setCity("");
+                        setLocality("");
                       }}
                       placeholder="Select State"
                     />
@@ -480,9 +502,56 @@ export default function EditStaffModal({
                         value: String(d.id),
                       }))}
                       value={districtId ?? ""}
-                      onValueChange={(val) => setDistrictId(val)}
+                      onValueChange={(val) => {
+                        setDistrictId(val);
+                        setCity("");
+                        setLocality("");
+                      }}
                       disabled={!stateId}
                       placeholder="Select District"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-xs font-semibold block mb-2 text-gray-700">
+                      City
+                    </label>
+                    <Combobox
+                      options={cities.map((c) => ({
+                        label: c.cityName || c.name,
+                        value: c.cityName || c.name || String(c.id),
+                      }))}
+                      value={city}
+                      onValueChange={(val) => setCity(val)}
+                      disabled={!districtId}
+                      placeholder={
+                        cities.length ? "Select City" : "Select district first"
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className={`text-xs font-semibold block mb-2 transition ${
+                        focusedField === "locality"
+                          ? "text-[#F87B1B]"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      Locality / Area
+                    </label>
+                    <Input
+                      placeholder="Enter locality / area"
+                      value={locality}
+                      onChange={(e) => setLocality(e.target.value)}
+                      className={`w-full border-2 transition ${
+                        focusedField === "locality"
+                          ? "!border-[#F87B1B]"
+                          : "!border-gray-300"
+                      }`}
+                      onFocus={() => setFocusedField("locality")}
+                      onBlur={() => setFocusedField(null)}
                     />
                   </div>
                 </div>
