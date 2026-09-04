@@ -46,7 +46,7 @@ interface FormState {
   stateId: string;
   districtId: string;
   city: string;
-  locality: string;
+  pincode: string;
   asmId: string;
   asmName: string;
 }
@@ -64,6 +64,7 @@ export default function EditDealerModal({
   const [step, setStep] = React.useState(1);
   const [focusedField, setFocusedField] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [loadingPincode, setLoadingPincode] = React.useState(false);
   const [aadhaarFileType, setAadhaarFileType] = React.useState<
     "image" | "pdf" | null
   >(
@@ -89,7 +90,7 @@ export default function EditDealerModal({
     stateId: dealer?.stateId || "",
     districtId: dealer?.districtId || "",
     city: dealer?.city || "",
-    locality: dealer?.locality || "",
+    pincode: dealer?.pincode || "",
     asmId: dealer?.asmId || "",
     asmName: dealer?.asmName || "",
   });
@@ -111,7 +112,7 @@ export default function EditDealerModal({
         stateId: dealer?.stateId || "",
         districtId: dealer?.districtId || "",
         city: dealer?.city || "",
-        locality: dealer?.locality || "",
+        pincode: dealer?.pincode || "",
         asmId: dealer?.asmId || "",
         asmName: dealer?.asmName || "",
       });
@@ -126,22 +127,11 @@ export default function EditDealerModal({
   const [asms, setAsms] = React.useState<any[]>([]);
 
   // Firebase auth
-  // Firebase auth
   const { user, userData, authReady } = useFirebaseAuth();
 
-  // Load states and ASMs when modal opens
+  // Load ASMs when modal opens
   React.useEffect(() => {
     if (!open) return;
-
-    const fetchStates = async () => {
-      try {
-        const res: any = await getState();
-        const data = res?.data?.data || res?.data || res || [];
-        setStates(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Failed to load states:", err);
-      }
-    };
 
     const fetchAsms = async () => {
       try {
@@ -154,8 +144,6 @@ export default function EditDealerModal({
         console.error("Failed to load ASMs:", err);
       }
     };
-
-    fetchStates();
     fetchAsms();
   }, [open]);
 
@@ -277,6 +265,54 @@ export default function EditDealerModal({
     reader.readAsDataURL(f);
   };
 
+  const handlePincodeChange = async (pin: string) => {
+    const cleanPin = pin.replace(/\D/g, "").slice(0, 6);
+    handleInputChange("pincode", cleanPin);
+
+    if (cleanPin.length === 6) {
+      setLoadingPincode(true);
+      try {
+        const res = await fetch(
+          `https://api.postalpincode.in/pincode/${cleanPin}`,
+        );
+        const data = await res.json();
+        if (
+          data &&
+          data[0] &&
+          data[0].Status === "Success" &&
+          data[0].PostOffice?.length > 0
+        ) {
+          const postOffices = data[0].PostOffice;
+          const apiStateName = postOffices[0].State;
+          const apiDistrictName = postOffices[0].District;
+
+          handleInputChange("stateId", apiStateName);
+          handleInputChange("districtId", apiDistrictName);
+
+          const cityNames = Array.from(
+            new Set(postOffices.map((po: any) => po.Name).filter(Boolean)),
+          ) as string[];
+
+          setCities(cityNames);
+          if (cityNames.length > 0) {
+            handleInputChange("city", cityNames[0]);
+          }
+
+          toastifyToast.success(
+            `Location found: ${apiDistrictName}, ${apiStateName}`,
+          );
+        } else {
+          toastifyToast.error("Location details not found for this PIN code");
+        }
+      } catch (err) {
+        console.error("Error fetching pincode info:", err);
+        toastifyToast.error("Failed to fetch location by PIN code");
+      } finally {
+        setLoadingPincode(false);
+      }
+    }
+  };
+
   // Validate form data
   const validateStep = (stepNum: number): boolean => {
     if (stepNum === 1) {
@@ -320,9 +356,11 @@ export default function EditDealerModal({
         gstBase64: formData.gstBase64,
         pancardBase64: formData.pancardBase64,
         stateId: formData.stateId,
+        stateName: formData.stateId,
         districtId: formData.districtId,
+        districtName: formData.districtId,
         city: formData.city,
-        locality: formData.locality,
+        pincode: formData.pincode,
         asmId: formData.asmId,
         asmName: formData.asmName,
       };
@@ -355,6 +393,7 @@ export default function EditDealerModal({
         stateId: "",
         districtId: "",
         city: "",
+        pincode: "",
         asmId: formData.asmId,
         asmName: formData.asmName,
       });
@@ -797,153 +836,153 @@ export default function EditDealerModal({
             </h3>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    State
-                  </label>
-                  <Combobox
-                    options={states.map((s) => ({
-                      label: s.stateName || s.name,
-                      value: s.id || s.stateId || s._id,
-                    }))}
-                    value={formData.stateId}
-                    onValueChange={async (val) => {
-                      handleInputChange("stateId", val);
-                      // reset downstream
-                      handleInputChange("districtId", "");
-                      handleInputChange("city", "");
-                      setDistricts([]);
-                      setCities([]);
-                      if (val) {
-                        try {
-                          const res: any = await getDistrict({ stateId: val });
-                          const data =
-                            res?.data?.data || res?.data || res || [];
-                          setDistricts(Array.isArray(data) ? data : []);
-                        } catch (err) {
-                          console.error("Failed to load districts:", err);
-                        }
-                      }
-                    }}
-                    placeholder="Select state"
-                    searchPlaceholder="Search state..."
+              <div>
+                <label
+                  className={`text-xs font-semibold block mb-2 transition ${
+                    focusedField === "pincode"
+                      ? "text-[#F87B1B]"
+                      : "text-gray-700"
+                  }`}
+                >
+                  PIN Code
+                </label>
+                <div className="relative">
+                  <Input
+                    value={formData.pincode}
+                    onChange={(e) => handlePincodeChange(e.target.value)}
+                    placeholder="Enter 6-digit PIN code (e.g. 493118)"
+                    maxLength={6}
+                    className={`w-full border-2 transition ${
+                      focusedField === "pincode"
+                        ? "border-[#F87B1B]"
+                        : "border-gray-300"
+                    }`}
+                    onFocus={() => setFocusedField("pincode")}
+                    onBlur={() => setFocusedField(null)}
                   />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    District
-                  </label>
-                  <Combobox
-                    options={districts.map((d) => ({
-                      label: d.districtName || d.name,
-                      value: d.id || d._id,
-                    }))}
-                    value={formData.districtId}
-                    onValueChange={async (val) => {
-                      handleInputChange("districtId", val);
-                      handleInputChange("city", "");
-                      setCities([]);
-                      if (val) {
-                        try {
-                          const res: any = await getCity({ districtId: val });
-                          const data =
-                            res?.data?.data || res?.data || res || [];
-                          setCities(Array.isArray(data) ? data : []);
-                        } catch (err) {
-                          console.error("Failed to load cities:", err);
-                        }
-                      }
-                    }}
-                    disabled={!formData.stateId}
-                    placeholder={
-                      districts.length
-                        ? "Select district"
-                        : "Select state first"
-                    }
-                    searchPlaceholder="Search district..."
-                  />
+                  {loadingPincode && (
+                    <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-3 text-[#F87B1B]" />
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    City
-                  </label>
-                  <Combobox
-                    options={cities.map((c) => ({
-                      label: c.cityName || c.name,
-                      value: c.cityName || c.name || c.id,
-                    }))}
-                    value={formData.city}
-                    onValueChange={(val) => handleInputChange("city", val)}
-                    disabled={!formData.districtId}
-                    placeholder={
-                      cities.length
-                        ? "Select city"
-                        : "Select district first"
-                    }
-                    searchPlaceholder="Search city..."
-                  />
-                </div>
-                <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "locality"
+                      focusedField === "stateId"
                         ? "text-[#F87B1B]"
                         : "text-gray-700"
                     }`}
                   >
-                    Locality / Area
+                    State
                   </label>
                   <Input
-                    value={formData.locality}
+                    value={formData.stateId}
                     onChange={(e) =>
-                      handleInputChange("locality", e.target.value)
+                      handleInputChange("stateId", e.target.value)
                     }
-                    placeholder="Enter locality / address"
+                    placeholder="State (auto-filled by PIN code)"
                     className={`w-full border-2 transition ${
-                      focusedField === "locality"
+                      focusedField === "stateId"
                         ? "border-[#F87B1B]"
                         : "border-gray-300"
                     }`}
-                    onFocus={() => setFocusedField("locality")}
+                    onFocus={() => setFocusedField("stateId")}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className={`text-xs font-semibold block mb-2 transition ${
+                      focusedField === "districtId"
+                        ? "text-[#F87B1B]"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    District
+                  </label>
+                  <Input
+                    value={formData.districtId}
+                    onChange={(e) =>
+                      handleInputChange("districtId", e.target.value)
+                    }
+                    placeholder="District (auto-filled by PIN code)"
+                    className={`w-full border-2 transition ${
+                      focusedField === "districtId"
+                        ? "border-[#F87B1B]"
+                        : "border-gray-300"
+                    }`}
+                    onFocus={() => setFocusedField("districtId")}
                     onBlur={() => setFocusedField(null)}
                   />
                 </div>
               </div>
 
-              <div>
-                <label
-                  className={`text-xs font-semibold block mb-2 transition ${
-                    focusedField === "asmId"
-                      ? "text-[#F87B1B]"
-                      : "text-gray-700"
-                  }`}
-                >
-                  ASM Name
-                </label>
-                <Combobox
-                  options={asms.map((a) => ({
-                    label: a.name || a.displayName || a.email || "N/A",
-                    value: String(a.id || a.uid || a._id),
-                  }))}
-                  value={formData.asmId}
-                  onValueChange={(val) => {
-                    const selected = asms.find(
-                      (a) => String(a.id || a.uid || a._id) === val,
-                    );
-                    setFormData((prev) => ({
-                      ...prev,
-                      asmId: val,
-                      asmName: selected?.name || selected?.displayName || "",
-                    }));
-                  }}
-                  placeholder="Select ASM"
-                  searchPlaceholder="Search ASM..."
-                />
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="text-xs font-semibold block mb-2 text-gray-700">
+                    City / Area
+                  </label>
+                  {cities.length > 0 ? (
+                    <Combobox
+                      options={cities.map((c: any) => ({
+                        label: typeof c === "string" ? c : c.cityName || c.name,
+                        value: typeof c === "string" ? c : c.cityName || c.name,
+                      }))}
+                      value={formData.city}
+                      onValueChange={(val) => handleInputChange("city", val)}
+                      placeholder="Select City / Area"
+                      searchPlaceholder="Search city..."
+                    />
+                  ) : (
+                    <Input
+                      value={formData.city}
+                      onChange={(e) =>
+                        handleInputChange("city", e.target.value)
+                      }
+                      placeholder="Enter city / area"
+                      className={`w-full border-2 transition ${
+                        focusedField === "city"
+                          ? "border-[#F87B1B]"
+                          : "border-gray-300"
+                      }`}
+                      onFocus={() => setFocusedField("city")}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  )}
+                </div>
+                <div>
+                  <label
+                    className={`text-xs font-semibold block mb-2 transition ${
+                      focusedField === "asmId"
+                        ? "text-[#F87B1B]"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    ASM Name
+                  </label>
+                  <Combobox
+                    options={asms.map((a) => ({
+                      label: a.name || a.displayName || a.email || "N/A",
+                      value: String(a.id || a.uid || a._id),
+                    }))}
+                    value={formData.asmId}
+                    onValueChange={(val) => {
+                      const selected = asms.find(
+                        (a) => String(a.id || a.uid || a._id) === val,
+                      );
+                      setFormData((prev) => ({
+                        ...prev,
+                        asmId: val,
+                        asmName: selected?.name || selected?.displayName || "",
+                      }));
+                    }}
+                    placeholder="Select ASM"
+                    searchPlaceholder="Search ASM..."
+                  />
+                </div>
               </div>
             </div>
 

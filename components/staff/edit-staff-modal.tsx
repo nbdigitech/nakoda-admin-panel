@@ -27,6 +27,7 @@ import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { getFirestoreDB, getFirebaseStorage } from "@/firebase";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { addNotification } from "@/services/notifications";
+import { toast as toastifyToast } from "react-toastify";
 
 export default function EditStaffModal({
   trigger,
@@ -80,10 +81,59 @@ export default function EditStaffModal({
     staff?.districtId || null,
   );
   const [city, setCity] = React.useState<string>(staff?.city || "");
-  const [locality, setLocality] = React.useState<string>(staff?.locality || "");
+  const [pincode, setPincode] = React.useState<string>(staff?.pincode || "");
+  const [loadingPincode, setLoadingPincode] = React.useState<boolean>(false);
   const [designationId, setDesignationId] = React.useState<string | null>(
     staff?.staffCategoryId || null,
   );
+
+  const handlePincodeChange = async (pin: string) => {
+    const cleanPin = pin.replace(/\D/g, "").slice(0, 6);
+    setPincode(cleanPin);
+
+    if (cleanPin.length === 6) {
+      setLoadingPincode(true);
+      try {
+        const res = await fetch(
+          `https://api.postalpincode.in/pincode/${cleanPin}`,
+        );
+        const data = await res.json();
+        if (
+          data &&
+          data[0] &&
+          data[0].Status === "Success" &&
+          data[0].PostOffice?.length > 0
+        ) {
+          const postOffices = data[0].PostOffice;
+          const apiStateName = postOffices[0].State;
+          const apiDistrictName = postOffices[0].District;
+
+          setStateId(apiStateName);
+          setDistrictId(apiDistrictName);
+
+          const cityNames = Array.from(
+            new Set(postOffices.map((po: any) => po.Name).filter(Boolean)),
+          ) as string[];
+
+          setCities(cityNames);
+          if (cityNames.length > 0) {
+            setCity(cityNames[0]);
+          }
+
+          toastifyToast.success(
+            `Location found: ${apiDistrictName}, ${apiStateName}`,
+          );
+        } else {
+          toastifyToast.error("Location details not found for this PIN code");
+        }
+      } catch (err) {
+        console.error("Error fetching pincode info:", err);
+        toastifyToast.error("Failed to fetch location by PIN code");
+      } finally {
+        setLoadingPincode(false);
+      }
+    }
+  };
 
   // permissions
   const [orderManagement, setOrderManagement] = React.useState<boolean>(
@@ -187,9 +237,11 @@ export default function EditStaffModal({
         return isNaN(date.getTime()) ? null : date.toISOString();
       })(),
       stateId: stateId,
+      stateName: stateId,
       districtId: districtId,
+      districtName: districtId,
       city: city,
-      locality: locality || null,
+      pincode: pincode,
       staffCategoryId: designationId,
       role: currentRoleValue,
       permissions: permissions,
@@ -258,9 +310,16 @@ export default function EditStaffModal({
       setCities([]);
       return;
     }
+    const matchedDistObj = districts.find(
+      (d) =>
+        (d.districtName || d.name) === districtId ||
+        String(d.id) === String(districtId),
+    );
+    const distObjId = matchedDistObj?.id || matchedDistObj?._id || districtId;
+
     const fetchCities = async () => {
       try {
-        const res: any = await getCity({ districtId });
+        const res: any = await getCity({ districtId: distObjId });
         const data = res?.data?.data || res?.data || res || [];
         setCities(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -268,10 +327,25 @@ export default function EditStaffModal({
       }
     };
     fetchCities();
-  }, [districtId]);
+  }, [districtId, districts]);
 
-  const filteredDistricts = districts.filter(
-    (d) => String(d.stateId) === String(stateId),
+  const selectedStateObj = states.find(
+    (s) =>
+      (s.stateName || s.name) === stateId ||
+      String(s.id) === String(stateId) ||
+      String(s.stateId) === String(stateId) ||
+      String(s._id) === String(stateId),
+  );
+
+  const filteredDistricts = districts.filter((d) =>
+    selectedStateObj
+      ? String(d.stateId) ===
+        String(
+          selectedStateObj.id ||
+            selectedStateObj._id ||
+            selectedStateObj.stateId,
+        )
+      : true,
   );
 
   return (
@@ -472,87 +546,121 @@ export default function EditStaffModal({
             <div className="space-y-6">
               <h3 className="text-sm font-semibold text-gray-700">Address</h3>
               <div className="space-y-4">
+                <div>
+                  <label
+                    className={`text-xs font-semibold block mb-2 transition ${
+                      focusedField === "pincode"
+                        ? "text-[#F87B1B]"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    PIN Code
+                  </label>
+                  <div className="relative">
+                    <Input
+                      value={pincode}
+                      onChange={(e) => handlePincodeChange(e.target.value)}
+                      placeholder="Enter 6-digit PIN code (e.g. 493118)"
+                      maxLength={6}
+                      className={`w-full border-2 transition ${
+                        focusedField === "pincode"
+                          ? "!border-[#F87B1B]"
+                          : "!border-gray-300"
+                      }`}
+                      onFocus={() => setFocusedField("pincode")}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                    {loadingPincode && (
+                      <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-3 text-[#F87B1B]" />
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="text-xs font-semibold block mb-2 text-gray-700">
+                    <label
+                      className={`text-xs font-semibold block mb-2 transition ${
+                        focusedField === "state"
+                          ? "text-[#F87B1B]"
+                          : "text-gray-700"
+                      }`}
+                    >
                       State
                     </label>
-                    <Combobox
-                      options={states.map((s) => ({
-                        label: s.stateName,
-                        value: String(s.id),
-                      }))}
+                    <Input
                       value={stateId ?? ""}
-                      onValueChange={(val) => {
-                        setStateId(val);
-                        setDistrictId(null);
-                        setCity("");
-                        setLocality("");
-                      }}
-                      placeholder="Select State"
+                      onChange={(e) => setStateId(e.target.value)}
+                      placeholder="State (auto-filled by PIN code)"
+                      className={`w-full border-2 transition ${
+                        focusedField === "state"
+                          ? "!border-[#F87B1B]"
+                          : "!border-gray-300"
+                      }`}
+                      onFocus={() => setFocusedField("state")}
+                      onBlur={() => setFocusedField(null)}
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold block mb-2 text-gray-700">
+                    <label
+                      className={`text-xs font-semibold block mb-2 transition ${
+                        focusedField === "district"
+                          ? "text-[#F87B1B]"
+                          : "text-gray-700"
+                      }`}
+                    >
                       District
                     </label>
-                    <Combobox
-                      options={filteredDistricts.map((d) => ({
-                        label: d.districtName,
-                        value: String(d.id),
-                      }))}
+                    <Input
                       value={districtId ?? ""}
-                      onValueChange={(val) => {
-                        setDistrictId(val);
-                        setCity("");
-                        setLocality("");
-                      }}
-                      disabled={!stateId}
-                      placeholder="Select District"
+                      onChange={(e) => setDistrictId(e.target.value)}
+                      placeholder="District (auto-filled by PIN code)"
+                      className={`w-full border-2 transition ${
+                        focusedField === "district"
+                          ? "!border-[#F87B1B]"
+                          : "!border-gray-300"
+                      }`}
+                      onFocus={() => setFocusedField("district")}
+                      onBlur={() => setFocusedField(null)}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="text-xs font-semibold block mb-2 text-gray-700">
-                      City
-                    </label>
-                    <Combobox
-                      options={cities.map((c) => ({
-                        label: c.cityName || c.name,
-                        value: c.cityName || c.name || String(c.id),
-                      }))}
-                      value={city}
-                      onValueChange={(val) => setCity(val)}
-                      disabled={!districtId}
-                      placeholder={
-                        cities.length ? "Select City" : "Select district first"
-                      }
-                    />
-                  </div>
-                  <div>
                     <label
                       className={`text-xs font-semibold block mb-2 transition ${
-                        focusedField === "locality"
+                        focusedField === "city"
                           ? "text-[#F87B1B]"
                           : "text-gray-700"
                       }`}
                     >
-                      Locality / Area
+                      City / Area
                     </label>
-                    <Input
-                      placeholder="Enter locality / area"
-                      value={locality}
-                      onChange={(e) => setLocality(e.target.value)}
-                      className={`w-full border-2 transition ${
-                        focusedField === "locality"
-                          ? "!border-[#F87B1B]"
-                          : "!border-gray-300"
-                      }`}
-                      onFocus={() => setFocusedField("locality")}
-                      onBlur={() => setFocusedField(null)}
-                    />
+                    {cities.length > 0 ? (
+                      <Combobox
+                        options={cities.map((c: any) => ({
+                          label: typeof c === "string" ? c : c.cityName || c.name,
+                          value: typeof c === "string" ? c : c.cityName || c.name,
+                        }))}
+                        value={city}
+                        onValueChange={(val) => setCity(val)}
+                        placeholder="Select City / Area"
+                        searchPlaceholder="Search city..."
+                      />
+                    ) : (
+                      <Input
+                        placeholder="Enter city / area"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className={`w-full border-2 transition ${
+                          focusedField === "city"
+                            ? "!border-[#F87B1B]"
+                            : "!border-gray-300"
+                        }`}
+                        onFocus={() => setFocusedField("city")}
+                        onBlur={() => setFocusedField(null)}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
