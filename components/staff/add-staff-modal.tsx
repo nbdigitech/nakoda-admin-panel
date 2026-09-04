@@ -57,7 +57,7 @@ export default function AddStaffModal({
   // selected values (ID stored)
   const [stateId, setStateId] = React.useState<string | null>(null);
   const [districtId, setDistrictId] = React.useState<string | null>(null);
-  const [city, setCity] = React.useState<string>("");
+  const [cityId, setCityId] = React.useState<string>("");
   const [pincode, setPincode] = React.useState<string>("");
   const [loadingPincode, setLoadingPincode] = React.useState<boolean>(false);
   const [designationId, setDesignationId] = React.useState<string | null>(null);
@@ -111,7 +111,7 @@ export default function AddStaffModal({
     setImageBase64("");
     setStateId(null);
     setDistrictId(null);
-    setCity("");
+    setCityId("");
     setPincode("");
     setCities([]);
     setDesignationId(null);
@@ -151,7 +151,7 @@ export default function AddStaffModal({
 
           setCities(cityNames);
           if (cityNames.length > 0) {
-            setCity(cityNames[0]);
+            setCityId(cityNames[0]);
           }
 
           toastifyToast.success(
@@ -286,7 +286,8 @@ export default function AddStaffModal({
       stateName: stateId,
       districtId: districtId ? String(districtId) : null,
       districtName: districtId ? String(districtId) : null,
-      city: city,
+      cityId: cityId,
+      cityName: cityId,
       pincode: pincode,
       staffCategoryId: designationId,
       role: currentRoleValue,
@@ -844,7 +845,7 @@ export default function AddStaffModal({
                   <div>
                     <label
                       className={`text-xs font-semibold block mb-2 transition ${
-                        focusedField === "city"
+                        focusedField === "cityId"
                           ? "text-[#F87B1B]"
                           : "text-gray-700"
                       }`}
@@ -857,22 +858,22 @@ export default function AddStaffModal({
                           label: typeof c === "string" ? c : c.cityName || c.name,
                           value: typeof c === "string" ? c : c.cityName || c.name,
                         }))}
-                        value={city}
-                        onValueChange={(val) => setCity(val)}
+                        value={cityId}
+                        onValueChange={(val) => setCityId(val)}
                         placeholder="Select City / Area"
                         searchPlaceholder="Search city..."
                       />
                     ) : (
                       <Input
                         placeholder="Enter city / area"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
+                        value={cityId}
+                        onChange={(e) => setCityId(e.target.value)}
                         className={`w-full border-2 transition ${
-                          focusedField === "city"
+                          focusedField === "cityId"
                             ? "!border-[#F87B1B]"
                             : "!border-gray-300"
                         }`}
-                        onFocus={() => setFocusedField("city")}
+                        onFocus={() => setFocusedField("cityId")}
                         onBlur={() => setFocusedField(null)}
                       />
                     )}

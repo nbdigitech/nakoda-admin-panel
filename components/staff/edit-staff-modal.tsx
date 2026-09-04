@@ -241,6 +241,7 @@ export default function EditStaffModal({
       districtId: districtId,
       districtName: districtId,
       city: city,
+      cityName: city,
       pincode: pincode,
       staffCategoryId: designationId,
       role: currentRoleValue,

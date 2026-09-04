@@ -50,7 +50,7 @@ interface FormState {
   // Step 3 - Address
   stateId: string;
   districtId: string;
-  city: string;
+  cityId: string;
   pincode: string;
   asmId: string;
   asmName: string;
@@ -88,7 +88,7 @@ export default function AddDealerModal({
     aadhaarBase64: "",
     stateId: "",
     districtId: "",
-    city: "",
+    cityId: "",
     pincode: "",
     asmId: "",
     asmName: "",
@@ -279,7 +279,7 @@ export default function AddDealerModal({
 
           setCities(cityNames);
           if (cityNames.length > 0) {
-            handleInputChange("city", cityNames[0]);
+            handleInputChange("cityId", cityNames[0]);
           }
 
           toastifyToast.success(
@@ -348,7 +348,8 @@ export default function AddDealerModal({
         stateName: formData.stateId,
         districtId: formData.districtId,
         districtName: formData.districtId,
-        city: formData.city,
+        cityId: formData.cityId,
+        cityName: formData.cityId,
         pincode: formData.pincode,
         asmId: formData.asmId,
         asmName: formData.asmName,
@@ -382,7 +383,7 @@ export default function AddDealerModal({
         aadhaarBase64: "",
         stateId: "",
         districtId: "",
-        city: "",
+        cityId: "",
         pincode: "",
         asmId: formData.asmId,
         asmName: formData.asmName,
@@ -929,24 +930,24 @@ export default function AddDealerModal({
                         label: typeof c === "string" ? c : c.cityName || c.name,
                         value: typeof c === "string" ? c : c.cityName || c.name,
                       }))}
-                      value={formData.city}
-                      onValueChange={(val) => handleInputChange("city", val)}
+                      value={formData.cityId}
+                      onValueChange={(val) => handleInputChange("cityId", val)}
                       placeholder="Select City / Area"
                       searchPlaceholder="Search city..."
                     />
                   ) : (
                     <Input
-                      value={formData.city}
+                      value={formData.cityId}
                       onChange={(e) =>
-                        handleInputChange("city", e.target.value)
+                        handleInputChange("cityId", e.target.value)
                       }
                       placeholder="Enter city / area"
                       className={`w-full border-2 transition ${
-                        focusedField === "city"
+                        focusedField === "cityId"
                           ? "border-[#F87B1B]"
                           : "border-gray-300"
                       }`}
-                      onFocus={() => setFocusedField("city")}
+                      onFocus={() => setFocusedField("cityId")}
                       onBlur={() => setFocusedField(null)}
                     />
                   )}
