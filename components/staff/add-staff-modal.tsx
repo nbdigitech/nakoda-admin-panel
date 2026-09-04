@@ -274,7 +274,7 @@ export default function AddStaffModal({
   };
 
   const handleSubmit = async () => {
-    if (!pincode || !state || !district || !city) {
+    if (!pincode?.trim() || !state?.trim() || !district?.trim() || !city?.trim()) {
       toastifyToast.error("Please fill all required address fields (Pincode, State, District, City)");
       return;
     }
@@ -763,7 +763,7 @@ export default function AddStaffModal({
                         : "text-gray-700"
                     }`}
                   >
-                    PIN Code
+                    PIN Code <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Input
