@@ -295,7 +295,6 @@ export default function AddStaffModal({
       phoneNumber: phone ? phone.replace(/^\+91/, "").replace(/\D/g, "") : null,
       name: staffName,
       permissions: permissions,
-      // allotment_area: districtId,
       dob: (() => {
         if (!dob) return null;
         const date = new Date(dob);
