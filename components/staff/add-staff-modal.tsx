@@ -55,9 +55,9 @@ export default function AddStaffModal({
   const [designations, setDesignations] = React.useState<any[]>([]);
 
   // selected values (ID stored)
-  const [stateId, setStateId] = React.useState<string | null>(null);
-  const [districtId, setDistrictId] = React.useState<string | null>(null);
-  const [cityId, setCityId] = React.useState<string>("");
+  const [state, setState] = React.useState<string>("");
+  const [district, setDistrict] = React.useState<string>("");
+  const [city, setCity] = React.useState<string>("");
   const [locality, setLocality] = React.useState<string>("");
   const [pincode, setPincode] = React.useState<string>("");
   const [loadingPincode, setLoadingPincode] = React.useState<boolean>(false);
@@ -110,9 +110,9 @@ export default function AddStaffModal({
     setAadhaarBase64("");
     setAadhaarFileType(null);
     setImageBase64("");
-    setStateId(null);
-    setDistrictId(null);
-    setCityId("");
+    setState("");
+    setDistrict("");
+    setCity("");
     setLocality("");
     setPincode("");
     setCities([]);
@@ -126,6 +126,14 @@ export default function AddStaffModal({
   const handlePincodeChange = async (pin: string) => {
     const cleanPin = pin.replace(/\D/g, "").slice(0, 6);
     setPincode(cleanPin);
+
+    if (cleanPin.length < 6) {
+      setState("");
+      setDistrict("");
+      setCity("");
+      setCities([]);
+      return;
+    }
 
     if (cleanPin.length === 6) {
       setLoadingPincode(true);
@@ -144,8 +152,8 @@ export default function AddStaffModal({
           const apiStateName = postOffices[0].State;
           const apiDistrictName = postOffices[0].District;
 
-          setStateId(apiStateName);
-          setDistrictId(apiDistrictName);
+          setState(apiStateName);
+          setDistrict(apiDistrictName);
 
           const cityNames = Array.from(
             new Set(postOffices.map((po: any) => po.Name).filter(Boolean)),
@@ -153,7 +161,9 @@ export default function AddStaffModal({
 
           setCities(cityNames);
           if (cityNames.length > 0) {
-            setCityId(cityNames[0]);
+            setCity(cityNames[0]);
+          } else {
+            setCity("");
           }
 
           toastifyToast.success(
@@ -161,10 +171,18 @@ export default function AddStaffModal({
           );
         } else {
           toastifyToast.error("Location details not found for this PIN code");
+          setState("");
+          setDistrict("");
+          setCity("");
+          setCities([]);
         }
       } catch (err) {
         console.error("Error fetching pincode info:", err);
         toastifyToast.error("Failed to fetch location by PIN code");
+        setState("");
+        setDistrict("");
+        setCity("");
+        setCities([]);
       } finally {
         setLoadingPincode(false);
       }
@@ -256,6 +274,16 @@ export default function AddStaffModal({
   };
 
   const handleSubmit = async () => {
+    if (!pincode || !state || !district || !city) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill all required address fields (Pincode, State, District, City)",
+        variant: "destructive",
+      });
+      toastifyToast.error("Please fill all required address fields (Pincode, State, District, City)");
+      return;
+    }
+
     if (isPhoneRegistered) {
       toast({
         title: "Error",
@@ -284,12 +312,9 @@ export default function AddStaffModal({
       })(),
       aadhaarBase64: aadhaarBase64 || "",
       imageBase64: imageBase64 || "",
-      stateId: stateId,
-      stateName: stateId,
-      districtId: districtId ? String(districtId) : null,
-      districtName: districtId ? String(districtId) : null,
-      cityId: cityId,
-      cityName: cityId,
+      state: state,
+      district: district,
+      city: city,
       locality: locality || null,
       pincode: pincode,
       staffCategoryId: designationId,
@@ -359,25 +384,6 @@ export default function AddStaffModal({
       mounted = false;
     };
   }, [open, authReady, user]);
-
-  const selectedStateObj = states.find(
-    (s) =>
-      (s.stateName || s.name) === stateId ||
-      String(s.id) === String(stateId) ||
-      String(s.stateId) === String(stateId) ||
-      String(s._id) === String(stateId),
-  );
-
-  const filteredDistricts = districts.filter((d) =>
-    selectedStateObj
-      ? String(d.stateId) ===
-        String(
-          selectedStateObj.id ||
-            selectedStateObj._id ||
-            selectedStateObj.stateId,
-        )
-      : true,
-  );
 
   return (
     <>
@@ -804,11 +810,11 @@ export default function AddStaffModal({
                           : "text-gray-700"
                       }`}
                     >
-                      State
+                      State <span className="text-red-500">*</span>
                     </label>
                     <Input
-                      value={stateId ?? ""}
-                      onChange={(e) => setStateId(e.target.value)}
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
                       placeholder="State (auto-filled by PIN code)"
                       className={`w-full border-2 transition ${
                         focusedField === "state"
@@ -827,11 +833,11 @@ export default function AddStaffModal({
                           : "text-gray-700"
                       }`}
                     >
-                      District
+                      District <span className="text-red-500">*</span>
                     </label>
                     <Input
-                      value={districtId ?? ""}
-                      onChange={(e) => setDistrictId(e.target.value)}
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
                       placeholder="District (auto-filled by PIN code)"
                       className={`w-full border-2 transition ${
                         focusedField === "district"
@@ -848,12 +854,12 @@ export default function AddStaffModal({
                   <div>
                     <label
                       className={`text-xs font-semibold block mb-2 transition ${
-                        focusedField === "cityId"
+                        focusedField === "city"
                           ? "text-[#F87B1B]"
                           : "text-gray-700"
                       }`}
                     >
-                      City / Area
+                      City / Area <span className="text-red-500">*</span>
                     </label>
                     {cities.length > 0 ? (
                       <Combobox
@@ -861,22 +867,22 @@ export default function AddStaffModal({
                           label: typeof c === "string" ? c : c.cityName || c.name,
                           value: typeof c === "string" ? c : c.cityName || c.name,
                         }))}
-                        value={cityId}
-                        onValueChange={(val) => setCityId(val)}
+                        value={city}
+                        onValueChange={(val) => setCity(val)}
                         placeholder="Select City / Area"
                         searchPlaceholder="Search city..."
                       />
                     ) : (
                       <Input
                         placeholder="Enter city / area"
-                        value={cityId}
-                        onChange={(e) => setCityId(e.target.value)}
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
                         className={`w-full border-2 transition ${
-                          focusedField === "cityId"
+                          focusedField === "city"
                             ? "!border-[#F87B1B]"
                             : "!border-gray-300"
                         }`}
-                        onFocus={() => setFocusedField("cityId")}
+                        onFocus={() => setFocusedField("city")}
                         onBlur={() => setFocusedField(null)}
                       />
                     )}

@@ -48,9 +48,9 @@ interface FormState {
   aadhaarBase64: string;
 
   // Step 3 - Address
-  stateId: string;
-  districtId: string;
-  cityId: string;
+  state: string;
+  district: string;
+  city: string;
   locality?: string;
   pincode: string;
   asmId: string;
@@ -87,9 +87,9 @@ export default function AddDealerModal({
     gstBase64: "",
     pancardBase64: "",
     aadhaarBase64: "",
-    stateId: "",
-    districtId: "",
-    cityId: "",
+    state: "",
+    district: "",
+    city: "",
     locality: "",
     pincode: "",
     asmId: "",
@@ -255,6 +255,14 @@ export default function AddDealerModal({
     const cleanPin = pin.replace(/\D/g, "").slice(0, 6);
     handleInputChange("pincode", cleanPin);
 
+    if (cleanPin.length < 6) {
+      handleInputChange("state", "");
+      handleInputChange("district", "");
+      handleInputChange("city", "");
+      setCities([]);
+      return;
+    }
+
     if (cleanPin.length === 6) {
       setLoadingPincode(true);
       try {
@@ -272,8 +280,8 @@ export default function AddDealerModal({
           const apiStateName = postOffices[0].State;
           const apiDistrictName = postOffices[0].District;
 
-          handleInputChange("stateId", apiStateName);
-          handleInputChange("districtId", apiDistrictName);
+          handleInputChange("state", apiStateName);
+          handleInputChange("district", apiDistrictName);
 
           const cityNames = Array.from(
             new Set(postOffices.map((po: any) => po.Name).filter(Boolean)),
@@ -281,7 +289,9 @@ export default function AddDealerModal({
 
           setCities(cityNames);
           if (cityNames.length > 0) {
-            handleInputChange("cityId", cityNames[0]);
+            handleInputChange("city", cityNames[0]);
+          } else {
+            handleInputChange("city", "");
           }
 
           toastifyToast.success(
@@ -289,10 +299,18 @@ export default function AddDealerModal({
           );
         } else {
           toastifyToast.error("Location details not found for this PIN code");
+          handleInputChange("state", "");
+          handleInputChange("district", "");
+          handleInputChange("city", "");
+          setCities([]);
         }
       } catch (err) {
         console.error("Error fetching pincode info:", err);
         toastifyToast.error("Failed to fetch location by PIN code");
+        handleInputChange("state", "");
+        handleInputChange("district", "");
+        handleInputChange("city", "");
+        setCities([]);
       } finally {
         setLoadingPincode(false);
       }
@@ -316,7 +334,12 @@ export default function AddDealerModal({
       return true;
     }
     if (stepNum === 3) {
-      return true;
+      return !!(
+        formData.pincode &&
+        formData.state &&
+        formData.district &&
+        formData.city
+      );
     }
     return false;
   };
@@ -326,9 +349,10 @@ export default function AddDealerModal({
     if (!validateStep(3)) {
       toast({
         title: "Validation Error",
-        description: "Please fill all required fields",
+        description: "Please fill all required address fields (Pincode, State, District, City)",
         variant: "destructive",
       });
+      toastifyToast.error("Please fill all required address fields (Pincode, State, District, City)");
       return;
     }
 
@@ -346,12 +370,9 @@ export default function AddDealerModal({
         logoBase64: formData.logoBase64,
         gstBase64: formData.gstBase64,
         pancardBase64: formData.pancardBase64,
-        stateId: formData.stateId,
-        stateName: formData.stateId,
-        districtId: formData.districtId,
-        districtName: formData.districtId,
-        cityId: formData.cityId,
-        cityName: formData.cityId,
+        state: formData.state,
+        district: formData.district,
+        city: formData.city,
         locality: formData.locality || null,
         pincode: formData.pincode,
         asmId: formData.asmId,
@@ -384,9 +405,9 @@ export default function AddDealerModal({
         gstBase64: "",
         pancardBase64: "",
         aadhaarBase64: "",
-        stateId: "",
-        districtId: "",
-        cityId: "",
+        state: "",
+        district: "",
+        city: "",
         locality: "",
         pincode: "",
         asmId: formData.asmId,
@@ -873,25 +894,25 @@ export default function AddDealerModal({
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "stateId"
+                      focusedField === "state"
                         ? "text-[#F87B1B]"
                         : "text-gray-700"
                     }`}
                   >
-                    State
+                    State <span className="text-red-500">*</span>
                   </label>
                   <Input
-                    value={formData.stateId}
+                    value={formData.state}
                     onChange={(e) =>
-                      handleInputChange("stateId", e.target.value)
+                      handleInputChange("state", e.target.value)
                     }
                     placeholder="State (auto-filled by PIN code)"
                     className={`w-full border-2 transition ${
-                      focusedField === "stateId"
+                      focusedField === "state"
                         ? "border-[#F87B1B]"
                         : "border-gray-300"
                     }`}
-                    onFocus={() => setFocusedField("stateId")}
+                    onFocus={() => setFocusedField("state")}
                     onBlur={() => setFocusedField(null)}
                   />
                 </div>
@@ -899,25 +920,25 @@ export default function AddDealerModal({
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "districtId"
+                      focusedField === "district"
                         ? "text-[#F87B1B]"
                         : "text-gray-700"
                     }`}
                   >
-                    District
+                    District <span className="text-red-500">*</span>
                   </label>
                   <Input
-                    value={formData.districtId}
+                    value={formData.district}
                     onChange={(e) =>
-                      handleInputChange("districtId", e.target.value)
+                      handleInputChange("district", e.target.value)
                     }
                     placeholder="District (auto-filled by PIN code)"
                     className={`w-full border-2 transition ${
-                      focusedField === "districtId"
+                      focusedField === "district"
                         ? "border-[#F87B1B]"
                         : "border-gray-300"
                     }`}
-                    onFocus={() => setFocusedField("districtId")}
+                    onFocus={() => setFocusedField("district")}
                     onBlur={() => setFocusedField(null)}
                   />
                 </div>
@@ -926,7 +947,7 @@ export default function AddDealerModal({
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-xs font-semibold block mb-2 text-gray-700">
-                    City / Area
+                    City / Area <span className="text-red-500">*</span>
                   </label>
                   {cities.length > 0 ? (
                     <Combobox
@@ -934,24 +955,24 @@ export default function AddDealerModal({
                         label: typeof c === "string" ? c : c.cityName || c.name,
                         value: typeof c === "string" ? c : c.cityName || c.name,
                       }))}
-                      value={formData.cityId}
-                      onValueChange={(val) => handleInputChange("cityId", val)}
+                      value={formData.city}
+                      onValueChange={(val) => handleInputChange("city", val)}
                       placeholder="Select City / Area"
                       searchPlaceholder="Search city..."
                     />
                   ) : (
                     <Input
-                      value={formData.cityId}
+                      value={formData.city}
                       onChange={(e) =>
-                        handleInputChange("cityId", e.target.value)
+                        handleInputChange("city", e.target.value)
                       }
                       placeholder="Enter city / area"
                       className={`w-full border-2 transition ${
-                        focusedField === "cityId"
+                        focusedField === "city"
                           ? "border-[#F87B1B]"
                           : "border-gray-300"
                       }`}
-                      onFocus={() => setFocusedField("cityId")}
+                      onFocus={() => setFocusedField("city")}
                       onBlur={() => setFocusedField(null)}
                     />
                   )}
