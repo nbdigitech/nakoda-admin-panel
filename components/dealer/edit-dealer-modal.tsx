@@ -32,7 +32,6 @@ interface FormState {
   name: string;
   phoneNumber: string;
   email: string;
-  password: string;
   dob: string;
 
   // Step 2 - Organization
@@ -81,7 +80,6 @@ export default function EditDealerModal({
     name: dealer?.name || "",
     phoneNumber: dealer?.phoneNumber || "",
     email: dealer?.email || "",
-    password: dealer?.password || "",
     dob: dealer?.dob || "",
     organizationName: dealer?.organizationName || "",
     logoBase64: dealer?.logoUrl || "",
@@ -104,7 +102,6 @@ export default function EditDealerModal({
         name: dealer?.name || "",
         phoneNumber: dealer?.phoneNumber || "",
         email: dealer?.email || "",
-        password: dealer?.password || "",
         dob: dealer?.dob || "",
         organizationName: dealer?.organizationName || "",
         logoBase64: dealer?.logoUrl || "",
@@ -382,7 +379,6 @@ export default function EditDealerModal({
         name: "",
         phoneNumber: "",
         email: "",
-        password: "",
         dob: "",
         organizationName: "",
         logoBase64: "",
@@ -511,35 +507,6 @@ export default function EditDealerModal({
                     onBlur={() => setFocusedField(null)}
                   />
                 </div>
-                <div>
-                  <label
-                    className={`text-xs font-semibold block mb-2 transition ${
-                      focusedField === "password"
-                        ? "text-[#F87B1B]"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    Password
-                  </label>
-                  <Input
-                    value={formData.password}
-                    onChange={(e) =>
-                      handleInputChange("password", e.target.value)
-                    }
-                    placeholder="••••••••"
-                    type="password"
-                    className={`w-full border-2 transition ${
-                      focusedField === "password"
-                        ? "!border-[#F87B1B]"
-                        : "!border-gray-300"
-                    }`}
-                    onFocus={() => setFocusedField("password")}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${
