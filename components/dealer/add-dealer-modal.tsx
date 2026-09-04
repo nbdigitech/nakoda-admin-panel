@@ -123,20 +123,23 @@ export default function AddDealerModal({
     fetchAsms();
   }, [open]);
 
-  // Set ASM id/name from logged-in user when available (if not already set)
+  // Set ASM id/name from logged-in user when available (if not already set and user is an ASM)
   React.useEffect(() => {
     if (authReady && user && typeof user === "object" && !formData.asmId) {
-      const asmName =
-        (userData as any)?.name ||
-        (userData as any)?.organizationName ||
-        (user as any).displayName ||
-        (user as any).name ||
-        (user as any).email ||
-        (user as any).phoneNumber ||
-        "";
-      const asmId =
-        (user as any).id || (user as any).uid || (user as any)._id || "";
-      setFormData((prev) => ({ ...prev, asmId, asmName }));
+      const role = (userData as any)?.role?.toLowerCase();
+      if (role === "asm") {
+        const asmName =
+          (userData as any)?.name ||
+          (userData as any)?.organizationName ||
+          (user as any).displayName ||
+          (user as any).name ||
+          (user as any).email ||
+          (user as any).phoneNumber ||
+          "";
+        const asmId =
+          (user as any).id || (user as any).uid || (user as any)._id || "";
+        setFormData((prev) => ({ ...prev, asmId, asmName }));
+      }
     }
   }, [authReady, user, userData]);
 
@@ -335,10 +338,11 @@ export default function AddDealerModal({
     }
     if (stepNum === 3) {
       return !!(
-        formData.pincode &&
-        formData.state &&
-        formData.district &&
-        formData.city
+        formData.pincode?.trim() &&
+        formData.state?.trim() &&
+        formData.district?.trim() &&
+        formData.city?.trim() &&
+        formData.asmId?.trim()
       );
     }
     return false;
@@ -347,7 +351,7 @@ export default function AddDealerModal({
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateStep(3)) {
-      toastifyToast.error("Please fill all required address fields (Pincode, State, District, City)");
+      toastifyToast.error("Please fill all required address & ASM fields (Pincode, State, District, City, ASM Name)");
       return;
     }
 
@@ -402,8 +406,8 @@ export default function AddDealerModal({
         city: "",
         locality: "",
         pincode: "",
-        asmId: formData.asmId,
-        asmName: formData.asmName,
+        asmId: "",
+        asmName: "",
       });
       setStep(1);
       setOpen(false);
@@ -856,7 +860,7 @@ export default function AddDealerModal({
                       : "text-gray-700"
                   }`}
                 >
-                  PIN Code
+                  PIN Code <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Input
@@ -1001,7 +1005,7 @@ export default function AddDealerModal({
                         : "text-gray-700"
                     }`}
                   >
-                    ASM Name
+                    ASM Name <span className="text-red-500">*</span>
                   </label>
                   <Combobox
                     options={asms.map((a) => ({
