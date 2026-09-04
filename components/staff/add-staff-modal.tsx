@@ -275,21 +275,12 @@ export default function AddStaffModal({
 
   const handleSubmit = async () => {
     if (!pincode || !state || !district || !city) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill all required address fields (Pincode, State, District, City)",
-        variant: "destructive",
-      });
       toastifyToast.error("Please fill all required address fields (Pincode, State, District, City)");
       return;
     }
 
     if (isPhoneRegistered) {
-      toast({
-        title: "Error",
-        description: "Cannot create user: phone number already registered.",
-        variant: "destructive",
-      });
+      toastifyToast.error("Cannot create user: phone number already registered.");
       return;
     }
     const permissions: string[] = [];
@@ -338,19 +329,12 @@ export default function AddStaffModal({
 
       resetForm();
       setOpen(false);
-      toast({
-        title: "Success",
-        description: "User created successfully!",
-      });
+      toastifyToast.success("User created successfully!");
       // Refresh table if callback provided
       if (onSuccess) onSuccess();
     } catch (err: any) {
       console.error(err);
-      toast({
-        title: "Error",
-        description: err?.message || "Failed to create user",
-        variant: "destructive",
-      });
+      toastifyToast.error(err?.message || "Failed to create user");
     } finally {
       setIsSubmitting(false);
     }

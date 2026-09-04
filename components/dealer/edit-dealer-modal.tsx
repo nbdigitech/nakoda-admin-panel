@@ -336,11 +336,6 @@ export default function EditDealerModal({
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateStep(3)) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill all required address fields (Pincode, State, District, City)",
-        variant: "destructive",
-      });
       toastifyToast.error("Please fill all required address fields (Pincode, State, District, City)");
       return;
     }
@@ -376,10 +371,7 @@ export default function EditDealerModal({
         "dealer",
       );
 
-      toast({
-        title: "Success",
-        description: "Dealer updated successfully!",
-      });
+      toastifyToast.success("Dealer updated successfully!");
 
       // Reset form
       setFormData({
@@ -406,11 +398,7 @@ export default function EditDealerModal({
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error creating dealer:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update dealer. Please try again.",
-        variant: "destructive",
-      });
+      toastifyToast.error("Failed to update dealer. Please try again.");
     } finally {
       setLoading(false);
     }

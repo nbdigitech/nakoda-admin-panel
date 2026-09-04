@@ -347,11 +347,6 @@ export default function AddDealerModal({
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateStep(3)) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill all required address fields (Pincode, State, District, City)",
-        variant: "destructive",
-      });
       toastifyToast.error("Please fill all required address fields (Pincode, State, District, City)");
       return;
     }
@@ -388,10 +383,7 @@ export default function AddDealerModal({
         "dealer",
       );
 
-      toast({
-        title: "Success",
-        description: "Dealer created successfully!",
-      });
+      toastifyToast.success("Dealer created successfully!");
 
       // Reset form
       setFormData({
@@ -418,11 +410,7 @@ export default function AddDealerModal({
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error creating dealer:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create dealer. Please try again.",
-        variant: "destructive",
-      });
+      toastifyToast.error("Failed to create dealer. Please try again.");
     } finally {
       setLoading(false);
     }

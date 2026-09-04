@@ -231,11 +231,6 @@ export default function EditStaffModal({
 
   const handleSubmit = async () => {
     if (!pincode || !state || !district || !city) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill all required address fields (Pincode, State, District, City)",
-        variant: "destructive",
-      });
       toastifyToast.error("Please fill all required address fields (Pincode, State, District, City)");
       return;
     }
@@ -301,18 +296,11 @@ export default function EditStaffModal({
       );
 
       setOpen(false);
-      toast({
-        title: "Success",
-        description: "Staff updated successfully!",
-      });
+      toastifyToast.success("Staff updated successfully!");
       if (onSuccess) onSuccess();
     } catch (err: any) {
       console.error(err);
-      toast({
-        title: "Error",
-        description: err?.message || "Failed to update staff",
-        variant: "destructive",
-      });
+      toastifyToast.error(err?.message || "Failed to update staff");
     } finally {
       setIsSubmitting(false);
     }
