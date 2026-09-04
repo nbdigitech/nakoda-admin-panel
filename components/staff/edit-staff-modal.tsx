@@ -23,7 +23,7 @@ import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Combobox } from "@/components/ui/combobox";
 import { Loader2 } from "lucide-react";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, deleteField } from "firebase/firestore";
 import { getFirestoreDB, getFirebaseStorage } from "@/firebase";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { addNotification } from "@/services/notifications";
@@ -279,6 +279,9 @@ export default function EditStaffModal({
         (userData as any)?.displayName ||
         staff?.asmName ||
         "",
+      stateId: deleteField(),
+      districtId: deleteField(),
+      cityId: deleteField(),
       ...updates,
       updatedAt: serverTimestamp(),
     };

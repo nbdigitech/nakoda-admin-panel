@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/select";
 import { createUserByPhone, checkUserBeforeLogin } from "@/services/user";
 import { getDesignation, getDistrict, getState, getCity } from "@/services/masterData";
-import { Timestamp } from "firebase/firestore";
+import { Timestamp, doc, updateDoc, setDoc, deleteField } from "firebase/firestore";
+import { getFirestoreDB } from "@/firebase";
 import { useFirebaseAuth } from "@/hooks/useFirebaseAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Combobox } from "@/components/ui/combobox";
@@ -317,8 +318,46 @@ export default function AddStaffModal({
 
     try {
       setIsSubmitting(true);
-      const res = await createUserByPhone(payload);
+      const res: any = await createUserByPhone(payload);
       console.log("User created:", res);
+
+      // Clean up Firestore doc to ensure string state, district, city are saved and null ID fields are removed
+      const cleanPhone = phone ? phone.replace(/^\+91/, "").replace(/\D/g, "") : null;
+      const targetUserIds = Array.from(
+        new Set(
+          [
+            res?.uid,
+            res?.data?.uid,
+            res?.id,
+            res?.data?.id,
+            res?.data?.user?.uid,
+            cleanPhone,
+          ].filter(Boolean),
+        ),
+      );
+
+      const db = getFirestoreDB();
+      for (const uid of targetUserIds) {
+        try {
+          const userRef = doc(db, "users", uid as string);
+          await setDoc(
+            userRef,
+            {
+              state: state,
+              district: district,
+              city: city,
+              locality: locality || null,
+              pincode: pincode,
+              stateId: deleteField(),
+              districtId: deleteField(),
+              cityId: deleteField(),
+            },
+            { merge: true },
+          );
+        } catch (dbErr) {
+          console.warn("Doc update warning for ID", uid, dbErr);
+        }
+      }
 
       await addNotification(
         "New Staff Member Added",
