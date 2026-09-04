@@ -46,6 +46,7 @@ interface FormState {
   stateId: string;
   districtId: string;
   cityId: string;
+  locality?: string;
   pincode: string;
   asmId: string;
   asmName: string;
@@ -90,6 +91,7 @@ export default function EditDealerModal({
     stateId: dealer?.stateId || "",
     districtId: dealer?.districtId || "",
     cityId: dealer?.cityId || dealer?.cityName || dealer?.city || "",
+    locality: dealer?.locality || "",
     pincode: dealer?.pincode || "",
     asmId: dealer?.asmId || "",
     asmName: dealer?.asmName || "",
@@ -112,6 +114,7 @@ export default function EditDealerModal({
         stateId: dealer?.stateId || "",
         districtId: dealer?.districtId || "",
         cityId: dealer?.cityId || dealer?.cityName || dealer?.city || "",
+        locality: dealer?.locality || "",
         pincode: dealer?.pincode || "",
         asmId: dealer?.asmId || "",
         asmName: dealer?.asmName || "",
@@ -361,6 +364,7 @@ export default function EditDealerModal({
         districtName: formData.districtId,
         cityId: formData.cityId,
         cityName: formData.cityId,
+        locality: formData.locality || null,
         pincode: formData.pincode,
         asmId: formData.asmId,
         asmName: formData.asmName,
@@ -394,6 +398,7 @@ export default function EditDealerModal({
         stateId: "",
         districtId: "",
         cityId: "",
+        locality: "",
         pincode: "",
         asmId: formData.asmId,
         asmName: formData.asmName,
@@ -954,6 +959,34 @@ export default function EditDealerModal({
                     />
                   )}
                 </div>
+                <div>
+                  <label
+                    className={`text-xs font-semibold block mb-2 transition ${
+                      focusedField === "locality"
+                        ? "text-[#F87B1B]"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    Locality / Specific Area <span className="text-gray-400 font-normal">(Optional)</span>
+                  </label>
+                  <Input
+                    value={formData.locality || ""}
+                    onChange={(e) =>
+                      handleInputChange("locality", e.target.value)
+                    }
+                    placeholder="Enter street / landmark / locality"
+                    className={`w-full border-2 transition ${
+                      focusedField === "locality"
+                        ? "border-[#F87B1B]"
+                        : "border-gray-300"
+                    }`}
+                    onFocus={() => setFocusedField("locality")}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label
                     className={`text-xs font-semibold block mb-2 transition ${

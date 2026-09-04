@@ -58,6 +58,7 @@ export default function AddStaffModal({
   const [stateId, setStateId] = React.useState<string | null>(null);
   const [districtId, setDistrictId] = React.useState<string | null>(null);
   const [cityId, setCityId] = React.useState<string>("");
+  const [locality, setLocality] = React.useState<string>("");
   const [pincode, setPincode] = React.useState<string>("");
   const [loadingPincode, setLoadingPincode] = React.useState<boolean>(false);
   const [designationId, setDesignationId] = React.useState<string | null>(null);
@@ -112,6 +113,7 @@ export default function AddStaffModal({
     setStateId(null);
     setDistrictId(null);
     setCityId("");
+    setLocality("");
     setPincode("");
     setCities([]);
     setDesignationId(null);
@@ -288,6 +290,7 @@ export default function AddStaffModal({
       districtName: districtId ? String(districtId) : null,
       cityId: cityId,
       cityName: cityId,
+      locality: locality || null,
       pincode: pincode,
       staffCategoryId: designationId,
       role: currentRoleValue,
@@ -877,6 +880,29 @@ export default function AddStaffModal({
                         onBlur={() => setFocusedField(null)}
                       />
                     )}
+                  </div>
+                  <div>
+                    <label
+                      className={`text-xs font-semibold block mb-2 transition ${
+                        focusedField === "locality"
+                          ? "text-[#F87B1B]"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      Locality / Specific Area <span className="text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <Input
+                      placeholder="Enter street / landmark / locality"
+                      value={locality}
+                      onChange={(e) => setLocality(e.target.value)}
+                      className={`w-full border-2 transition ${
+                        focusedField === "locality"
+                          ? "!border-[#F87B1B]"
+                          : "!border-gray-300"
+                      }`}
+                      onFocus={() => setFocusedField("locality")}
+                      onBlur={() => setFocusedField(null)}
+                    />
                   </div>
                 </div>
               </div>

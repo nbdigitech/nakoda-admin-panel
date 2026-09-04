@@ -80,7 +80,12 @@ export default function EditStaffModal({
   const [districtId, setDistrictId] = React.useState<string | null>(
     staff?.districtId || null,
   );
-  const [city, setCity] = React.useState<string>(staff?.city || "");
+  const [cityId, setCityId] = React.useState<string>(
+    staff?.cityId || staff?.cityName || staff?.city || "",
+  );
+  const [locality, setLocality] = React.useState<string>(
+    staff?.locality || "",
+  );
   const [pincode, setPincode] = React.useState<string>(staff?.pincode || "");
   const [loadingPincode, setLoadingPincode] = React.useState<boolean>(false);
   const [designationId, setDesignationId] = React.useState<string | null>(
@@ -117,7 +122,7 @@ export default function EditStaffModal({
 
           setCities(cityNames);
           if (cityNames.length > 0) {
-            setCity(cityNames[0]);
+            setCityId(cityNames[0]);
           }
 
           toastifyToast.success(
@@ -240,8 +245,9 @@ export default function EditStaffModal({
       stateName: stateId,
       districtId: districtId,
       districtName: districtId,
-      city: city,
-      cityName: city,
+      cityId: cityId,
+      cityName: cityId,
+      locality: locality || null,
       pincode: pincode,
       staffCategoryId: designationId,
       role: currentRoleValue,
@@ -630,7 +636,7 @@ export default function EditStaffModal({
                   <div>
                     <label
                       className={`text-xs font-semibold block mb-2 transition ${
-                        focusedField === "city"
+                        focusedField === "cityId"
                           ? "text-[#F87B1B]"
                           : "text-gray-700"
                       }`}
@@ -643,25 +649,48 @@ export default function EditStaffModal({
                           label: typeof c === "string" ? c : c.cityName || c.name,
                           value: typeof c === "string" ? c : c.cityName || c.name,
                         }))}
-                        value={city}
-                        onValueChange={(val) => setCity(val)}
+                        value={cityId}
+                        onValueChange={(val) => setCityId(val)}
                         placeholder="Select City / Area"
                         searchPlaceholder="Search city..."
                       />
                     ) : (
                       <Input
                         placeholder="Enter city / area"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
+                        value={cityId}
+                        onChange={(e) => setCityId(e.target.value)}
                         className={`w-full border-2 transition ${
-                          focusedField === "city"
+                          focusedField === "cityId"
                             ? "!border-[#F87B1B]"
                             : "!border-gray-300"
                         }`}
-                        onFocus={() => setFocusedField("city")}
+                        onFocus={() => setFocusedField("cityId")}
                         onBlur={() => setFocusedField(null)}
                       />
                     )}
+                  </div>
+                  <div>
+                    <label
+                      className={`text-xs font-semibold block mb-2 transition ${
+                        focusedField === "locality"
+                          ? "text-[#F87B1B]"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      Locality / Specific Area <span className="text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <Input
+                      placeholder="Enter street / landmark / locality"
+                      value={locality}
+                      onChange={(e) => setLocality(e.target.value)}
+                      className={`w-full border-2 transition ${
+                        focusedField === "locality"
+                          ? "!border-[#F87B1B]"
+                          : "!border-gray-300"
+                      }`}
+                      onFocus={() => setFocusedField("locality")}
+                      onBlur={() => setFocusedField(null)}
+                    />
                   </div>
                 </div>
               </div>
